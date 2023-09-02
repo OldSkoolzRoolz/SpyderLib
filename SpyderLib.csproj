@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AssemblyVersion>1.00</AssemblyVersion>
+        <FileVersion>1.00</FileVersion>
+        <Title>SpyderWire Net Recycler</Title>
+        <Authors>Kyle Crowder</Authors>
+        <Description>Spyder Wire is a network crawler</Description>
+        <PackageProjectUrl>http://github.com/netrecycler</PackageProjectUrl>
+
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+        <DefineConstants>DEBUG</DefineConstants>
+               <DebugType>full</DebugType>
+           </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="HtmlAgilityPack" Version="1.11.52" />
+        <PackageReference Include="Jetbrains.Annotations" Version="2023.2.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Metrics" Version="3.3.4" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0-preview.7.23375.6" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0-preview.7.23375.6" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0-preview.7.23375.6" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="8.0.0-preview.7.23375.6" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0-preview.7.23375.6" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0-preview.7.23375.6" />
+        <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0-preview.7.23375.6" />
+        <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="8.0.0-preview.7.23375.6" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="PuppeteerSharp" Version="11.0.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="Modules\temp.js" />
+        <None Remove="Annotations.Rider" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+        <Compile Remove="Modules\SpyderWireEngineBase.cs" />
+        <Compile Remove="Modules\TestConstants.cs" />
+    </ItemGroup>
+
+</Project>
