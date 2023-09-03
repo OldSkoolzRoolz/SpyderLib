@@ -1,46 +1,45 @@
 #region
 
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
 
 #endregion
 
-namespace SpyderLib.Control;
+namespace KC.Apps.SpyderLib;
 
-#pragma warning disable CS8600
-/// <summary>
-/// </summary>
-public interface ISpyderControl
+public interface ISpyderControl : IHostedService
 {
     /// <summary>
+    ///     Instructs Spyder to crawl each link in the input file
     /// </summary>
-    Task? ExecuteTask { get; }
-
-    /// <summary>
-    /// </summary>
-    ILoggerFactory Factory { get; set; }
-
-    #region Methods
-
-    /// <summary>
-    /// </summary>
-    /// <param name="url"></param>
-    /// <param name="outputFileName"></param>
     /// <returns></returns>
-    Task BeginSpyder(string url, string outputFileName);
+    Task BeginProcessingInputFileAsync();
 
 
 
 
 
     /// <summary>
+    ///     Set the depth and the starting url and crawl the web
     /// </summary>
-    void Dispose();
+    /// <param name="seedUrl"></param>
+    Task BeginSpyder(string seedUrl);
 
 
 
 
 
-    Task ScrapeSingleSite(string address = "");
+    /// Worker
+    /// <summary>
+    /// </summary>
+    Task ScrapeSingleSiteAsync();
 
-    #endregion
+
+
+
+
+    /// <summary>
+    ///     Starts Crawler according to options already set during initialization
+    /// </summary>
+    /// <returns>Task</returns>
+    Task StartCrawlingAsync();
 }

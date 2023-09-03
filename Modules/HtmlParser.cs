@@ -1,16 +1,12 @@
-
-
-using System.Runtime.CompilerServices;
+#region
 
 using HtmlAgilityPack;
 
-using Microsoft.Extensions.Logging;
-
-using SpyderLib.Models;
+#endregion
 
 
 
-namespace SpyderLib.Modules;
+namespace KC.Apps.SpyderLib.Modules;
 
 internal class HtmlParser
 {
@@ -24,7 +20,7 @@ internal class HtmlParser
         var capturedLinks = new ConcurrentScrapedUrlCollection();
 
         var nodes = doc.DocumentNode.Descendants(name: "a").ToArray();
-        capturedLinks = SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
+        capturedLinks = KC.Apps.SpyderLib.Control.SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
 
         return capturedLinks;
     }
@@ -40,7 +36,7 @@ internal class HtmlParser
         try
         {
             var nodes = doc.DocumentNode.Descendants(name: "a").ToArray();
-            links = SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
+            links = KC.Apps.SpyderLib.Control.SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
         }
         catch (Exception)
         {
@@ -74,7 +70,7 @@ internal class HtmlParser
                     continue;
                 }
 
-                var clean = SpyderHelpers.StripQueryFragment(url: attr.Value);
+                var clean = KC.Apps.SpyderLib.Control.SpyderHelpers.StripQueryFragment(url: attr.Value);
                 urls.Add(item: clean);
             }
         }
@@ -110,7 +106,7 @@ internal class HtmlParser
 
 
 
-    internal static bool SearchPageForTagName(HtmlDocument htmlDocument, string  tag)
+    internal static bool SearchPageForTagName(HtmlDocument htmlDocument, string tag)
     {
         ArgumentNullException.ThrowIfNull(argument: htmlDocument);
 
@@ -129,6 +125,4 @@ internal class HtmlParser
 
         return false;
     }
-
-    
 }

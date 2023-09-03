@@ -1,36 +1,23 @@
 #region
 
-#region
-
-#region
-
 using System.Net;
 
 using HtmlAgilityPack;
 
-using SpyderLib.Models;
-using SpyderLib.Properties;
-
 #endregion
 
-using SpyderLib.Control;
-
-using static SpyderLib.Control.SpyderControl;
-
-#endregion
-
-#endregion
-
-namespace SpyderLib.Modules;
+namespace KC.Apps.SpyderLib.Control;
 
 /// <summary>
 /// </summary>
 public class SpyderHelpers
 {
-    private static readonly SpyderOptions _options = CrawlerOptions;
+    private static readonly KC.Apps.SpyderLib.Properties.SpyderOptions _options = SpyderControl.CrawlerOptions;
     private static readonly OutputControl _output = new(options: _options);
 
-    #region Methods
+
+
+
 
     /// <summary>
     ///     Process captured nodes and extracts Anchor Links
@@ -89,7 +76,7 @@ public class SpyderHelpers
     /// <param name="spyderOptions"></param>
     /// <returns></returns>
     public static ConcurrentScrapedUrlCollection FilterScrapedCollection(ConcurrentScrapedUrlCollection collection,
-        SpyderOptions                                                                                   spyderOptions)
+        KC.Apps.SpyderLib.Properties.SpyderOptions                                                      spyderOptions)
     {
         return FilterScrapedCollectionCore(collection: collection, _output: _output, options: spyderOptions);
     }
@@ -104,7 +91,7 @@ public class SpyderHelpers
     /// <returns></returns>
     /// <param name="options"></param>
     private static ConcurrentScrapedUrlCollection FilterScrapedCollectionCore(ConcurrentScrapedUrlCollection collection,
-        OutputControl _output, SpyderOptions options)
+        OutputControl _output, KC.Apps.SpyderLib.Properties.SpyderOptions options)
     {
         ArgumentNullException.ThrowIfNull(argument: options);
         var baseUri = new Uri(uriString: options.StartingUrl);
@@ -268,7 +255,7 @@ public class SpyderHelpers
     /// <returns></returns>
     public static ConcurrentScrapedUrlCollection? LoadLinksFromFile(string filename)
     {
-        var                            path = Path.Combine(path1: CrawlerOptions.OutputFilePath, path2: filename);
+        var                            path = Path.Combine(path1: _options.OutputFilePath, path2: filename);
         ConcurrentScrapedUrlCollection temp = new();
         try
         {
@@ -309,6 +296,4 @@ public class SpyderHelpers
 
         return x;
     }
-
-    #endregion
 }

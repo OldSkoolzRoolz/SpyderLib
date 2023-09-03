@@ -2,19 +2,14 @@
 
 using Microsoft.Extensions.DependencyInjection;
 
-using SpyderLib.Control;
-using SpyderLib.Properties;
-
 #endregion
 
-namespace SpyderLib.Extensions;
+namespace KC.Apps.SpyderLib.Extensions;
 
 /// <summary>
 /// </summary>
 public static class SpyderLibExtensions
 {
-    #region Methods
-
     /// <summary>
     ///     parameterless Service registration method using default settings for Spyder Options
     /// </summary>
@@ -22,7 +17,7 @@ public static class SpyderLibExtensions
     /// <returns></returns>
     public static IServiceCollection AddSpyderService(this IServiceCollection services)
     {
-        services.AddOptions<SpyderOptions>()
+        services.AddOptions<KC.Apps.SpyderLib.Properties.SpyderOptions>()
                 .Configure(options =>
                            {
                                options.ScrapeDepthLevel = 3;
@@ -43,8 +38,8 @@ public static class SpyderLibExtensions
     /// <param name="configureOptions"></param>
     /// <returns></returns>
     public static IServiceCollection AddSpyderService(
-        this IServiceCollection services,
-        Action<SpyderOptions>   configureOptions)
+        this IServiceCollection                            services,
+        Action<KC.Apps.SpyderLib.Properties.SpyderOptions> configureOptions)
     {
         services.Configure(configureOptions: configureOptions);
 
@@ -64,11 +59,12 @@ public static class SpyderLibExtensions
     /// <param name="services"></param>
     /// <param name="userOptions"></param>
     /// <returns></returns>
-    public static IServiceCollection AddSpyderService(this IServiceCollection services, SpyderOptions userOptions)
+    public static IServiceCollection AddSpyderService(this IServiceCollection services,
+        KC.Apps.SpyderLib.Properties.SpyderOptions                            userOptions)
     {
         services
             .ConfigureOptions(userOptions: userOptions)
-            .AddHostedService<SpyderControl>();
+            .AddHostedService<ISpyderControl>();
 
         return services;
     }
@@ -77,9 +73,10 @@ public static class SpyderLibExtensions
 
 
 
-    private static IServiceCollection ConfigureOptions(this IServiceCollection services, SpyderOptions userOptions)
+    private static IServiceCollection ConfigureOptions(this IServiceCollection services,
+        KC.Apps.SpyderLib.Properties.SpyderOptions                             userOptions)
     {
-        services.AddOptions<SpyderOptions>()
+        services.AddOptions<KC.Apps.SpyderLib.Properties.SpyderOptions>()
                 .Configure(options => options.SetProperties(userOptions: userOptions));
 
         return services;
@@ -89,9 +86,10 @@ public static class SpyderLibExtensions
 
 
 
-    private static void SetProperties(this SpyderOptions options, SpyderOptions userOptions)
+    private static void SetProperties(this KC.Apps.SpyderLib.Properties.SpyderOptions options,
+        KC.Apps.SpyderLib.Properties.SpyderOptions                                    userOptions)
     {
-        var type = typeof(SpyderOptions);
+        var type = typeof(KC.Apps.SpyderLib.Properties.SpyderOptions);
         foreach (var prop in type.GetProperties())
         {
             if (prop.CanRead && prop.CanWrite)
@@ -100,6 +98,4 @@ public static class SpyderLibExtensions
             }
         }
     }
-
-    #endregion
 }

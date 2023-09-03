@@ -4,13 +4,9 @@ using HtmlAgilityPack;
 
 using JetBrains.Annotations;
 
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
+using KC.Apps.SpyderLib.Logging;
 
-using SpyderLib.Control;
-using SpyderLib.Logging;
-using SpyderLib.Models;
-using SpyderLib.Properties;
+using Microsoft.Extensions.Logging;
 
 #endregion
 
@@ -18,19 +14,20 @@ using SpyderLib.Properties;
 //TODO: Implement async cancellation
 //TODO: Move output to outputcontroller;
 
-namespace SpyderLib.Modules;
+namespace KC.Apps.SpyderLib.Modules;
 
 /// <summary>
 /// </summary>
-public class SpyderWeb : IDisposable, ISpyderWeb
+public class SpyderWeb : ISpyderWeb
 {
-    private readonly ICacheControl _cacheControl;
-   // private readonly HtmlParser _htmlParser;
+    private readonly KC.Apps.SpyderLib.Control.ICacheControl _cacheControl;
+
+    // private readonly HtmlParser _htmlParser;
     private readonly ILogger _logger;
-    private readonly SpyderOptions _options;
-    private IOutputControl _output;
+    private readonly KC.Apps.SpyderLib.Properties.SpyderOptions _options;
+    private readonly KC.Apps.SpyderLib.Control.IOutputControl _output;
     private readonly SemaphoreSlim _semaphore;
- //   private readonly Lazy<SpyderHelpers> _spyderHelpers;
+    //   private readonly Lazy<SpyderHelpers> _spyderHelpers;
 
 
 
@@ -41,25 +38,24 @@ public class SpyderWeb : IDisposable, ISpyderWeb
     /// <param name="logger"></param>
     /// <param name="options"></param>
     /// <exception cref="ArgumentNullException"></exception>
-    public SpyderWeb([NotNull]ILogger logger,[NotNull] SpyderOptions options, [NotNull]ICacheControl cacheControl)
+    public SpyderWeb([NotNull] ILogger logger, [NotNull] KC.Apps.SpyderLib.Properties.SpyderOptions options,
+        [NotNull]              KC.Apps.SpyderLib.Control.ICacheControl cacheControl)
     {
         ArgumentNullException.ThrowIfNull(argument: logger);
         _options = options ??
                    throw new ArgumentNullException(nameof(options), message: "SpyderOptions cannot be null");
         _logger = logger ?? throw new ArgumentNullException(nameof(logger), message: "ILogger cannot be null");
 
-        _output = new OutputControl(_options);
+        _output = new OutputControl(options: _options);
         _cacheControl = cacheControl;
         _logger.LogDebug(message: "SpyderWeb Initialized");
-     
+
         _semaphore = new(5, 5);
     }
 
 
 
 
-
-    #region Methods
 
     public void Dispose()
     {
@@ -115,7 +111,7 @@ public class SpyderWeb : IDisposable, ISpyderWeb
 
         // Ensure valid url string structure
         var cleanlinks = links.Select(link => link)
-                              .Where(predicate: SpyderHelpers.IsValidUrl);
+                              .Where(predicate: KC.Apps.SpyderLib.Control.SpyderHelpers.IsValidUrl);
 
         // Create scraping tasks
         var tasks = cleanlinks.Select(selector: ScrapePageForHtmlTagAsync);
@@ -198,12 +194,10 @@ public class SpyderWeb : IDisposable, ISpyderWeb
             var          htmlDoc = await _cacheControl.GetWebPageSourceAsync(address: url);
             doc.LoadHtml(html: htmlDoc);
 
-               if(HtmlParser.SearchPageForTagName(htmlDocument: doc, tag: _options.HtmlTagToSearchFor))
-               {
-                   _output.CapturedVideoLinks.Add(url);
-
-               }
-               
+            if (HtmlParser.SearchPageForTagName(htmlDocument: doc, tag: _options.HtmlTagToSearchFor))
+            {
+                _output.CapturedVideoLinks.Add(url: url);
+            }
         }
         catch (Exception e)
         {
@@ -224,8 +218,8 @@ public class SpyderWeb : IDisposable, ISpyderWeb
     /// <param name="newlinks"></param>
     public async Task<ConcurrentScrapedUrlCollection> ScrapePageForLinksAsync(string link)
     {
-        var newlinks = new ConcurrentScrapedUrlCollection();
-        HtmlDocument htmlDoc = new();
+        var          newlinks = new ConcurrentScrapedUrlCollection();
+        HtmlDocument htmlDoc  = new();
         try
         {
             var pageSource = await _cacheControl.GetWebPageSourceAsync(address: link);
@@ -239,7 +233,9 @@ public class SpyderWeb : IDisposable, ISpyderWeb
             //Filter out links according to SpyderOptions
             if (links.Count > 0)
             {
-                var filteredlinks = SpyderHelpers.FilterScrapedCollection(collection: links, spyderOptions: _options);
+                var filteredlinks =
+                    KC.Apps.SpyderLib.Control.SpyderHelpers.FilterScrapedCollection(collection: links,
+                             spyderOptions: _options);
                 newlinks.AddArray(array: filteredlinks);
                 _output.UrlsScrapedThisSession.AddArray(array: newlinks);
             }
@@ -292,7 +288,7 @@ public class SpyderWeb : IDisposable, ISpyderWeb
     /// </summary>
     public async Task StartScrapingInputFileAsync()
     {
-        var links = SpyderHelpers.LoadLinksFromFile(filename: _options.InputFileName);
+        var links = KC.Apps.SpyderLib.Control.SpyderHelpers.LoadLinksFromFile(filename: _options.InputFileName);
         if (links is null)
         {
             _logger.GeneralSpyderMessage(message: "No links found in input file. check your file and try again");
@@ -348,6 +344,4 @@ public class SpyderWeb : IDisposable, ISpyderWeb
             _output.OnLibraryShutdown();
         }
     }
-
-    #endregion
 }

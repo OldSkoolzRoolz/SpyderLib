@@ -6,17 +6,12 @@ using System.Runtime.Serialization;
 
 #endregion
 
-namespace SpyderLib.Models;
+namespace KC.Apps.SpyderLib.Models;
 
 /// <inheritdoc />
 internal class ScrapedUri : INotifyPropertyChanged
 {
-    #region Events, Enums
-
     public event PropertyChangedEventHandler? PropertyChanged;
-
-    #endregion
-
     private bool _crawled;
     private Uri? _urii;
     private string? _url;
@@ -84,7 +79,9 @@ internal class ScrapedUri : INotifyPropertyChanged
         }
     }
 
-    #region Methods
+
+
+
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
@@ -106,6 +103,4 @@ internal class ScrapedUri : INotifyPropertyChanged
         OnPropertyChanged(propertyName: propertyName);
         return true;
     }
-
-    #endregion
 }

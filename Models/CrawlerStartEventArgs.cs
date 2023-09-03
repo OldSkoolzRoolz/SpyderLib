@@ -1,4 +1,4 @@
-namespace SpyderLib.Models;
+namespace KC.Apps.SpyderLib.Models;
 
 internal class CrawlerStartEventArgs
 {

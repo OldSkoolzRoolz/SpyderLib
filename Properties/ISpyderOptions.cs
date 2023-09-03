@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 #endregion
 
-namespace SpyderLib.Properties;
+namespace KC.Apps.SpyderLib.Properties;
 
 /// <summary>
 /// </summary>

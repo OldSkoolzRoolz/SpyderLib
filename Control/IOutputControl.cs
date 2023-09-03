@@ -1,8 +1,4 @@
-using SpyderLib.Models;
-
-
-
-namespace SpyderLib.Control;
+namespace KC.Apps.SpyderLib.Control;
 
 public interface IOutputControl
 {

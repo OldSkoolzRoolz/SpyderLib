@@ -5,12 +5,10 @@ using System.Runtime.CompilerServices;
 
 #endregion
 
-namespace SpyderLib.Logging;
+namespace KC.Apps.SpyderLib.Logging;
 
 internal class Log
 {
-    #region Methods
-
     internal static void AndContinue(Exception exception,
         [CallerMemberName] string              memberName = "",
         [CallerLineNumber] int                 line       = 0,
@@ -117,6 +115,4 @@ internal class Log
         Console.WriteLine(format: "{0}::{1} : {3}. Line #{2}", message, memberName, line, path);
         Console.ForegroundColor = b42;
     }
-
-    #endregion
 }

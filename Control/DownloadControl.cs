@@ -1,15 +1,11 @@
 #region
 
-using SpyderLib.Models;
-
 #endregion
 
-namespace SpyderLib.Control;
+namespace KC.Apps.SpyderLib.Control;
 
 internal class DownloadControl : IDownloadControl
 {
-    #region Methods
-
     public void AddDownloadItem(DownloadItem item)
     {
         AddItemToQue(item: item);
@@ -42,7 +38,9 @@ internal class DownloadControl : IDownloadControl
         //_downloader.Complete();
     }
 
-    #endregion
+
+
+
 
     // private ILogger<DownloadControl> _logger = SpyderControl.Factory.CreateLogger<DownloadControl>();
 }

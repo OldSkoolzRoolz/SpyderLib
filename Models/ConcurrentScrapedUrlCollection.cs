@@ -4,13 +4,11 @@ using System.Collections.Concurrent;
 
 #endregion
 
-namespace SpyderLib.Models;
+namespace KC.Apps;
 
 /// <inheritdoc />
 public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
 {
-    #region Methods
-
     internal void Add(string url)
     {
         // weeds out relative urls, only adding absolute urls
@@ -57,7 +55,8 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
 
     internal void AddRange(ConcurrentDictionary<string, byte> itemsToAdd)
     {
-        var valid = itemsToAdd.Select(url => url.Key).Where(u => !string.IsNullOrEmpty(value: u) && IsValidUrl(url: u));
+        var valid = itemsToAdd.Select(url => url.Key)
+                              .Where(u => !string.IsNullOrEmpty(value: u) && IsValidUrl(url: u));
 
         foreach (var item in valid)
         {
@@ -81,6 +80,4 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
                && Uri.TryCreate(uriString: url, uriKind: UriKind.Absolute, out var uriResult)
                && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
     }
-
-    #endregion
 }

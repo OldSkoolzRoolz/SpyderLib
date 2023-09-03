@@ -1,23 +1,19 @@
 #region
 
-using JetBrains.Annotations;
-
 using System.Collections.Concurrent;
 using System.Net;
 
+using KC.Apps.SpyderLib.Logging;
+
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Newtonsoft.Json;
 
-using SpyderLib.Logging;
-using SpyderLib.Properties;
-
 #endregion
 
-namespace SpyderLib.Control;
+namespace KC.Apps.SpyderLib.Control;
 
 public interface ICacheControl
 {
@@ -61,30 +57,28 @@ public interface ICacheControl
 
 
     bool SafeFileWrite(string path, string contents);
-
-
-
 }
 
-public class CacheControl 
+public class CacheControl
 {
     public static event Action CacheShuttingDown;
     private const string FILENAME = "Spyder_Cache_Index.json";
     private readonly IMemoryCache _cache;
+    private object _fileLock;
     private bool _isCacheInitialized;
     private object _lock = new();
     private bool _lockTaken;
     private readonly ILogger _logger;
-    private readonly SpyderOptions _options;
+    private readonly KC.Apps.SpyderLib.Properties.SpyderOptions _options;
     private readonly TimeSpan _updateInterval = TimeSpan.FromMinutes(1);
     private static readonly HttpClient HttpClientInstance = new() { Timeout = Timeout.InfiniteTimeSpan };
-    private object _fileLock;
 
 
 
 
 
-    public CacheControl(ILoggerFactory factory, IOptions<SpyderOptions> options, IMemoryCache cache)
+    public CacheControl(ILoggerFactory factory, IOptions<KC.Apps.SpyderLib.Properties.SpyderOptions> options,
+        IMemoryCache                   cache)
     {
         _cache = cache;
 
@@ -166,6 +160,166 @@ public class CacheControl
 
 
 
+    public string GenerateUniqueFilename()
+    {
+        string filename;
+        do
+        {
+            filename = Path.GetRandomFileName();
+        } while (File.Exists(Path.Combine(path1: _options.CacheLocation, path2: filename)));
+
+        return filename;
+    }
+
+
+
+
+
+    private IEnumerable<string> GetExistingCacheFiles()
+    {
+        return Directory
+               .EnumerateFiles(path: _options.CacheLocation)
+               .Select(selector: Path.GetFileName);
+    }
+
+
+
+
+
+    /// <summary>
+    /// </summary>
+    /// <param name="address"></param>
+    /// <returns></returns>
+    public async Task<string> GetHttpContentFromWebAsync(string address)
+    {
+        var content = string.Empty;
+        try
+        {
+            var resp = await HttpClientInstance.GetAsync(requestUri: address,
+                                                         completionOption: HttpCompletionOption.ResponseContentRead);
+
+            // if success read content
+            if (resp.IsSuccessStatusCode)
+            {
+                content = await resp.Content.ReadAsStringAsync();
+            }
+
+            // If unsuccessful try to recover and retry
+            switch (resp.StatusCode)
+            {
+                case HttpStatusCode.Found:
+                {
+                    var str = await GetHttpContentFromWebAsync(resp.Headers.Location.ToString());
+                    break;
+                }
+                case HttpStatusCode.Unauthorized:
+                {
+                    //They didn't like us poking around so we will just log and carry on.
+                    _logger.PageCacheException("Unauthorized web response. Moving on.");
+                    break;
+                }
+                case HttpStatusCode.Forbidden:
+                {
+                    //we get the boot again. Rinse and repeat....
+                    _logger.PageCacheException("Unauthorized web response. Moving on.");
+                    break;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            // Errors here should be avoided at all costs.
+            _logger.UnexpectedResultsException(message: e.Message);
+        }
+
+        return content;
+    }
+
+
+
+
+
+    /// <summary>
+    /// </summary>
+    /// <param name="address"></param>
+    /// <returns></returns>
+    public async Task<string?> GetWebPageSourceAsync(string address)
+    {
+        if (!_options.UseLocalCache)
+        {
+            return await GetHttpContentFromWebAsync(address: address);
+        }
+
+        // Attempt to get page from local cache.
+        var cache = TryGetFileNameFromCache(uniqueUrlKey: address);
+        if (!string.IsNullOrEmpty(value: cache))
+        {
+            _logger.DebugTestingMessage(message: "Page loaded from cache");
+            return cache;
+        }
+
+        // Cache failed to load or doesn't exist so we Get from web
+        cache = await GetHttpContentFromWebAsync(address: address);
+        if (string.IsNullOrEmpty(value: cache))
+        {
+            _logger.DebugTestingMessage(message: "Failed to get page from cache or web.");
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(value: cache))
+        {
+            // Add page to cache
+            AddContentToCache(address: address, content: cache);
+        }
+
+        return cache;
+    }
+
+
+
+
+
+    private void InitializeCache()
+    {
+        _logger.LogInformation(message: "Loading cache.");
+
+        try
+        {
+            var diskcache = LoadCacheIndex();
+
+            if (!diskcache.IsEmpty && diskcache is not null)
+            {
+                _logger.LogInformation($"disccache count = {diskcache.Count}");
+                foreach (var item in diskcache)
+                {
+                    AddToCache(uniqueUrlKey: item.Key, cacheFileName: item.Value);
+                }
+
+                var stats = _cache.GetCurrentStatistics();
+                _logger.LogInformation(
+                                       message: "Cache loaded from disk record count={count}",
+                                       stats?.CurrentEntryCount);
+            }
+            else
+            {
+                _logger.LogWarning(
+                                   message: "Unable to fetch records from disk to update cache.");
+            }
+        }
+        finally
+        {
+            if (!_isCacheInitialized)
+            {
+                // _cacheSignal.Release();
+                _isCacheInitialized = true;
+            }
+        }
+    }
+
+
+
+
+
     /*
             public string? TryGetDocumentFromCache(string address)
             {
@@ -231,166 +385,6 @@ public class CacheControl
             {
                 SaveCacheIndex();
                 _logger.DebugTestingMessage(message: "Saving cache");
-            }
-        }
-    }
-
-
-
-
-
-    public string GenerateUniqueFilename()
-    {
-        string filename;
-        do
-        {
-            filename = Path.GetRandomFileName();
-        } while (File.Exists(Path.Combine(path1: _options.CacheLocation, path2: filename)));
-
-        return filename;
-    }
-
-
-
-
-
-    private IEnumerable<string> GetExistingCacheFiles()
-    {
-        return Directory
-               .EnumerateFiles(path: _options.CacheLocation)
-               .Select(selector: Path.GetFileName);
-    }
-
-
-
-
-
-    /// <summary>
-    /// </summary>
-    /// <param name="address"></param>
-    /// <returns></returns>
-    public async Task<string> GetHttpContentFromWebAsync(string address)
-    {
-        var content = string.Empty;
-        try
-        {
-            var resp = await HttpClientInstance.GetAsync(requestUri: address,
-                                                         completionOption: HttpCompletionOption.ResponseContentRead);
-
-            // if success read content
-            if (resp.IsSuccessStatusCode)
-            {
-                content = await resp.Content.ReadAsStringAsync();
-            }
-
-            // If unsuccessful try to recover and retry
-            switch (resp.StatusCode)
-            {
-                case HttpStatusCode.Found:
-                {
-                 var str = await GetHttpContentFromWebAsync(resp.Headers.Location.ToString());
-                    break;
-                }
-                case HttpStatusCode.Unauthorized:
-                {
-                    //They didn't like us poking around so we will just log and carry on.
-                    _logger.PageCacheException("Unauthorized web response. Moving on.");
-                    break;
-                }
-                case HttpStatusCode.Forbidden:
-                {
-                    //we get the boot again. Rinse and repeat....
-                    _logger.PageCacheException("Unauthorized web response. Moving on.");
-                    break;
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            // Errors here should be avoided at all costs.
-            _logger.UnexpectedResultsException(message: e.Message);
-        }
-
-        return content;
-    }
-
-
-
-
-
-    /// <summary>
-    /// </summary>
-    /// <param name="address"></param>
-    /// <returns></returns>
-    public async Task<string?> GetWebPageSourceAsync(string address)
-    {
-        if (!_options.UseLocalCache)
-        {
-            return await GetHttpContentFromWebAsync(address: address);
-        }
-
-        // Attempt to get page from local cache.
-        var cache = TryGetFileNameFromCache(uniqueUrlKey: address);
-        if (!string.IsNullOrEmpty(value: cache))
-        {
-            _logger.DebugTestingMessage(message: "Page loaded from cache");
-            return cache;
-        }
-
-        // Cache failed to load or doesn't exist so we Get from web
-        cache = await GetHttpContentFromWebAsync(address: address);
-        if (string.IsNullOrEmpty(value: cache))
-        {
-            _logger.DebugTestingMessage(message: "Failed to get page from cache or web.");
-            return null;
-        }
-
-        if (!string.IsNullOrWhiteSpace(cache))
-        {
-            // Add page to cache
-            AddContentToCache(address: address, content: cache);
-        }
-
-        return cache;
-    }
-
-
-
-
-
-    private void InitializeCache()
-    {
-        _logger.LogInformation(message: "Loading cache.");
-
-        try
-        {
-            var diskcache = LoadCacheIndex();
-
-            if (!diskcache.IsEmpty && diskcache is not null)
-            {
-                _logger.LogInformation($"disccache count = {diskcache.Count}");
-                foreach (var item in diskcache)
-                {
-                    AddToCache(uniqueUrlKey: item.Key, cacheFileName: item.Value);
-                }
-
-                var stats = _cache.GetCurrentStatistics();
-                _logger.LogInformation(
-                                       message: "Cache loaded from disk record count={count}",
-                                       stats?.CurrentEntryCount);
-            }
-            else
-            {
-                _logger.LogWarning(
-                                   message: "Unable to fetch records from disk to update cache.");
-            }
-        }
-        finally
-        {
-            if (!_isCacheInitialized)
-            {
-                // _cacheSignal.Release();
-                _isCacheInitialized = true;
             }
         }
     }

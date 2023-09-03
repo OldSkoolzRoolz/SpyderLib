@@ -1,25 +1,24 @@
 #region
 
+#region
+
 using System.Collections.Concurrent;
 
 using Microsoft.Extensions.Logging;
-
-using SpyderLib.Properties;
-
-
-
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 #endregion
 
-namespace SpyderLib.Modules;
+using KC.Apps.SpyderLib.Properties;
+
+#endregion
+
+namespace KC.Apps.SpyderLib.Modules;
 
 /// <summary>
 /// </summary>
 public interface IFileOperations : IDisposable
 {
-    #region Methods
-
     /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
     void Dispose();
 
@@ -43,8 +42,6 @@ public interface IFileOperations : IDisposable
 
 
     void VerifyCache();
-
-    #endregion
 }
 
 public class FileOperations : IDisposable
@@ -73,7 +70,9 @@ public class FileOperations : IDisposable
 
     public string Name { get; } = "FileOperations";
 
-    #region Methods
+
+
+
 
     /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
     public void Dispose()
@@ -139,6 +138,4 @@ public class FileOperations : IDisposable
             s_logger.LogError(exception: e, message: "Error saving cache");
         }
     }
-
-    #endregion
 }

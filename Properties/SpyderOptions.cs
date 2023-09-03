@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 
 #endregion
 
-namespace SpyderLib.Properties;
+namespace KC.Apps.SpyderLib.Properties;
 
 /// <summary>
 /// </summary>
@@ -135,7 +135,12 @@ public class SpyderOptions : IOptions<SpyderOptions>
     [Required]
     public bool UseLocalCache { get; set; }
 
-    #region Methods
+    /// <summary>Gets the default configured <typeparamref name="TOptions" /> instance.</summary>
+    public SpyderOptions Value { get; }
+
+
+
+
 
     /// <summary>
     /// </summary>
@@ -169,9 +174,4 @@ public class SpyderOptions : IOptions<SpyderOptions>
 
         return errors;
     }
-
-    #endregion
-
-    /// <summary>Gets the default configured <typeparamref name="TOptions" /> instance.</summary>
-    public SpyderOptions Value { get; }
 }

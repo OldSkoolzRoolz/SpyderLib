@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 #endregion
 
-namespace SpyderLib.Modules;
+namespace KC.Apps.SpyderLib.Modules;
 
 /// <summary>
 ///     Download que

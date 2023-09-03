@@ -1,8 +1,4 @@
-using SpyderLib.Models;
-
-
-
-namespace SpyderLib.Modules;
+namespace KC.Apps.SpyderLib.Modules;
 
 public interface ISpyderWeb
 {
@@ -14,10 +10,16 @@ public interface ISpyderWeb
 
 
 
-    Task ScrapeUrlAsync(Uri url);
+    Task ScrapePageForHtmlTagAsync(string url);
 
 
     Task<ConcurrentScrapedUrlCollection> ScrapePageForLinksAsync(string link);
+
+
+    Task ScrapeUrlAsync(Uri url);
+
+
+
 
 
     /// <summary>
@@ -26,9 +28,6 @@ public interface ISpyderWeb
 
 
 
-
-
-    Task ScrapePageForHtmlTagAsync(string url);
 
 
     /// <summary>

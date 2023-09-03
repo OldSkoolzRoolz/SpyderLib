@@ -1,19 +1,13 @@
 #region
 
-using SpyderLib.Models;
-
 #endregion
 
-namespace SpyderLib.Control;
+namespace KC.Apps.SpyderLib.Control;
 
 internal interface IDownloadControl
 {
-    #region Methods
-
     void AddDownloadItem(DownloadItem item);
 
 
     void SetInputComplete();
-
-    #endregion
 }

@@ -8,12 +8,13 @@ using Microsoft.Extensions.Logging;
 
 using PuppeteerSharp;
 
-using SpyderLib.Models;
-
 #endregion
 
-namespace SpyderLib.Control;
+namespace KC.Apps.SpyderLib.Control;
 
+/// <summary>
+///     Control class for puppeteer sharp
+/// </summary>
 internal class BrowserControl : IAsyncDisposable, IDisposable
 {
     private const string USER_AGENT =
@@ -40,7 +41,9 @@ internal class BrowserControl : IAsyncDisposable, IDisposable
     internal IBrowser Browser => _browser.Value;
     internal ILoggerFactory? LoggerFactory { get; }
 
-    #region Methods
+
+
+
 
     private async Task<IPage> CreatePageAsync()
     {
@@ -205,6 +208,4 @@ internal class BrowserControl : IAsyncDisposable, IDisposable
     {
         return await Puppeteer.LaunchAsync(GetLaunchOptions()).ConfigureAwait(false);
     }
-
-    #endregion
 }

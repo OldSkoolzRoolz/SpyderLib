@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 #endregion
 
-namespace SpyderLib.Logging;
+namespace KC.Apps.SpyderLib.Logging;
 
 /// <summary>
 ///     The log output which all <see cref="FileLogger" /> share to log messages to
@@ -65,8 +65,6 @@ public class FileLoggingOutput : IDisposable
 
 
 
-
-    #region Methods
 
     /// <inheritdoc />
     public void Dispose()
@@ -173,8 +171,6 @@ public class FileLoggingOutput : IDisposable
             }
         }
     }
-
-    #endregion
 }
 
 /// <summary>
@@ -245,12 +241,12 @@ public class FileLogger : ILogger
     {
         public static NullScope Instance { get; } = new();
 
-        #region Methods
+
+
+
 
         public void Dispose()
         {
         }
-
-        #endregion
     }
 }

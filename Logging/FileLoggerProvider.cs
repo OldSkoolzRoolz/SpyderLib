@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 #endregion
 
-namespace SpyderLib.Logging;
+namespace KC.Apps.SpyderLib.Logging;
 
 /// <summary>
 ///     <see cref="ILoggerProvider" /> which outputs to a log file.
@@ -30,8 +30,6 @@ public class FileLoggerProvider : ILoggerProvider
 
 
 
-    #region Methods
-
     /// <inheritdoc />
     public ILogger CreateLogger(string categoryName)
     {
@@ -47,8 +45,6 @@ public class FileLoggerProvider : ILoggerProvider
     {
         _output.Dispose();
     }
-
-    #endregion
 }
 
 /// <summary>
@@ -56,8 +52,6 @@ public class FileLoggerProvider : ILoggerProvider
 /// </summary>
 public static class FileLoggerProviderExtensions
 {
-    #region Methods
-
     /// <summary>
     ///     Add <see cref="FileLoggerProvider" /> to <paramref name="builder" />
     /// </summary>
@@ -73,6 +67,4 @@ public static class FileLoggerProviderExtensions
         builder.AddProvider(new FileLoggerProvider(filePath: filePathName));
         return builder;
     }
-
-    #endregion
 }

@@ -4,12 +4,10 @@ using Microsoft.Extensions.Logging;
 
 #endregion
 
-namespace SpyderLib.Logging;
+namespace KC.Apps.SpyderLib.Logging;
 
 public static partial class LoggingMessages
 {
-    #region Methods
-
     [LoggerMessage(EventId = 9999,
                    Level = LogLevel.Debug,
                    Message = "NON-error Debug Message == {message}")]
@@ -86,6 +84,4 @@ public static partial class LoggingMessages
                    Level = LogLevel.Error,
                    Message = "Unknown library error. Unexpected results.  {message}")]
     public static partial void UnexpectedResultsException(this ILogger logger, string message);
-
-    #endregion
 }

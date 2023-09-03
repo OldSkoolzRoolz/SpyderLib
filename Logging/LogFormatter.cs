@@ -7,7 +7,7 @@ using System.Text;
 
 #endregion
 
-namespace SpyderLib.Logging;
+namespace KC.Apps.SpyderLib.Logging;
 
 internal static class LogFormatter
 {
@@ -20,7 +20,9 @@ internal static class LogFormatter
     private const string TIME_FORMAT = "HH:mm:ss.fff 'GMT'"; // Example: 09:50:43.341 GMT
     private static readonly ConcurrentDictionary<Type, Func<Exception, string>> s_exceptionDecoders = new();
 
-    #region Methods
+
+
+
 
     /// <summary>
     ///     Parses a date.
@@ -153,6 +155,4 @@ internal static class LogFormatter
     {
         s_exceptionDecoders.TryAdd(key: exceptionType, value: decoder);
     }
-
-    #endregion
 }

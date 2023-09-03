@@ -6,13 +6,15 @@ using System.Text;
 #endregion
 
 //Resharper disable all
-namespace SpyderLib.Properties;
+namespace KC.Apps.SpyderLib.Properties;
 
 internal class SettingsProvider : ISettingsProvider
 {
     private static readonly Type[] s_sroKnownTypes = { typeof(string[]) };
 
-    #region Methods
+
+
+
 
     public T LoadSettings<T>(string fileName) where T : class, new()
     {
@@ -73,6 +75,4 @@ internal class SettingsProvider : ISettingsProvider
             writer.Flush();
         }
     }
-
-    #endregion
 }
