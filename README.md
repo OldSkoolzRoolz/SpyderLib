@@ -18,6 +18,7 @@ Scraper One is a cross-plaform gui crawler using the Spyder Library as it's engi
 - Can run as service in a host
 - Cab be dropped in a console app
 - Can be used to download binary fields
+- Multi-threaded for speed
 
 <code>SpyderOptions options = new<br>
 {<br>
