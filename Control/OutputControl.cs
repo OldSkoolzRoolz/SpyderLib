@@ -88,8 +88,8 @@ public class OutputControl : KC.Apps.SpyderLib.Control.IOutputControl
         {
             lock (s_lock)
             {
-                var       path = Path.Combine(path1: _options.OutputFilePath, path2: fileName);
-                using var sw   = File.CreateText(path: path);
+                var path = Path.Combine(path1: _options.OutputFilePath, path2: fileName);
+                using var sw = File.CreateText(path: path);
 
                 foreach (var item in col)
                 {

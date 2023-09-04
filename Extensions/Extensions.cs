@@ -38,7 +38,7 @@ public static class SpyderLibExtensions
     /// <param name="configureOptions"></param>
     /// <returns></returns>
     public static IServiceCollection AddSpyderService(
-        this IServiceCollection                            services,
+        this IServiceCollection services,
         Action<KC.Apps.SpyderLib.Properties.SpyderOptions> configureOptions)
     {
         services.Configure(configureOptions: configureOptions);
@@ -60,11 +60,11 @@ public static class SpyderLibExtensions
     /// <param name="userOptions"></param>
     /// <returns></returns>
     public static IServiceCollection AddSpyderService(this IServiceCollection services,
-        KC.Apps.SpyderLib.Properties.SpyderOptions                            userOptions)
+        KC.Apps.SpyderLib.Properties.SpyderOptions userOptions)
     {
         services
             .ConfigureOptions(userOptions: userOptions)
-            .AddHostedService<ISpyderControl>();
+            .AddHostedService<KC.Apps.SpyderLib.Control.ISpyderControl>();
 
         return services;
     }
@@ -74,7 +74,7 @@ public static class SpyderLibExtensions
 
 
     private static IServiceCollection ConfigureOptions(this IServiceCollection services,
-        KC.Apps.SpyderLib.Properties.SpyderOptions                             userOptions)
+        KC.Apps.SpyderLib.Properties.SpyderOptions userOptions)
     {
         services.AddOptions<KC.Apps.SpyderLib.Properties.SpyderOptions>()
                 .Configure(options => options.SetProperties(userOptions: userOptions));
@@ -87,7 +87,7 @@ public static class SpyderLibExtensions
 
 
     private static void SetProperties(this KC.Apps.SpyderLib.Properties.SpyderOptions options,
-        KC.Apps.SpyderLib.Properties.SpyderOptions                                    userOptions)
+        KC.Apps.SpyderLib.Properties.SpyderOptions userOptions)
     {
         var type = typeof(KC.Apps.SpyderLib.Properties.SpyderOptions);
         foreach (var prop in type.GetProperties())

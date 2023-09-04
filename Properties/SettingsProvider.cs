@@ -33,8 +33,8 @@ internal class SettingsProvider : ISettingsProvider
             return new();
         }
 
-        using var stream     = new FileStream(path: fileName, mode: FileMode.Open, access: FileAccess.Read);
-        var       serializer = new DataContractJsonSerializer(typeof(T), knownTypes: s_sroKnownTypes);
+        using var stream = new FileStream(path: fileName, mode: FileMode.Open, access: FileAccess.Read);
+        var serializer = new DataContractJsonSerializer(typeof(T), knownTypes: s_sroKnownTypes);
         return serializer.ReadObject(stream: stream) as T ?? new T();
     }
 

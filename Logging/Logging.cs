@@ -10,11 +10,11 @@ namespace KC.Apps.SpyderLib.Logging;
 internal class Log
 {
     internal static void AndContinue(Exception exception,
-        [CallerMemberName] string              memberName = "",
-        [CallerLineNumber] int                 line       = 0,
-        [CallerFilePath]   string              path       = "")
+        [CallerMemberName] string memberName = "",
+        [CallerLineNumber] int line = 0,
+        [CallerFilePath] string path = "")
     {
-        var back  = Console.BackgroundColor;
+        var back = Console.BackgroundColor;
         var front = Console.ForegroundColor;
         Console.BackgroundColor = ConsoleColor.Green;
         Console.ForegroundColor = ConsoleColor.Red;
@@ -30,10 +30,10 @@ internal class Log
 
 
     internal static void Critical(
-        string                    message,
+        string message,
         [CallerMemberName] string memberName = "",
-        [CallerLineNumber] int    line       = 0,
-        [CallerFilePath]   string path       = "")
+        [CallerLineNumber] int line = 0,
+        [CallerFilePath] string path = "")
     {
         var b42 = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Magenta;
@@ -46,9 +46,9 @@ internal class Log
 
 
     internal static void Debug(string message,
-        [CallerMemberName] string     memberName = "",
-        [CallerLineNumber] int        line       = 0,
-        [CallerFilePath]   string     path       = "")
+        [CallerMemberName] string memberName = "",
+        [CallerLineNumber] int line = 0,
+        [CallerFilePath] string path = "")
     {
         var b42 = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.DarkYellow;
@@ -61,8 +61,8 @@ internal class Log
 
 
     internal static void Error(string message, [CallerMemberName] string memberName = "",
-        [CallerLineNumber] int        line = 0,
-        [CallerFilePath]   string     path = "")
+        [CallerLineNumber] int line = 0,
+        [CallerFilePath] string path = "")
     {
         var b42 = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.DarkRed;
@@ -75,10 +75,10 @@ internal class Log
 
 
     internal static void Information(
-        string                    message,
+        string message,
         [CallerMemberName] string memberName = "",
-        [CallerLineNumber] int    line       = 0,
-        [CallerFilePath]   string path       = "")
+        [CallerLineNumber] int line = 0,
+        [CallerFilePath] string path = "")
     {
         var b42 = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Yellow;
@@ -91,9 +91,9 @@ internal class Log
 
 
     internal static void Trace(string message,
-        [CallerMemberName] string     memberName = "",
-        [CallerLineNumber] int        line       = 0,
-        [CallerFilePath]   string     path       = "")
+        [CallerMemberName] string memberName = "",
+        [CallerLineNumber] int line = 0,
+        [CallerFilePath] string path = "")
     {
         var b42 = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.DarkRed;
@@ -106,9 +106,9 @@ internal class Log
 
 
     internal static void Warning(string message,
-        [CallerMemberName] string       memberName = "",
-        [CallerLineNumber] int          line       = 0,
-        [CallerFilePath]   string       path       = "")
+        [CallerMemberName] string memberName = "",
+        [CallerLineNumber] int line = 0,
+        [CallerFilePath] string path = "")
     {
         var b42 = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Yellow;

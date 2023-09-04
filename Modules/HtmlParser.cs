@@ -20,7 +20,7 @@ internal class HtmlParser
         var capturedLinks = new ConcurrentScrapedUrlCollection();
 
         var nodes = doc.DocumentNode.Descendants(name: "a").ToArray();
-        capturedLinks = KC.Apps.SpyderLib.Control.SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
+        capturedLinks = KC.Apps.SpyderLib.Modules.SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
 
         return capturedLinks;
     }
@@ -36,7 +36,7 @@ internal class HtmlParser
         try
         {
             var nodes = doc.DocumentNode.Descendants(name: "a").ToArray();
-            links = KC.Apps.SpyderLib.Control.SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
+            links = KC.Apps.SpyderLib.Modules.SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
         }
         catch (Exception)
         {
@@ -70,7 +70,7 @@ internal class HtmlParser
                     continue;
                 }
 
-                var clean = KC.Apps.SpyderLib.Control.SpyderHelpers.StripQueryFragment(url: attr.Value);
+                var clean = KC.Apps.SpyderLib.Modules.SpyderHelpers.StripQueryFragment(url: attr.Value);
                 urls.Add(item: clean);
             }
         }

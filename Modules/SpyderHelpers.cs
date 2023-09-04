@@ -5,8 +5,9 @@ using System.Net;
 using HtmlAgilityPack;
 
 #endregion
+using KC.Apps.SpyderLib.Control;
 
-namespace KC.Apps.SpyderLib.Control;
+namespace KC.Apps.SpyderLib.Modules;
 
 /// <summary>
 /// </summary>
@@ -76,7 +77,7 @@ public class SpyderHelpers
     /// <param name="spyderOptions"></param>
     /// <returns></returns>
     public static ConcurrentScrapedUrlCollection FilterScrapedCollection(ConcurrentScrapedUrlCollection collection,
-        KC.Apps.SpyderLib.Properties.SpyderOptions                                                      spyderOptions)
+        KC.Apps.SpyderLib.Properties.SpyderOptions spyderOptions)
     {
         return FilterScrapedCollectionCore(collection: collection, _output: _output, options: spyderOptions);
     }
@@ -149,17 +150,17 @@ public class SpyderHelpers
     private static HtmlWeb GetHtmlWeb()
     {
         return new()
-               {
-                   Timeout = 120,
-                   AutomaticDecompression = DecompressionMethods.All,
-                   AutoDetectEncoding = true,
-                   CacheOnly = false,
-                   UseCookies = true,
-                   CachePath = "/dump/cache",
-                   UserAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/116.0",
-                   UsingCache = true,
-                   CaptureRedirect = true
-               };
+        {
+            Timeout = 120,
+            AutomaticDecompression = DecompressionMethods.All,
+            AutoDetectEncoding = true,
+            CacheOnly = false,
+            UseCookies = true,
+            CachePath = "/dump/cache",
+            UserAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/116.0",
+            UsingCache = true,
+            CaptureRedirect = true
+        };
     }
 
 
@@ -255,7 +256,7 @@ public class SpyderHelpers
     /// <returns></returns>
     public static ConcurrentScrapedUrlCollection? LoadLinksFromFile(string filename)
     {
-        var                            path = Path.Combine(path1: _options.OutputFilePath, path2: filename);
+        var path = Path.Combine(path1: _options.OutputFilePath, path2: filename);
         ConcurrentScrapedUrlCollection temp = new();
         try
         {

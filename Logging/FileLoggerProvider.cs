@@ -60,7 +60,7 @@ public static class FileLoggerProviderExtensions
     /// <returns>The logging builder.</returns>
     public static ILoggingBuilder AddFile(
         this ILoggingBuilder builder,
-        string               filePathName)
+        string filePathName)
     {
         ArgumentNullException.ThrowIfNull(argument: builder);
 

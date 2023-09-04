@@ -107,12 +107,12 @@ public class FileLoggingOutput : IDisposable
 
 
     private static string FormatMessage(
-        DateTime   timestamp,
-        LogLevel   logLevel,
-        string     caller,
-        string     message,
+        DateTime timestamp,
+        LogLevel logLevel,
+        string caller,
+        string message,
         Exception? exception,
-        EventId    errorCode)
+        EventId errorCode)
     {
         if (logLevel == LogLevel.Error)
         {
@@ -146,8 +146,8 @@ public class FileLoggingOutput : IDisposable
     /// <param name="exception">The exception.</param>
     /// <param name="formatter">The formatter.</param>
     /// <param name="category">The category.</param>
-    internal void Log<TState>(LogLevel  logLevel,  EventId eventId, TState state, Exception? exception,
-        Func<TState, Exception, string> formatter, string  category)
+    internal void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+        Func<TState, Exception, string> formatter, string category)
     {
         if (exception != null)
         {
@@ -224,7 +224,7 @@ public class FileLogger : ILogger
 
 
     /// Logging method with multiple parameters
-    public void Log<TState>(LogLevel    logLevel, EventId eventId, TState state, Exception? exception,
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
         Func<TState, Exception, string> formatter)
     {
         //Debug.Assert(exception != null, nameof(exception) + " != null");

@@ -1,5 +1,7 @@
 #region
 
+using System.Diagnostics;
+
 using HtmlAgilityPack;
 
 using JetBrains.Annotations;
@@ -39,7 +41,7 @@ public class SpyderWeb : ISpyderWeb
     /// <param name="options"></param>
     /// <exception cref="ArgumentNullException"></exception>
     public SpyderWeb([NotNull] ILogger logger, [NotNull] KC.Apps.SpyderLib.Properties.SpyderOptions options,
-        [NotNull]              KC.Apps.SpyderLib.Control.ICacheControl cacheControl)
+        [NotNull] KC.Apps.SpyderLib.Control.ICacheControl cacheControl)
     {
         ArgumentNullException.ThrowIfNull(argument: logger);
         _options = options ??
@@ -68,7 +70,7 @@ public class SpyderWeb : ISpyderWeb
 
 
     private async Task ExploreWebPagesAsync(ConcurrentScrapedUrlCollection scrapingTargets,
-        ConcurrentScrapedUrlCollection                                     newLinks)
+        ConcurrentScrapedUrlCollection newLinks)
     {
         var depthLevel = 0;
 
@@ -80,22 +82,6 @@ public class SpyderWeb : ISpyderWeb
     }
 
 
-
-
-
-    private void OnCacheShutdown()
-    {
-        _logger.DebugTestingMessage(message: "Cache shutdown is triggered");
-    }
-
-
-
-
-
-    private void OnControlShutdown()
-    {
-        _logger.DebugTestingMessage(message: "Spyder Control shutdown triggered");
-    }
 
 
 
@@ -111,7 +97,7 @@ public class SpyderWeb : ISpyderWeb
 
         // Ensure valid url string structure
         var cleanlinks = links.Select(link => link)
-                              .Where(predicate: KC.Apps.SpyderLib.Control.SpyderHelpers.IsValidUrl);
+                              .Where(predicate: KC.Apps.SpyderLib.Modules.SpyderHelpers.IsValidUrl);
 
         // Create scraping tasks
         var tasks = cleanlinks.Select(selector: ScrapePageForHtmlTagAsync);
@@ -162,7 +148,7 @@ public class SpyderWeb : ISpyderWeb
 
 
     private async Task ScrapeCurrentDepthLevel(ConcurrentScrapedUrlCollection scrapingTargets,
-        ConcurrentScrapedUrlCollection                                        newlinks, int depthLevel)
+        ConcurrentScrapedUrlCollection newlinks, int depthLevel)
     {
         var scrapeTasks =
             scrapingTargets.Select((link, index) => ScrapeAndLog(link: link.Key, newlinks: newlinks, index: index));
@@ -190,8 +176,8 @@ public class SpyderWeb : ISpyderWeb
     {
         try
         {
-            HtmlDocument doc     = new();
-            var          htmlDoc = await _cacheControl.GetWebPageSourceAsync(address: url);
+            HtmlDocument doc = new();
+            var htmlDoc = await _cacheControl.GetWebPageSourceAsync(address: url);
             doc.LoadHtml(html: htmlDoc);
 
             if (HtmlParser.SearchPageForTagName(htmlDocument: doc, tag: _options.HtmlTagToSearchFor))
@@ -218,8 +204,8 @@ public class SpyderWeb : ISpyderWeb
     /// <param name="newlinks"></param>
     public async Task<ConcurrentScrapedUrlCollection> ScrapePageForLinksAsync(string link)
     {
-        var          newlinks = new ConcurrentScrapedUrlCollection();
-        HtmlDocument htmlDoc  = new();
+        var newlinks = new ConcurrentScrapedUrlCollection();
+        HtmlDocument htmlDoc = new();
         try
         {
             var pageSource = await _cacheControl.GetWebPageSourceAsync(address: link);
@@ -234,7 +220,7 @@ public class SpyderWeb : ISpyderWeb
             if (links.Count > 0)
             {
                 var filteredlinks =
-                    KC.Apps.SpyderLib.Control.SpyderHelpers.FilterScrapedCollection(collection: links,
+                    KC.Apps.SpyderLib.Modules.SpyderHelpers.FilterScrapedCollection(collection: links,
                              spyderOptions: _options);
                 newlinks.AddArray(array: filteredlinks);
                 _output.UrlsScrapedThisSession.AddArray(array: newlinks);
@@ -257,13 +243,30 @@ public class SpyderWeb : ISpyderWeb
 
 
 
-    public async Task ScrapeUrlAsync(Uri url)
+    public Task ScrapeUrlAsync(Uri url)
+    {
+        return null;
+    }
+
+
+
+
+
+    /// <summary>
+/// Method gets the page source and parses it for video lnks 
+/// </summary>
+/// <param name="url"></param>
+    public async Task ScrapePageForVideoLinksAsync(Uri url)
     {
         await _semaphore.WaitAsync();
         try
         {
+            //Method gets page from cache or from the web.
+            // This should never be null
             var strdoc = await _cacheControl.GetWebPageSourceAsync(address: url.AbsoluteUri);
-            var doc    = new HtmlDocument();
+            Debug.Assert(!string.IsNullOrEmpty(strdoc));
+            
+            var doc = new HtmlDocument();
             doc.LoadHtml(html: strdoc);
             var videoLinks = HtmlParser.GetVideoLinksFromDocument(doc: doc);
 
@@ -288,7 +291,7 @@ public class SpyderWeb : ISpyderWeb
     /// </summary>
     public async Task StartScrapingInputFileAsync()
     {
-        var links = KC.Apps.SpyderLib.Control.SpyderHelpers.LoadLinksFromFile(filename: _options.InputFileName);
+        var links = KC.Apps.SpyderLib.Modules.SpyderHelpers.LoadLinksFromFile(filename: _options.InputFileName);
         if (links is null)
         {
             _logger.GeneralSpyderMessage(message: "No links found in input file. check your file and try again");
@@ -326,7 +329,7 @@ public class SpyderWeb : ISpyderWeb
     {
         _options.StartingUrl = startingLink;
         var scrapingTargets = new ConcurrentScrapedUrlCollection();
-        var newLinks        = new ConcurrentScrapedUrlCollection();
+        var newLinks = new ConcurrentScrapedUrlCollection();
 
         try
         {

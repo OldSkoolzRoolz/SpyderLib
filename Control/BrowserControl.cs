@@ -153,19 +153,19 @@ internal class BrowserControl : IAsyncDisposable, IDisposable
     private LaunchOptions GetLaunchOptions()
     {
         return new()
-               {
-                   Headless = true,
-                   IgnoreHTTPSErrors = true,
-                   LogProcess = false,
-                   DefaultViewport = null,
-                   UserDataDir = "/Data/Chrome/userdata",
-                   ExecutablePath = "/Data/Chrome/Linux-1069273/chrome-linux/chrome",
-                   Args = new[]
+        {
+            Headless = true,
+            IgnoreHTTPSErrors = true,
+            LogProcess = false,
+            DefaultViewport = null,
+            UserDataDir = "/Data/Chrome/userdata",
+            ExecutablePath = "/Data/Chrome/Linux-1069273/chrome-linux/chrome",
+            Args = new[]
                           {
                               "--no-sandbox", "--no-zygote", "--disable-setupid-sandbox"
                           },
-                   EnqueueTransportMessages = false
-               };
+            EnqueueTransportMessages = false
+        };
     }
 
 

@@ -17,7 +17,6 @@ namespace KC.Apps.SpyderLib.Control;
 
 public interface ICacheControl
 {
-    Task? ExecuteTask { get; }
 
 
 
@@ -32,9 +31,6 @@ public interface ICacheControl
 
 
 
-
-
-    void Dispose();
 
 
     string GenerateUniqueFilename();
@@ -59,7 +55,7 @@ public interface ICacheControl
     bool SafeFileWrite(string path, string contents);
 }
 
-public class CacheControl
+public class CacheControl: ICacheControl
 {
     public static event Action CacheShuttingDown;
     private const string FILENAME = "Spyder_Cache_Index.json";
@@ -78,7 +74,7 @@ public class CacheControl
 
 
     public CacheControl(ILoggerFactory factory, IOptions<KC.Apps.SpyderLib.Properties.SpyderOptions> options,
-        IMemoryCache                   cache)
+        IMemoryCache cache)
     {
         _cache = cache;
 
@@ -129,14 +125,14 @@ public class CacheControl
     private bool AddToCache(string uniqueUrlKey, string cacheFileName)
     {
         MemoryCacheOptions coptions = new()
-                                      {
-                                          TrackStatistics = true,
-                                          ExpirationScanFrequency = TimeSpan.FromMinutes(60)
-                                      };
+        {
+            TrackStatistics = true,
+            ExpirationScanFrequency = TimeSpan.FromMinutes(60)
+        };
         MemoryCacheEntryOptions options = new()
-                                          {
-                                              SlidingExpiration = TimeSpan.FromDays(1)
-                                          };
+        {
+            SlidingExpiration = TimeSpan.FromDays(1)
+        };
         _ = options.RegisterPostEvictionCallback(callback: OnPostEviction);
         _cache.Set(key: uniqueUrlKey, value: cacheFileName, options: options);
 
@@ -208,22 +204,22 @@ public class CacheControl
             switch (resp.StatusCode)
             {
                 case HttpStatusCode.Found:
-                {
-                    var str = await GetHttpContentFromWebAsync(resp.Headers.Location.ToString());
-                    break;
-                }
+                    {
+                        var str = await GetHttpContentFromWebAsync(resp.Headers.Location.ToString());
+                        break;
+                    }
                 case HttpStatusCode.Unauthorized:
-                {
-                    //They didn't like us poking around so we will just log and carry on.
-                    _logger.PageCacheException("Unauthorized web response. Moving on.");
-                    break;
-                }
+                    {
+                        //They didn't like us poking around so we will just log and carry on.
+                        _logger.PageCacheException("Unauthorized web response. Moving on.");
+                        break;
+                    }
                 case HttpStatusCode.Forbidden:
-                {
-                    //we get the boot again. Rinse and repeat....
-                    _logger.PageCacheException("Unauthorized web response. Moving on.");
-                    break;
-                }
+                    {
+                        //we get the boot again. Rinse and repeat....
+                        _logger.PageCacheException("Unauthorized web response. Moving on.");
+                        break;
+                    }
             }
         }
         catch (Exception e)
@@ -546,9 +542,9 @@ public class CacheControl
     {
         lock (_fileLock)
         {
-            var json     = JsonConvert.SerializeObject(value: _cache, formatting: Formatting.Indented);
+            var json = JsonConvert.SerializeObject(value: _cache, formatting: Formatting.Indented);
             var origpath = Path.Combine(path1: _options.OutputFilePath, path2: FILENAME);
-            var newfile  = Path.Combine(path1: _options.OutputFilePath, FILENAME + ".new");
+            var newfile = Path.Combine(path1: _options.OutputFilePath, FILENAME + ".new");
             File.WriteAllText(path: newfile, contents: json);
             File.Delete(path: backpath);
             if (File.Exists(path: newfile))
@@ -569,9 +565,9 @@ public class CacheControl
 
     internal void SaveCacheIndex()
     {
-        var path     = Path.Combine(path1: _options.OutputFilePath, FILENAME + ".new");
+        var path = Path.Combine(path1: _options.OutputFilePath, FILENAME + ".new");
         var backpath = Path.Combine(path1: _options.OutputFilePath, FILENAME + ".bak");
-        var oldpath  = Path.Combine(path1: _options.OutputFilePath, path2: FILENAME);
+        var oldpath = Path.Combine(path1: _options.OutputFilePath, path2: FILENAME);
 
 
         SafeSerializeAndWrite(path: path, oldpath: oldpath, backpath: backpath);
