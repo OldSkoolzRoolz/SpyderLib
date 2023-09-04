@@ -1,4 +1,4 @@
-# SpyderLibrary
+# Spyder Library
 
 The Spyder Library is a portable lightweight network crawler and parser. Spyder can search the page for specific html
 tags and records the URL to process later. Can be implemented as a service and use the built in console menu or drop it
