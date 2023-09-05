@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 #endregion
 
-namespace KC.Apps.SpyderLib.Logging;
+namespace KC.Apps.Logging;
 
 public static partial class LoggingMessages
 {

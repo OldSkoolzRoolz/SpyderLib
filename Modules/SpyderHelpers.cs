@@ -1,20 +1,29 @@
 #region
-
-using System.Net;
-
+// ReSharper disable All
 using HtmlAgilityPack;
 
-#endregion
-using KC.Apps.SpyderLib.Control;
+using KC.Apps.Control;
+using KC.Apps.Models;
+using KC.Apps.Properties;
 
-namespace KC.Apps.SpyderLib.Modules;
+#endregion
+//ReSharper disable All
+namespace KC.Apps.Modules;
 
 /// <summary>
 /// </summary>
 public class SpyderHelpers
 {
-    private static readonly KC.Apps.SpyderLib.Properties.SpyderOptions _options = SpyderControl.CrawlerOptions;
-    private static readonly OutputControl _output = new(options: _options);
+    private static readonly SpyderOptions s_options = SpyderControlService.CrawlerOptions;
+    private static readonly OutputControl s_output = new(s_options ?? throw new InvalidOperationException());
+
+
+
+
+
+    protected SpyderHelpers()
+    {
+    }
 
 
 
@@ -47,39 +56,15 @@ public class SpyderHelpers
 
 
     /// <summary>
-    /// </summary>
-    /// <param name="nodes"></param>
-    /// <returns></returns>
-    public static ConcurrentScrapedUrlCollection ExtractVideoLinksFromNodes(IEnumerable<HtmlNode> nodes)
-    {
-        var htmlNodes = nodes as HtmlNode[] ?? nodes.ToArray();
-
-
-        //original method
-        var validUrls = htmlNodes
-                        .Select(node => node.GetAttributeValue(name: "href", def: string.Empty))
-                        .Where(link => !string.IsNullOrEmpty(value: link) && IsValidUrl(url: link))
-                        .ToArray();
-
-        ConcurrentScrapedUrlCollection scrapedUrls = new();
-        scrapedUrls.AddArray(array: validUrls);
-        return scrapedUrls;
-    }
-
-
-
-
-
-    /// <summary>
     ///     Method organizes and cleans the links in the collection and filters out links according to SpyderOptions
     /// </summary>
     /// <param name="collection"></param>
     /// <param name="spyderOptions"></param>
     /// <returns></returns>
     public static ConcurrentScrapedUrlCollection FilterScrapedCollection(ConcurrentScrapedUrlCollection collection,
-        KC.Apps.SpyderLib.Properties.SpyderOptions spyderOptions)
+        SpyderOptions                                                                                   spyderOptions)
     {
-        return FilterScrapedCollectionCore(collection: collection, _output: _output, options: spyderOptions);
+        return FilterScrapedCollectionCore(collection: collection, options: spyderOptions);
     }
 
 
@@ -92,7 +77,7 @@ public class SpyderHelpers
     /// <returns></returns>
     /// <param name="options"></param>
     private static ConcurrentScrapedUrlCollection FilterScrapedCollectionCore(ConcurrentScrapedUrlCollection collection,
-        OutputControl _output, KC.Apps.SpyderLib.Properties.SpyderOptions options)
+        SpyderOptions                                                                                        options)
     {
         ArgumentNullException.ThrowIfNull(argument: options);
         var baseUri = new Uri(uriString: options.StartingUrl);
@@ -101,17 +86,18 @@ public class SpyderHelpers
             var processedLinks = collection
                                  .Select<KeyValuePair<string, byte>, string>(l => StripQueryFragment(url: l.Key))
                                  .Where(predicate: IsValidUrl)
-                                 .Except(_output.UrlsScrapedThisSession.Select(x => x.Key));
+                                 .Except(s_output.UrlsScrapedThisSession.Select(x => x.Key));
 
             var internalLinks = new List<string>();
             var externalLinks = new List<string>();
+            externalLinks.Capacity = 0;
             internalLinks = processedLinks.Where(link => !IsExternalDomainLinkCore(link: link, baseUri: baseUri))
                                           .ToList();
             externalLinks = processedLinks.Except(second: internalLinks).ToList();
 
-            _output.CapturedExternalLinks.AddArray(externalLinks.ToArray());
-            _output.CapturedSeedLinks.AddArray(internalLinks.ToArray());
-            _output.UrlsScrapedThisSession.AddArray(processedLinks.ToArray());
+            s_output.CapturedExternalLinks.AddArray(externalLinks.ToArray());
+            s_output.CapturedSeedLinks.AddArray(internalLinks.ToArray());
+            s_output.UrlsScrapedThisSession.AddArray(processedLinks.ToArray());
 
             var scrapedUrls = new ConcurrentScrapedUrlCollection();
 
@@ -137,30 +123,6 @@ public class SpyderHelpers
             // If you can't recover from this exception, it's better to let it bubble up rather than return null.
             throw;
         }
-    }
-
-
-
-
-
-    /// <summary>
-    ///     Enables the quick configuration of HtmlWeb
-    /// </summary>
-    /// <returns>preconfigured HtmlWeb</returns>
-    private static HtmlWeb GetHtmlWeb()
-    {
-        return new()
-        {
-            Timeout = 120,
-            AutomaticDecompression = DecompressionMethods.All,
-            AutoDetectEncoding = true,
-            CacheOnly = false,
-            UseCookies = true,
-            CachePath = "/dump/cache",
-            UserAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/116.0",
-            UsingCache = true,
-            CaptureRedirect = true
-        };
     }
 
 
@@ -208,7 +170,7 @@ public class SpyderHelpers
     /// <returns></returns>
     public static bool IsExternalDomainLink(string urlLink)
     {
-        var baseUri = new Uri(uriString: _options.StartingUrl);
+        var baseUri = new Uri(uriString: s_options.StartingUrl);
         return IsExternalDomainLinkCore(link: urlLink, baseUri: baseUri);
     }
 
@@ -254,9 +216,10 @@ public class SpyderHelpers
     /// </summary>
     /// <param name="filename">Filename to load links from</param>
     /// <returns></returns>
-    public static ConcurrentScrapedUrlCollection? LoadLinksFromFile(string filename)
+    internal static ConcurrentScrapedUrlCollection? LoadLinksFromFile(string filename)
     {
-        var path = Path.Combine(path1: _options.OutputFilePath, path2: filename);
+        var path = Path.Combine(path1: s_options.OutputFilePath, path2: filename);
+        
         ConcurrentScrapedUrlCollection temp = new();
         try
         {

@@ -1,4 +1,10 @@
-namespace KC.Apps.SpyderLib.Modules;
+#region
+
+using KC.Apps.Models;
+
+#endregion
+
+namespace KC.Apps.Interfaces;
 
 public interface ISpyderWeb
 {

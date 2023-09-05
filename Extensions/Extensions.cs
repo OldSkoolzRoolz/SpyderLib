@@ -1,10 +1,18 @@
 #region
+// ReSharper disable All
+using System.Runtime.InteropServices.ComTypes;
+
+using KC.Apps.Interfaces;
+using KC.Apps.Modules;
+using KC.Apps.Properties;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using PuppeteerSharp;
+
 #endregion
 
-namespace KC.Apps.SpyderLib.Extensions;
+namespace KC.Apps.Extensions;
 
 /// <summary>
 /// </summary>
@@ -17,7 +25,7 @@ public static class SpyderLibExtensions
     /// <returns></returns>
     public static IServiceCollection AddSpyderService(this IServiceCollection services)
     {
-        services.AddOptions<KC.Apps.SpyderLib.Properties.SpyderOptions>()
+        services.AddOptions<SpyderOptions>()
                 .Configure(options =>
                            {
                                options.ScrapeDepthLevel = 3;
@@ -39,7 +47,7 @@ public static class SpyderLibExtensions
     /// <returns></returns>
     public static IServiceCollection AddSpyderService(
         this IServiceCollection services,
-        Action<KC.Apps.SpyderLib.Properties.SpyderOptions> configureOptions)
+        Action<SpyderOptions>   configureOptions)
     {
         services.Configure(configureOptions: configureOptions);
 
@@ -60,12 +68,19 @@ public static class SpyderLibExtensions
     /// <param name="userOptions"></param>
     /// <returns></returns>
     public static IServiceCollection AddSpyderService(this IServiceCollection services,
-        KC.Apps.SpyderLib.Properties.SpyderOptions userOptions)
+        SpyderOptions                                                         userOptions)
     {
         services
             .ConfigureOptions(userOptions: userOptions)
-            .AddHostedService<KC.Apps.SpyderLib.Control.ISpyderControl>();
+            .AddHostedService<ISpyderControl>();
 
+        services.AddSingleton <IBackgroundTaskQueue>(_ =>
+                                                     {
+                                                         var queCapcity = userOptions.QueueCapacity;
+
+                                                         return new BackgroundDownloadQue(queCapcity);
+                                                     });
+        services.AddSingleton<QueueHostService>();
         return services;
     }
 
@@ -74,9 +89,9 @@ public static class SpyderLibExtensions
 
 
     private static IServiceCollection ConfigureOptions(this IServiceCollection services,
-        KC.Apps.SpyderLib.Properties.SpyderOptions userOptions)
+        SpyderOptions                                                          userOptions)
     {
-        services.AddOptions<KC.Apps.SpyderLib.Properties.SpyderOptions>()
+        services.AddOptions<SpyderOptions>()
                 .Configure(options => options.SetProperties(userOptions: userOptions));
 
         return services;
@@ -86,10 +101,10 @@ public static class SpyderLibExtensions
 
 
 
-    private static void SetProperties(this KC.Apps.SpyderLib.Properties.SpyderOptions options,
-        KC.Apps.SpyderLib.Properties.SpyderOptions userOptions)
+    private static void SetProperties(this SpyderOptions options,
+        SpyderOptions                                    userOptions)
     {
-        var type = typeof(KC.Apps.SpyderLib.Properties.SpyderOptions);
+        var type = typeof(SpyderOptions);
         foreach (var prop in type.GetProperties())
         {
             if (prop.CanRead && prop.CanWrite)

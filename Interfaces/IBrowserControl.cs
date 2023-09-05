@@ -2,21 +2,20 @@
 
 using HtmlAgilityPack;
 
+using KC.Apps.Models;
+
 using Microsoft.Extensions.Logging;
 
 using PuppeteerSharp;
 
 #endregion
 
-namespace KC.Apps.SpyderLib.Control;
+namespace KC.Apps.Interfaces;
 
 internal interface IBrowserControl
 {
     IBrowser Browser { get; }
     ILoggerFactory MyLoggerFactory { get; set; }
-
-
-    void Dispose();
 
 
     Task<ConcurrentScrapedUrlCollection> ExtractHyperLinksAsync(string url);

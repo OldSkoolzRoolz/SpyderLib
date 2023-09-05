@@ -1,4 +1,4 @@
-namespace KC.Apps;
+namespace KC.Apps.Models;
 
 /// <summary>
 /// </summary>

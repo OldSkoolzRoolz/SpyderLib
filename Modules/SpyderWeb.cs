@@ -1,35 +1,33 @@
 #region
-
+// ReSharper disable All
 using System.Diagnostics;
 
 using HtmlAgilityPack;
 
-using JetBrains.Annotations;
-
-using KC.Apps.SpyderLib.Logging;
+using KC.Apps.Control;
+using KC.Apps.Interfaces;
+using KC.Apps.Logging;
+using KC.Apps.Models;
+using KC.Apps.Properties;
 
 using Microsoft.Extensions.Logging;
 
+using SpyderLib.Modules;
+
 #endregion
 
-//TODO: Seperate out sub-classes SRP
-//TODO: Implement async cancellation
-//TODO: Move output to outputcontroller;
-
-namespace KC.Apps.SpyderLib.Modules;
+namespace KC.Apps.Modules;
 
 /// <summary>
 /// </summary>
 public class SpyderWeb : ISpyderWeb
 {
-    private readonly KC.Apps.SpyderLib.Control.ICacheControl _cacheControl;
-
-    // private readonly HtmlParser _htmlParser;
+    private readonly ICacheControl _cacheControl;
     private readonly ILogger _logger;
-    private readonly KC.Apps.SpyderLib.Properties.SpyderOptions _options;
-    private readonly KC.Apps.SpyderLib.Control.IOutputControl _output;
+    private readonly SpyderOptions _options;
+    private readonly IOutputControl _output;
     private readonly SemaphoreSlim _semaphore;
-    //   private readonly Lazy<SpyderHelpers> _spyderHelpers;
+    private readonly IBackgroundTaskQueue _taskQue;
 
 
 
@@ -39,17 +37,18 @@ public class SpyderWeb : ISpyderWeb
     /// </summary>
     /// <param name="logger"></param>
     /// <param name="options"></param>
+    /// <param name="cacheControl"></param>
     /// <exception cref="ArgumentNullException"></exception>
-    public SpyderWeb([NotNull] ILogger logger, [NotNull] KC.Apps.SpyderLib.Properties.SpyderOptions options,
-        [NotNull] KC.Apps.SpyderLib.Control.ICacheControl cacheControl)
+    public SpyderWeb(ILogger logger, SpyderOptions? options, ICacheControl cacheControl, IBackgroundTaskQueue taskQueue)
     {
         ArgumentNullException.ThrowIfNull(argument: logger);
-        _options = options ??
-                   throw new ArgumentNullException(nameof(options), message: "SpyderOptions cannot be null");
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger), message: "ILogger cannot be null");
-
-        _output = new OutputControl(options: _options);
+        ArgumentNullException.ThrowIfNull(argument: options);
+        ArgumentNullException.ThrowIfNull(argument: cacheControl);
+        _taskQue = taskQueue;
+        _logger = logger;
+        _options = options;
         _cacheControl = cacheControl;
+        _output = new OutputControl(options: _options);
         _logger.LogDebug(message: "SpyderWeb Initialized");
 
         _semaphore = new(5, 5);
@@ -59,29 +58,16 @@ public class SpyderWeb : ISpyderWeb
 
 
 
-    public void Dispose()
-    {
-        _semaphore?.Dispose();
-        GC.SuppressFinalize(this);
-    }
-
-
-
-
-
     private async Task ExploreWebPagesAsync(ConcurrentScrapedUrlCollection scrapingTargets,
-        ConcurrentScrapedUrlCollection newLinks)
+        ConcurrentScrapedUrlCollection                                     newLinks)
     {
         var depthLevel = 0;
 
         while (scrapingTargets.Any() && depthLevel < _options.ScrapeDepthLevel)
         {
-            await ScrapeCurrentDepthLevel(scrapingTargets: scrapingTargets, newlinks: newLinks,
-                                          depthLevel: ++depthLevel);
+            await ScrapeCurrentDepthLevel(scrapingTargets: scrapingTargets, newlinks: newLinks);
         }
     }
-
-
 
 
 
@@ -91,13 +77,13 @@ public class SpyderWeb : ISpyderWeb
     /// </summary>
     public async Task ProcessInputFileAsync()
     {
-        using var fo = new FileOperations(logger: _logger, options: _options);
+        using var fo = new FileOperations();
         //Load links from file
         var links = fo.LoadLinksFromInputFile(filename: _options.InputFileName);
 
         // Ensure valid url string structure
         var cleanlinks = links.Select(link => link)
-                              .Where(predicate: KC.Apps.SpyderLib.Modules.SpyderHelpers.IsValidUrl);
+                              .Where(predicate: SpyderHelpers.IsValidUrl);
 
         // Create scraping tasks
         var tasks = cleanlinks.Select(selector: ScrapePageForHtmlTagAsync);
@@ -138,8 +124,9 @@ public class SpyderWeb : ISpyderWeb
 
 
 
-    private async Task ScrapeAndLog(string link, ConcurrentScrapedUrlCollection newlinks, int index)
+    private async Task ScrapeAndLog(string link)
     {
+        ArgumentNullException.ThrowIfNull(argument: link);
         await ScrapePageForLinksAsync(link: link);
     }
 
@@ -148,10 +135,10 @@ public class SpyderWeb : ISpyderWeb
 
 
     private async Task ScrapeCurrentDepthLevel(ConcurrentScrapedUrlCollection scrapingTargets,
-        ConcurrentScrapedUrlCollection newlinks, int depthLevel)
+        ConcurrentScrapedUrlCollection                                        newlinks)
     {
         var scrapeTasks =
-            scrapingTargets.Select((link, index) => ScrapeAndLog(link: link.Key, newlinks: newlinks, index: index));
+            scrapingTargets.Select((link, index) => ScrapeAndLog(link: link.Key));
 
         await Task.WhenAll(tasks: scrapeTasks);
 
@@ -176,8 +163,8 @@ public class SpyderWeb : ISpyderWeb
     {
         try
         {
-            HtmlDocument doc = new();
-            var htmlDoc = await _cacheControl.GetWebPageSourceAsync(address: url);
+            HtmlDocument doc     = new();
+            var          htmlDoc = await _cacheControl.GetWebPageSourceAsync(address: url);
             doc.LoadHtml(html: htmlDoc);
 
             if (HtmlParser.SearchPageForTagName(htmlDocument: doc, tag: _options.HtmlTagToSearchFor))
@@ -185,7 +172,7 @@ public class SpyderWeb : ISpyderWeb
                 _output.CapturedVideoLinks.Add(url: url);
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
             _logger.SpyderWebException($"Unknown error was during crawl of a page {url}");
             // Log and continue Failed tasks won't hang up the flow. Possible retry?            
@@ -201,11 +188,10 @@ public class SpyderWeb : ISpyderWeb
     ///     Links are filtered according to options set in SpyderOptions
     /// </summary>
     /// <param name="link"></param>
-    /// <param name="newlinks"></param>
     public async Task<ConcurrentScrapedUrlCollection> ScrapePageForLinksAsync(string link)
     {
-        var newlinks = new ConcurrentScrapedUrlCollection();
-        HtmlDocument htmlDoc = new();
+        var          newlinks = new ConcurrentScrapedUrlCollection();
+        HtmlDocument htmlDoc  = new();
         try
         {
             var pageSource = await _cacheControl.GetWebPageSourceAsync(address: link);
@@ -217,11 +203,11 @@ public class SpyderWeb : ISpyderWeb
 
             var links = HtmlParser.GetHrefLinksFromDocument(doc: htmlDoc);
             //Filter out links according to SpyderOptions
-            if (links.Count > 0)
+            if (links is { Count: > 0 })
             {
                 var filteredlinks =
-                    KC.Apps.SpyderLib.Modules.SpyderHelpers.FilterScrapedCollection(collection: links,
-                             spyderOptions: _options);
+                    SpyderHelpers.FilterScrapedCollection(collection: links,
+                                                          spyderOptions: _options);
                 newlinks.AddArray(array: filteredlinks);
                 _output.UrlsScrapedThisSession.AddArray(array: newlinks);
             }
@@ -230,7 +216,7 @@ public class SpyderWeb : ISpyderWeb
         {
             _logger.SpyderWebException(message: tce.Message);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // Log error and Continue to next url
             _logger.SpyderWebException(message: "Unknown error occured during link filtering");
@@ -243,19 +229,10 @@ public class SpyderWeb : ISpyderWeb
 
 
 
-    public Task ScrapeUrlAsync(Uri url)
-    {
-        return null;
-    }
-
-
-
-
-
     /// <summary>
-/// Method gets the page source and parses it for video lnks 
-/// </summary>
-/// <param name="url"></param>
+    ///     Method gets the page source and parses it for video lnks
+    /// </summary>
+    /// <param name="url"></param>
     public async Task ScrapePageForVideoLinksAsync(Uri url)
     {
         await _semaphore.WaitAsync();
@@ -264,18 +241,14 @@ public class SpyderWeb : ISpyderWeb
             //Method gets page from cache or from the web.
             // This should never be null
             var strdoc = await _cacheControl.GetWebPageSourceAsync(address: url.AbsoluteUri);
-            Debug.Assert(!string.IsNullOrEmpty(strdoc));
-            
+            Debug.Assert(!string.IsNullOrEmpty(value: strdoc));
+
             var doc = new HtmlDocument();
             doc.LoadHtml(html: strdoc);
             var videoLinks = HtmlParser.GetVideoLinksFromDocument(doc: doc);
 
-            _output.CapturedVideoLinks.AddArray(videoLinks.ToArray());
+            _output.CapturedVideoLinks.AddArray(array: videoLinks);
             _output.OnLibraryShutdown();
-        }
-        catch
-        {
-            _logger.SpyderWebException(message: "Error occurec during page scraping");
         }
         finally
         {
@@ -287,34 +260,45 @@ public class SpyderWeb : ISpyderWeb
 
 
 
+    public Task ScrapeUrlAsync(Uri url)
+    {
+        throw new NotImplementedException();
+    }
+
+
+
+
+
     /// <summary>
     /// </summary>
-    public async Task StartScrapingInputFileAsync()
+    public Task StartScrapingInputFileAsync()
     {
-        var links = KC.Apps.SpyderLib.Modules.SpyderHelpers.LoadLinksFromFile(filename: _options.InputFileName);
+        var links = SpyderHelpers.LoadLinksFromFile(filename: _options.InputFileName);
         if (links is null)
         {
             _logger.GeneralSpyderMessage(message: "No links found in input file. check your file and try again");
-            return;
+            return Task.CompletedTask;
         }
 
-        foreach (var link in links)
+        //LINQ
+        var urls = links.Select(link => link.Key);
+
+        try
         {
-            try
-            {
-                _options.StartingUrl = link.Key;
-                await StartSpyderAsync(startingLink: link.Key);
-                _logger.DebugTestingMessage(message: "StartScraper method has returned. successfully");
-            }
-            catch (Exception e)
-            {
-                _logger.SpyderWebException(message: "General exception, crawling aborted.");
-            }
-            finally
-            {
-                _output.OnLibraryShutdown();
-            }
+            var tasks = urls.Select(selector: StartSpyderAsync);
+            Task.WaitAll(tasks.ToArray());
         }
+        catch (Exception)
+        {
+            _logger.SpyderWebException(message: "General exception, crawling aborted.");
+        }
+        finally
+        {
+            _output.OnLibraryShutdown();
+        }
+
+        return Task.CompletedTask;
+        
     }
 
 
@@ -329,7 +313,7 @@ public class SpyderWeb : ISpyderWeb
     {
         _options.StartingUrl = startingLink;
         var scrapingTargets = new ConcurrentScrapedUrlCollection();
-        var newLinks = new ConcurrentScrapedUrlCollection();
+        var newLinks        = new ConcurrentScrapedUrlCollection();
 
         try
         {
@@ -338,7 +322,7 @@ public class SpyderWeb : ISpyderWeb
 
             _logger.GeneralSpyderMessage(message: "Scraping Complete");
         }
-        catch (Exception e)
+        catch (Exception)
         {
             _logger.SpyderWebException(message: "Unhandled exception during scraping of a webpage");
         }

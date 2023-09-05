@@ -1,5 +1,6 @@
 #region
 
+//Resharper disable all
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
@@ -8,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 #endregion
 
-namespace KC.Apps.SpyderLib.Logging;
+namespace KC.Apps.Logging;
 
 /// <summary>
 ///     The log output which all <see cref="FileLogger" /> share to log messages to
@@ -16,7 +17,7 @@ namespace KC.Apps.SpyderLib.Logging;
 public class FileLoggingOutput : IDisposable
 {
     private readonly TimeSpan _flushInterval =
-        Debugger.IsAttached ? TimeSpan.FromMilliseconds(10) : TimeSpan.FromSeconds(1);
+        Debugger.IsAttached ? TimeSpan.FromMilliseconds(value: 10) : TimeSpan.FromSeconds(value: 1);
 
     private DateTime _lastFlush = DateTime.UtcNow;
     private readonly object _lockObj = new();
@@ -39,7 +40,7 @@ public class FileLoggingOutput : IDisposable
                          File.Open(path: fileName, mode: FileMode.Append, access: FileAccess.Write,
                                    share: FileShare.ReadWrite),
                          encoding: Encoding.UTF8);
-        Instances[this] = null;
+        Instances[this] = null!;
     }
 
 
@@ -69,7 +70,7 @@ public class FileLoggingOutput : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        Dispose(true);
+        Dispose(disposing: true);
     }
 
 
@@ -87,7 +88,7 @@ public class FileLoggingOutput : IDisposable
                     return;
                 }
 
-                _logOutput = null;
+                _logOutput.DisposeAsync();
                 _ = Instances.TryRemove(this, value: out _);
 
                 // Dispose the output, which will flush all buffers.
@@ -107,12 +108,12 @@ public class FileLoggingOutput : IDisposable
 
 
     private static string FormatMessage(
-        DateTime timestamp,
-        LogLevel logLevel,
-        string caller,
-        string message,
+        DateTime   timestamp,
+        LogLevel   logLevel,
+        string     caller,
+        string     message,
         Exception? exception,
-        EventId errorCode)
+        EventId    errorCode)
     {
         if (logLevel == LogLevel.Error)
         {
@@ -146,8 +147,8 @@ public class FileLoggingOutput : IDisposable
     /// <param name="exception">The exception.</param>
     /// <param name="formatter">The formatter.</param>
     /// <param name="category">The category.</param>
-    internal void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
-        Func<TState, Exception, string> formatter, string category)
+    internal void Log<TState>(LogLevel  logLevel,  EventId eventId, TState state, Exception? exception,
+        Func<TState, Exception, string> formatter, string  category)
     {
         if (exception != null)
         {
@@ -224,7 +225,7 @@ public class FileLogger : ILogger
 
 
     /// Logging method with multiple parameters
-    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+    public void Log<TState>(LogLevel    logLevel, EventId eventId, TState state, Exception? exception,
         Func<TState, Exception, string> formatter)
     {
         //Debug.Assert(exception != null, nameof(exception) + " != null");

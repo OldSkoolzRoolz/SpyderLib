@@ -1,31 +1,23 @@
-#region
+// ReSharper disable All
 
-#region
-
-using System.Collections.Concurrent;
-
-using Microsoft.Extensions.Logging;
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
+#region
+
+using System.Diagnostics.CodeAnalysis;
+using System.Collections.Concurrent;
+
+using KC.Apps.Properties;
+
 #endregion
 
-using KC.Apps.SpyderLib.Properties;
-
-#endregion
-
-namespace KC.Apps.SpyderLib.Modules;
+namespace SpyderLib.Modules;
 
 /// <summary>
 /// </summary>
 public interface IFileOperations : IDisposable
 {
-    /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
-    void Dispose();
-
-
-
-
-
     string GenerateUniqueFilename();
 
 
@@ -44,31 +36,14 @@ public interface IFileOperations : IDisposable
     void VerifyCache();
 }
 
+[SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed")]
 public class FileOperations : IDisposable
 {
     private const string FILENAME = "Spyder_Cache_Index.json";
-    private readonly ConcurrentDictionary<string, string> _cachedDownloads;
     private readonly object _fileLock = new();
     private static readonly object s_lock = new();
-    public static ILogger s_logger;
-    public static SpyderOptions s_options;
-
-
-
-
-
-    public FileOperations(ILogger logger, SpyderOptions options)
-    {
-        s_logger = logger;
-        s_options = options;
-        // _cachedDownloads = LoadCacheIndex() ?? new ConcurrentDictionary<string, string>();
-    }
-
-
-
-
-
     public string Name { get; } = "FileOperations";
+    public static SpyderOptions? Options { get; set; }
 
 
 
@@ -87,20 +62,15 @@ public class FileOperations : IDisposable
     public string GenerateUniqueFilename()
     {
         string filename;
-        do
+        lock (s_lock)
         {
-            filename = Path.GetRandomFileName();
-        } while (File.Exists(Path.Combine(path1: s_options.CacheLocation, path2: filename)));
+            do
+            {
+                filename = Path.GetRandomFileName();
+            } while (File.Exists(Path.Combine(path1: Options.CacheLocation, path2: filename)));
+        }
 
         return filename;
-    }
-
-
-
-
-
-    public void Init()
-    {
     }
 
 
@@ -113,29 +83,13 @@ public class FileOperations : IDisposable
         {
             try
             {
-                return File.ReadAllLines(Path.Combine(path1: s_options.OutputFilePath, path2: s_options.InputFileName));
+                return File.ReadAllLines(Path.Combine(path1: Options.OutputFilePath, path2: Options.InputFileName));
             }
             catch (Exception e)
             {
                 Console.WriteLine(value: e);
                 return Array.Empty<string>();
             }
-        }
-    }
-
-
-
-
-
-    public void SaveCache(object? state)
-    {
-        try
-        {
-            //SaveCacheIndex();
-        }
-        catch (Exception e)
-        {
-            s_logger.LogError(exception: e, message: "Error saving cache");
         }
     }
 }

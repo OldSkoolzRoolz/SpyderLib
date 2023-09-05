@@ -2,11 +2,16 @@
 
 using HtmlAgilityPack;
 
+using KC.Apps.Models;
+using KC.Apps.Modules;
+
+
+
+// ReSharper disable All
+
 #endregion
 
-
-
-namespace KC.Apps.SpyderLib.Modules;
+namespace SpyderLib.Modules;
 
 internal class HtmlParser
 {
@@ -20,7 +25,7 @@ internal class HtmlParser
         var capturedLinks = new ConcurrentScrapedUrlCollection();
 
         var nodes = doc.DocumentNode.Descendants(name: "a").ToArray();
-        capturedLinks = KC.Apps.SpyderLib.Modules.SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
+        capturedLinks = SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
 
         return capturedLinks;
     }
@@ -36,7 +41,7 @@ internal class HtmlParser
         try
         {
             var nodes = doc.DocumentNode.Descendants(name: "a").ToArray();
-            links = KC.Apps.SpyderLib.Modules.SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
+            links = SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
         }
         catch (Exception)
         {
@@ -55,7 +60,7 @@ internal class HtmlParser
     /// </summary>
     /// <param name="node"></param>
     /// <returns>List</returns>
-    internal List<string> ParseNodeForSourceAttributes(HtmlNode node)
+    internal static List<string> ParseNodeForSourceAttributes(HtmlNode node)
     {
         ArgumentNullException.ThrowIfNull(argument: node);
         List<string> urls = new();
@@ -70,11 +75,11 @@ internal class HtmlParser
                     continue;
                 }
 
-                var clean = KC.Apps.SpyderLib.Modules.SpyderHelpers.StripQueryFragment(url: attr.Value);
+                var clean = SpyderHelpers.StripQueryFragment(url: attr.Value);
                 urls.Add(item: clean);
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
             //Swallow
         }
@@ -90,7 +95,7 @@ internal class HtmlParser
     ///     Iteration Wrapper overload for single node method
     /// </summary>
     /// <param name="nodes">IEnumerable</param>
-    internal List<string> ParseNodesForVideoSourceAttributes(IEnumerable<HtmlNode> nodes)
+    internal static List<string> ParseNodesForVideoSourceAttributes(IEnumerable<HtmlNode> nodes)
     {
         List<string> temp = new();
         foreach (var node in nodes)

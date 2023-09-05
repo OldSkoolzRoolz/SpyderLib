@@ -1,10 +1,12 @@
+#region
+
 using Microsoft.Extensions.Hosting;
 
+#endregion
 
+namespace KC.Apps.Interfaces;
 
-namespace KC.Apps.SpyderLib.Control;
-
-public interface ISpyderControl :IHostedService
+public interface ISpyderControl : IHostedService
 {
     /// <summary>
     ///     Instructs Spyder to crawl each link in the input file
@@ -37,7 +39,10 @@ public interface ISpyderControl :IHostedService
 
     /// <summary>Triggered when the application host is ready to start the service.</summary>
     /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
-    Task StartAsync(CancellationToken cancellationToken);
+    Task IHostedService.StartAsync(CancellationToken cancellationToken)
+    {
+        return StartAsync(cancellationToken: cancellationToken);
+    }
 
 
 
@@ -55,5 +60,8 @@ public interface ISpyderControl :IHostedService
 
     /// <summary>Triggered when the application host is performing a graceful shutdown.</summary>
     /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
-    Task StopAsync(CancellationToken cancellationToken);
+    Task IHostedService.StopAsync(CancellationToken cancellationToken)
+    {
+        return StopAsync(cancellationToken: cancellationToken);
+    }
 }

@@ -7,7 +7,7 @@ using System.Text;
 
 #endregion
 
-namespace KC.Apps.SpyderLib.Logging;
+namespace KC.Apps.Logging;
 
 internal static class LogFormatter
 {
@@ -79,52 +79,59 @@ internal static class LogFormatter
 
     private static void PrintException_Helper(StringBuilder sb, Exception? exception, int level)
     {
-        if (exception == null)
+        while (true)
         {
-            return;
-        }
-
-        var message = s_exceptionDecoders.TryGetValue(exception.GetType(), out var decoder)
-            ? decoder(arg: exception)
-            : exception.Message;
-        sb.Append($"{Environment.NewLine}Exc level {level}: {exception.GetType()}: {message}");
-
-        if (exception.StackTrace is { } stack)
-        {
-            sb.Append($"{Environment.NewLine}{stack}");
-        }
-
-        if (exception is ReflectionTypeLoadException typeLoadException)
-        {
-            var loaderExceptions = typeLoadException.LoaderExceptions;
-            if (loaderExceptions == null || loaderExceptions.Length == 0)
+            if (exception == null)
             {
-                sb.Append(value: "No LoaderExceptions found");
+                return;
             }
-            else
+
+            var message = s_exceptionDecoders.TryGetValue(exception.GetType(), out var decoder)
+                ? decoder(arg: exception)
+                : exception.Message;
+            sb.Append($"{Environment.NewLine}Exc level {level}: {exception.GetType()}: {message}");
+
+            if (exception.StackTrace is { } stack)
             {
-                foreach (var inner in loaderExceptions)
+                sb.Append($"{Environment.NewLine}{stack}");
+            }
+
+            if (exception is ReflectionTypeLoadException typeLoadException)
+            {
+                var loaderExceptions = typeLoadException.LoaderExceptions;
+                if (loaderExceptions == null || loaderExceptions.Length == 0)
                 {
-                    // call recursively on all loader exceptions. Same level for all.
-                    PrintException_Helper(sb: sb, exception: inner, level + 1);
+                    sb.Append(value: "No LoaderExceptions found");
+                }
+                else
+                {
+                    foreach (var inner in loaderExceptions)
+                    {
+                        // call recursively on all loader exceptions. Same level for all.
+                        PrintException_Helper(sb: sb, exception: inner, level + 1);
+                    }
                 }
             }
-        }
-        else if (exception.InnerException != null)
-        {
-            if (exception is AggregateException { InnerExceptions: { Count: > 1 } innerExceptions })
+            else if (exception.InnerException != null)
             {
-                foreach (var inner in innerExceptions)
+                if (exception is AggregateException { InnerExceptions: { Count: > 1 } innerExceptions })
                 {
-                    // call recursively on all inner exceptions. Same level for all.
-                    PrintException_Helper(sb: sb, exception: inner, level + 1);
+                    foreach (var inner in innerExceptions)
+                    {
+                        // call recursively on all inner exceptions. Same level for all.
+                        PrintException_Helper(sb: sb, exception: inner, level + 1);
+                    }
+                }
+                else
+                {
+                    // call recursively on a single inner exception.
+                    exception = exception.InnerException;
+                    level = level + 1;
+                    continue;
                 }
             }
-            else
-            {
-                // call recursively on a single inner exception.
-                PrintException_Helper(sb: sb, exception: exception.InnerException, level + 1);
-            }
+
+            break;
         }
     }
 

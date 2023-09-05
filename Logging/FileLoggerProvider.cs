@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 #endregion
 
-namespace KC.Apps.SpyderLib.Logging;
+namespace KC.Apps.Logging;
 
 /// <summary>
 ///     <see cref="ILoggerProvider" /> which outputs to a log file.
@@ -60,7 +60,7 @@ public static class FileLoggerProviderExtensions
     /// <returns>The logging builder.</returns>
     public static ILoggingBuilder AddFile(
         this ILoggingBuilder builder,
-        string filePathName)
+        string               filePathName)
     {
         ArgumentNullException.ThrowIfNull(argument: builder);
 

@@ -1,27 +1,22 @@
 #region
-
+// ReSharper disable All
 using System.Collections.Concurrent;
 using System.Net;
 
-using KC.Apps.SpyderLib.Logging;
+using KC.Apps.Logging;
+using KC.Apps.Properties;
 
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 using Newtonsoft.Json;
 
 #endregion
 
-namespace KC.Apps.SpyderLib.Control;
+namespace KC.Apps.Control;
 
 public interface ICacheControl
 {
-
-
-
-
-
     /// <summary>
     /// </summary>
     /// <param name="address"></param>
@@ -55,17 +50,14 @@ public interface ICacheControl
     bool SafeFileWrite(string path, string contents);
 }
 
-public class CacheControl: ICacheControl
+public class CacheControl : ICacheControl
 {
-    public static event Action CacheShuttingDown;
     private const string FILENAME = "Spyder_Cache_Index.json";
     private readonly IMemoryCache _cache;
-    private object _fileLock;
+    private object? _fileLock;
     private bool _isCacheInitialized;
-    private object _lock = new();
-    private bool _lockTaken;
     private readonly ILogger _logger;
-    private readonly KC.Apps.SpyderLib.Properties.SpyderOptions _options;
+    private readonly SpyderOptions _options;
     private readonly TimeSpan _updateInterval = TimeSpan.FromMinutes(1);
     private static readonly HttpClient HttpClientInstance = new() { Timeout = Timeout.InfiniteTimeSpan };
 
@@ -73,13 +65,13 @@ public class CacheControl: ICacheControl
 
 
 
-    public CacheControl(ILoggerFactory factory, IOptions<KC.Apps.SpyderLib.Properties.SpyderOptions> options,
-        IMemoryCache cache)
+    public CacheControl(ILoggerFactory factory, SpyderOptions options,
+        IMemoryCache                   cache)
     {
         _cache = cache;
 
         _logger = factory.CreateLogger<CacheControl>();
-        _options = options.Value;
+        _options = options;
     }
 
 
@@ -125,14 +117,14 @@ public class CacheControl: ICacheControl
     private bool AddToCache(string uniqueUrlKey, string cacheFileName)
     {
         MemoryCacheOptions coptions = new()
-        {
-            TrackStatistics = true,
-            ExpirationScanFrequency = TimeSpan.FromMinutes(60)
-        };
+                                      {
+                                          TrackStatistics = true,
+                                          ExpirationScanFrequency = TimeSpan.FromMinutes(60)
+                                      };
         MemoryCacheEntryOptions options = new()
-        {
-            SlidingExpiration = TimeSpan.FromDays(1)
-        };
+                                          {
+                                              SlidingExpiration = TimeSpan.FromDays(1)
+                                          };
         _ = options.RegisterPostEvictionCallback(callback: OnPostEviction);
         _cache.Set(key: uniqueUrlKey, value: cacheFileName, options: options);
 
@@ -171,7 +163,7 @@ public class CacheControl: ICacheControl
 
 
 
-    private IEnumerable<string> GetExistingCacheFiles()
+    private IEnumerable<string?> GetExistingCacheFiles()
     {
         return Directory
                .EnumerateFiles(path: _options.CacheLocation)
@@ -204,22 +196,140 @@ public class CacheControl: ICacheControl
             switch (resp.StatusCode)
             {
                 case HttpStatusCode.Found:
-                    {
-                        var str = await GetHttpContentFromWebAsync(resp.Headers.Location.ToString());
-                        break;
-                    }
+                {
+                    var str = await GetHttpContentFromWebAsync(resp.Headers.Location.ToString());
+                    break;
+                }
                 case HttpStatusCode.Unauthorized:
-                    {
-                        //They didn't like us poking around so we will just log and carry on.
-                        _logger.PageCacheException("Unauthorized web response. Moving on.");
-                        break;
-                    }
+                {
+                    //They didn't like us poking around so we will just log and carry on.
+                    _logger.PageCacheException(message: "Unauthorized web response. Moving on.");
+                    break;
+                }
                 case HttpStatusCode.Forbidden:
-                    {
-                        //we get the boot again. Rinse and repeat....
-                        _logger.PageCacheException("Unauthorized web response. Moving on.");
-                        break;
-                    }
+                {
+                    //we get the boot again. Rinse and repeat....
+                    _logger.PageCacheException(message: "Unauthorized web response. Moving on.");
+                    break;
+                }
+                case HttpStatusCode.Continue:
+                    break;
+                case HttpStatusCode.SwitchingProtocols:
+                    break;
+                case HttpStatusCode.Processing:
+                    break;
+                case HttpStatusCode.EarlyHints:
+                    break;
+                case HttpStatusCode.OK:
+                    break;
+                case HttpStatusCode.Created:
+                    break;
+                case HttpStatusCode.Accepted:
+                    break;
+                case HttpStatusCode.NonAuthoritativeInformation:
+                    break;
+                case HttpStatusCode.NoContent:
+                    break;
+                case HttpStatusCode.ResetContent:
+                    break;
+                case HttpStatusCode.PartialContent:
+                    break;
+                case HttpStatusCode.MultiStatus:
+                    break;
+                case HttpStatusCode.AlreadyReported:
+                    break;
+                case HttpStatusCode.IMUsed:
+                    break;
+                case HttpStatusCode.Ambiguous:
+                    break;
+                case HttpStatusCode.Moved:
+                    break;
+                case HttpStatusCode.RedirectMethod:
+                    break;
+                case HttpStatusCode.NotModified:
+                    break;
+                case HttpStatusCode.UseProxy:
+                    break;
+                case HttpStatusCode.Unused:
+                    break;
+                case HttpStatusCode.RedirectKeepVerb:
+                    break;
+                case HttpStatusCode.PermanentRedirect:
+                    break;
+                case HttpStatusCode.BadRequest:
+                    break;
+                case HttpStatusCode.PaymentRequired:
+                    break;
+                case HttpStatusCode.NotFound:
+                    break;
+                case HttpStatusCode.MethodNotAllowed:
+                    break;
+                case HttpStatusCode.NotAcceptable:
+                    break;
+                case HttpStatusCode.ProxyAuthenticationRequired:
+                    break;
+                case HttpStatusCode.RequestTimeout:
+                    break;
+                case HttpStatusCode.Conflict:
+                    break;
+                case HttpStatusCode.Gone:
+                    break;
+                case HttpStatusCode.LengthRequired:
+                    break;
+                case HttpStatusCode.PreconditionFailed:
+                    break;
+                case HttpStatusCode.RequestEntityTooLarge:
+                    break;
+                case HttpStatusCode.RequestUriTooLong:
+                    break;
+                case HttpStatusCode.UnsupportedMediaType:
+                    break;
+                case HttpStatusCode.RequestedRangeNotSatisfiable:
+                    break;
+                case HttpStatusCode.ExpectationFailed:
+                    break;
+                case HttpStatusCode.MisdirectedRequest:
+                    break;
+                case HttpStatusCode.UnprocessableEntity:
+                    break;
+                case HttpStatusCode.Locked:
+                    break;
+                case HttpStatusCode.FailedDependency:
+                    break;
+                case HttpStatusCode.UpgradeRequired:
+                    break;
+                case HttpStatusCode.PreconditionRequired:
+                    break;
+                case HttpStatusCode.TooManyRequests:
+                    break;
+                case HttpStatusCode.RequestHeaderFieldsTooLarge:
+                    break;
+                case HttpStatusCode.UnavailableForLegalReasons:
+                    break;
+                case HttpStatusCode.InternalServerError:
+                    break;
+                case HttpStatusCode.NotImplemented:
+                    break;
+                case HttpStatusCode.BadGateway:
+                    break;
+                case HttpStatusCode.ServiceUnavailable:
+                    break;
+                case HttpStatusCode.GatewayTimeout:
+                    break;
+                case HttpStatusCode.HttpVersionNotSupported:
+                    break;
+                case HttpStatusCode.VariantAlsoNegotiates:
+                    break;
+                case HttpStatusCode.InsufficientStorage:
+                    break;
+                case HttpStatusCode.LoopDetected:
+                    break;
+                case HttpStatusCode.NotExtended:
+                    break;
+                case HttpStatusCode.NetworkAuthenticationRequired:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
         catch (Exception e)
@@ -306,33 +416,10 @@ public class CacheControl: ICacheControl
         {
             if (!_isCacheInitialized)
             {
-                // _cacheSignal.Release();
                 _isCacheInitialized = true;
             }
         }
     }
-
-
-
-
-
-    /*
-            public string? TryGetDocumentFromCache(string address)
-            {
-                if (!_pageCacheInitializationComplete) throw new PageCacheException("Cache not initilized");
-
-                if (_cachedDownloads.TryGetValue(key: address, out string? cacheFileName))
-                {
-                    var p = $"{_options.CacheLocation}/{cacheFileName}";
-                    var cachedContent = File.ReadAllText(p);
-                    _logger.DebugTestingMessage(message: "Loaded From Cache");
-                    return cachedContent;
-                }
-
-                return null;
-            }
-
-    */
 
 
 
@@ -373,7 +460,6 @@ public class CacheControl: ICacheControl
             catch (OperationCanceledException)
             {
                 _logger.GeneralSpyderMessage(message: "Cancellation acknowledged: shutting down.");
-                CacheShuttingDown?.Invoke();
 
                 break;
             }
@@ -467,7 +553,7 @@ public class CacheControl: ICacheControl
 
 
 
-    private void OnPostEviction(object key, object? value, EvictionReason reason, object state)
+    private void OnPostEviction(object key, object? value, EvictionReason reason, object? state)
     {
         Console.WriteLine($"value = {value} reason is {reason}");
     }
@@ -542,9 +628,9 @@ public class CacheControl: ICacheControl
     {
         lock (_fileLock)
         {
-            var json = JsonConvert.SerializeObject(value: _cache, formatting: Formatting.Indented);
+            var json     = JsonConvert.SerializeObject(value: _cache, formatting: Formatting.Indented);
             var origpath = Path.Combine(path1: _options.OutputFilePath, path2: FILENAME);
-            var newfile = Path.Combine(path1: _options.OutputFilePath, FILENAME + ".new");
+            var newfile  = Path.Combine(path1: _options.OutputFilePath, FILENAME + ".new");
             File.WriteAllText(path: newfile, contents: json);
             File.Delete(path: backpath);
             if (File.Exists(path: newfile))
@@ -565,9 +651,9 @@ public class CacheControl: ICacheControl
 
     internal void SaveCacheIndex()
     {
-        var path = Path.Combine(path1: _options.OutputFilePath, FILENAME + ".new");
+        var path     = Path.Combine(path1: _options.OutputFilePath, FILENAME + ".new");
         var backpath = Path.Combine(path1: _options.OutputFilePath, FILENAME + ".bak");
-        var oldpath = Path.Combine(path1: _options.OutputFilePath, path2: FILENAME);
+        var oldpath  = Path.Combine(path1: _options.OutputFilePath, path2: FILENAME);
 
 
         SafeSerializeAndWrite(path: path, oldpath: oldpath, backpath: backpath);

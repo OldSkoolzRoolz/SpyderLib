@@ -1,8 +1,10 @@
 #region
 
+using KC.Apps.Models;
+
 #endregion
 
-namespace KC.Apps.SpyderLib.Control;
+namespace KC.Apps.Interfaces;
 
 internal interface IDownloadControl
 {

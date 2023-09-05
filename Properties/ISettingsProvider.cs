@@ -1,4 +1,4 @@
-namespace KC.Apps.SpyderLib.Properties;
+namespace KC.Apps.Properties;
 
 internal interface ISettingsProvider
 {

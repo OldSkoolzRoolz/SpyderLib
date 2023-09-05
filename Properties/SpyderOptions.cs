@@ -6,15 +6,14 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 #endregion
 
-namespace KC.Apps.SpyderLib.Properties;
+namespace KC.Apps.Properties;
 
 /// <summary>
 /// </summary>
-public class SpyderOptions : IOptions<SpyderOptions>
+public class SpyderOptions
 {
     public SpyderOptions()
     {
@@ -134,9 +133,8 @@ public class SpyderOptions : IOptions<SpyderOptions>
     /// </summary>
     [Required]
     public bool UseLocalCache { get; set; }
-
-    /// <summary>Gets the default configured <typeparamref name="TOptions" /> instance.</summary>
-    public SpyderOptions Value { get; }
+[Required]
+    public int QueueCapacity { get; set; }
 
 
 

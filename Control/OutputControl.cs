@@ -1,12 +1,16 @@
 #region
+// ReSharper disable All
+using KC.Apps.Interfaces;
+using KC.Apps.Models;
+using KC.Apps.Properties;
 
 #endregion
 
-namespace KC.Apps.SpyderLib;
+namespace KC.Apps.Control;
 
-public class OutputControl : KC.Apps.SpyderLib.Control.IOutputControl
+public class OutputControl : IOutputControl
 {
-    private readonly KC.Apps.SpyderLib.Properties.SpyderOptions _options;
+    private readonly SpyderOptions _options;
     private static readonly object s_lock = new();
     // Access the options from SpyderControl
 
@@ -14,7 +18,7 @@ public class OutputControl : KC.Apps.SpyderLib.Control.IOutputControl
 
 
 
-    public OutputControl(KC.Apps.SpyderLib.Properties.SpyderOptions options)
+    public OutputControl(SpyderOptions options)
     {
         _options = options;
     }
@@ -88,8 +92,8 @@ public class OutputControl : KC.Apps.SpyderLib.Control.IOutputControl
         {
             lock (s_lock)
             {
-                var path = Path.Combine(path1: _options.OutputFilePath, path2: fileName);
-                using var sw = File.CreateText(path: path);
+                var       path = Path.Combine(path1: _options.OutputFilePath, path2: fileName);
+                using var sw   = File.CreateText(path: path);
 
                 foreach (var item in col)
                 {

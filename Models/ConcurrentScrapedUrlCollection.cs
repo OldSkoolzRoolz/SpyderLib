@@ -1,10 +1,10 @@
 #region
-
+// ReSharper disable All
 using System.Collections.Concurrent;
 
 #endregion
 
-namespace KC.Apps;
+namespace KC.Apps.Models;
 
 /// <inheritdoc />
 public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>

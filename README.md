@@ -3,7 +3,7 @@
 The Spyder Library is a portable lightweight network crawler and parser. Spyder can search the page for specific html
 tags and records the URL to process later. Can be implemented as a service and use the built in console menu or drop it
 in an app of your choice. Very flexible and can respect the robots rule file and employs a throttling mechanism to
-ensure polite crawling protocols. Methods are optimized for multi-threaded speed and safety. 
+ensure polite crawling protocols. Methods are optimized for multi-threaded speed and safety.
 
 Scraper One is a cross-plaform gui crawler using the Spyder Library as it's engine.
 
@@ -22,11 +22,11 @@ Scraper One is a cross-plaform gui crawler using the Spyder Library as it's engi
 
 <code>SpyderOptions options = new<br>
 {<br>
-   StartingUrl="https://www.google.com",<br>
-   ScraperDepthLevel = 2<br>
+StartingUrl="https://www.google.com",<br>
+ScraperDepthLevel = 2<br>
 };<br>
 
 SpyderControl control = new(options);<br>
 control.Initialize();<br>
-   await control.BeginCrawling();<br>
+await control.BeginCrawling();<br>
 <code/>

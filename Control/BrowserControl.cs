@@ -1,16 +1,22 @@
 #region
-
+// ReSharper disable All
 using System.Net.WebSockets;
 
 using HtmlAgilityPack;
+
+using KC.Apps.Models;
 
 using Microsoft.Extensions.Logging;
 
 using PuppeteerSharp;
 
+
+
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+
 #endregion
 
-namespace KC.Apps.SpyderLib.Control;
+namespace KC.Apps.Control;
 
 /// <summary>
 ///     Control class for puppeteer sharp
@@ -30,7 +36,7 @@ internal class BrowserControl : IAsyncDisposable, IDisposable
     internal BrowserControl()
     {
         // _myLoggerFactory = SpyderControl.Factory; 
-        _logger = SpyderControl.Factory.CreateLogger(categoryName: "BrowserControl");
+        _logger = SpyderControlService.Factory.CreateLogger(categoryName: "BrowserControl");
         _browser = new(() => OpenBrowserAsync().Result);
     }
 
@@ -119,7 +125,8 @@ internal class BrowserControl : IAsyncDisposable, IDisposable
             try
             {
                 // Navigate to the desired address
-                await page.GoToAsync(url: url, waitUntil: WaitUntilNavigation.Networkidle2).ConfigureAwait(false);
+                await page.GoToAsync(url: url, waitUntil: WaitUntilNavigation.Networkidle2)
+                          .ConfigureAwait(false);
 
                 // Extract all hyperlinks from the page
                 var jsSelectAllAnchors = @"Array.from(document.querySelectorAll('a')).map(a => a.href);";
@@ -153,19 +160,19 @@ internal class BrowserControl : IAsyncDisposable, IDisposable
     private LaunchOptions GetLaunchOptions()
     {
         return new()
-        {
-            Headless = true,
-            IgnoreHTTPSErrors = true,
-            LogProcess = false,
-            DefaultViewport = null,
-            UserDataDir = "/Data/Chrome/userdata",
-            ExecutablePath = "/Data/Chrome/Linux-1069273/chrome-linux/chrome",
-            Args = new[]
+               {
+                   Headless = true,
+                   IgnoreHTTPSErrors = true,
+                   LogProcess = false,
+                   DefaultViewport = null,
+                   UserDataDir = "/Data/Chrome/userdata",
+                   ExecutablePath = "/Data/Chrome/Linux-1069273/chrome-linux/chrome",
+                   Args = new[]
                           {
                               "--no-sandbox", "--no-zygote", "--disable-setupid-sandbox"
                           },
-            EnqueueTransportMessages = false
-        };
+                   EnqueueTransportMessages = false
+               };
     }
 
 

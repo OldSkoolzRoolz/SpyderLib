@@ -6,7 +6,7 @@ using System.Text;
 #endregion
 
 //Resharper disable all
-namespace KC.Apps.SpyderLib.Properties;
+namespace KC.Apps.Properties;
 
 internal class SettingsProvider : ISettingsProvider
 {
@@ -33,8 +33,8 @@ internal class SettingsProvider : ISettingsProvider
             return new();
         }
 
-        using var stream = new FileStream(path: fileName, mode: FileMode.Open, access: FileAccess.Read);
-        var serializer = new DataContractJsonSerializer(typeof(T), knownTypes: s_sroKnownTypes);
+        using var stream     = new FileStream(path: fileName, mode: FileMode.Open, access: FileAccess.Read);
+        var       serializer = new DataContractJsonSerializer(typeof(T), knownTypes: s_sroKnownTypes);
         return serializer.ReadObject(stream: stream) as T ?? new T();
     }
 
@@ -60,7 +60,7 @@ internal class SettingsProvider : ISettingsProvider
         }
 
         var directory = Path.GetDirectoryName(path: fileName);
-        if (!Directory.Exists(path: directory))
+        if (directory != null && !Directory.Exists(path: directory))
         {
             _ = Directory.CreateDirectory(path: directory);
         }
