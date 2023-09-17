@@ -33,24 +33,22 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0-preview.23364.2">
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="*">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="8.0.0-preview.7.23375.6"/>
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0-preview.7.23375.6"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0-preview.7.23375.6"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0-preview.7.23375.6"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="8.0.0-preview.7.23375.6"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0-preview.7.23375.6"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0-preview.7.23375.6"/>
-        <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0-preview.7.23375.6"/>
+        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="*"/>
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="*"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="*"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="*"/>
+        <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="*"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="*"/>
+        <PackageReference Include="Microsoft.Extensions.Options" Version="*"/>
+        <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="7.0.0"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageReference Include="PuppeteerSharp" Version="11.0.5"/>
-        <PackageReference Include="SonarAnalyzer.CSharp" Version="9.9.0.77355">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
+        <PackageReference Include="System.Runtime.caching" Version="7.0.0"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -58,5 +56,9 @@
         <None Remove="Annotations.Rider"/>
     </ItemGroup>
 
+
+    <ItemGroup>
+        <Compile Remove="Modules\MonitorLoop.cs"/>
+    </ItemGroup>
 
 </Project>

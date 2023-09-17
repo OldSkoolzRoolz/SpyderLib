@@ -403,3 +403,5 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 SpyderLib.csproj.DotSettings
+MyTheme.jsonc
+MyTheme-color-theme.jsonc

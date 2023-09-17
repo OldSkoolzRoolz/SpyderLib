@@ -1,10 +1,10 @@
 #region
 
-using KC.Apps.Models;
-
 #endregion
 
 namespace KC.Apps.Interfaces;
+
+
 
 public interface ISpyderWeb
 {
@@ -17,20 +17,6 @@ public interface ISpyderWeb
 
 
     Task ScrapePageForHtmlTagAsync(string url);
-
-
-    Task<ConcurrentScrapedUrlCollection> ScrapePageForLinksAsync(string link);
-
-
-    Task ScrapeUrlAsync(Uri url);
-
-
-
-
-
-    /// <summary>
-    /// </summary>
-    Task StartScrapingInputFileAsync();
 
 
 

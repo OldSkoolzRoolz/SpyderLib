@@ -6,8 +6,32 @@ using Microsoft.Extensions.Hosting;
 
 namespace KC.Apps.Interfaces;
 
+
+
 public interface ISpyderControl : IHostedService
 {
+    /// <summary>Triggered when the application host is ready to start the service.</summary>
+    /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
+    Task IHostedService.StartAsync(CancellationToken cancellationToken)
+        {
+            return StartAsync(cancellationToken);
+        }
+
+
+
+
+
+    /// <summary>Triggered when the application host is performing a graceful shutdown.</summary>
+    /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
+    Task IHostedService.StopAsync(CancellationToken cancellationToken)
+        {
+            return StopAsync(cancellationToken);
+        }
+
+
+
+
+
     /// <summary>
     ///     Instructs Spyder to crawl each link in the input file
     /// </summary>
@@ -37,31 +61,9 @@ public interface ISpyderControl : IHostedService
 
 
 
-    /// <summary>Triggered when the application host is ready to start the service.</summary>
-    /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
-    Task IHostedService.StartAsync(CancellationToken cancellationToken)
-    {
-        return StartAsync(cancellationToken: cancellationToken);
-    }
-
-
-
-
-
     /// <summary>
     ///     Starts Crawler according to options already set during initialization
     /// </summary>
     /// <returns>Task</returns>
     Task StartCrawlingAsync();
-
-
-
-
-
-    /// <summary>Triggered when the application host is performing a graceful shutdown.</summary>
-    /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
-    Task IHostedService.StopAsync(CancellationToken cancellationToken)
-    {
-        return StopAsync(cancellationToken: cancellationToken);
-    }
 }

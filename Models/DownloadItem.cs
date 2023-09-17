@@ -1,21 +1,22 @@
 namespace KC.Apps.Models;
 
+
+
 /// <summary>
 /// </summary>
 public class DownloadItem
 {
     internal DownloadItem(string link, string savepath)
-    {
-        ArgumentNullException.ThrowIfNull(argument: link);
-
-        if (savepath == null)
         {
-            throw new ArgumentNullException(nameof(savepath));
-        }
+            ArgumentNullException.ThrowIfNull(link);
+            if (savepath == null)
+            {
+                throw new ArgumentNullException(nameof(savepath));
+            }
 
-        this.SavePath = savepath;
-        this.Link = link;
-    }
+            this.SavePath = savepath;
+            this.Link = link;
+        }
 
 
 

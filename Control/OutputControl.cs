@@ -1,4 +1,5 @@
 #region
+
 // ReSharper disable All
 using KC.Apps.Interfaces;
 using KC.Apps.Models;
@@ -8,10 +9,13 @@ using KC.Apps.Properties;
 
 namespace KC.Apps.Control;
 
+
+
 public class OutputControl : IOutputControl
 {
-    private readonly SpyderOptions _options;
     private static readonly object s_lock = new();
+
+    private readonly SpyderOptions _options;
     // Access the options from SpyderControl
 
 
@@ -19,9 +23,9 @@ public class OutputControl : IOutputControl
 
 
     public OutputControl(SpyderOptions options)
-    {
-        _options = options;
-    }
+        {
+            _options = options;
+        }
 
 
 
@@ -43,39 +47,39 @@ public class OutputControl : IOutputControl
 
     // This method is called when the library is shutting down
     public void OnLibraryShutdown()
-    {
-        var collectionDictionary = new Dictionary<ConcurrentScrapedUrlCollection, string>
-                                   {
-                                       { this.CapturedVideoLinks, "TestingVideoLinks.txt" },
-                                       {
-                                           this.CapturedExternalLinks,
-                                           _options.CaptureExternalLinks
-                                               ? _options.CapturedExternalLinksFilename
-                                               : "ExternalLinksTesting.txt"
-                                       },
-                                       {
-                                           this.CapturedSeedLinks,
-                                           _options.CaptureSeedLinks
-                                               ? _options.CapturedSeedUrlsFilename
-                                               : "CapturedSeedUrlsFilename.txt"
-                                       },
-                                       { this.UrlsScrapedThisSession, "AllUrlsCaptured.txt" },
-                                       {
-                                           this.CapturedUrlWithSearchResults,
-                                           _options.EnableTagSearch ? "PositiveTagSearchResults.txt" : null
-                                       }
-                                   };
-
-        foreach (var entry in collectionDictionary)
         {
-            if (entry.Value is not null)
+            var collectionDictionary = new Dictionary<ConcurrentScrapedUrlCollection, string>
             {
-                SaveCollectionToFile(col: entry.Key, fileName: entry.Value);
-            }
-        }
+                { this.CapturedVideoLinks, "TestingVideoLinks.txt" },
+                {
+                    this.CapturedExternalLinks, _options.CaptureExternalLinks
+                        ? _options.CapturedExternalLinksFilename
+                        : "ExternalLinksTesting.txt"
+                }
+                ,
+                {
+                    this.CapturedSeedLinks, _options.CaptureSeedLinks
+                        ? _options.CapturedSeedUrlsFilename
+                        : "CapturedSeedUrlsFilename.txt"
+                }
+                , { this.UrlsScrapedThisSession, "AllUrlsCaptured.txt" },
+                {
+                    this.CapturedUrlWithSearchResults, _options.EnableTagSearch
+                        ? "PositiveTagSearchResults.txt"
+                        : "ShouldNotSeeThis.txt"
+                }
+            };
 
-        Console.WriteLine(value: "Output written");
-    }
+            foreach (var entry in collectionDictionary)
+            {
+                if (entry.Value is not null)
+                {
+                    SaveCollectionToFile(col: entry.Key, fileName: entry.Value);
+                }
+            }
+
+            Console.WriteLine(value: "Output written");
+        }
 
 
 
@@ -87,19 +91,18 @@ public class OutputControl : IOutputControl
     /// <param name="col">The collection to save.</param>
     /// <param name="fileName">The name of the file to save to.</param>
     private void SaveCollectionToFile(ConcurrentScrapedUrlCollection col, string fileName)
-    {
-        if (col is not { IsEmpty: true })
         {
-            lock (s_lock)
+            if (col is not { IsEmpty: true })
             {
-                var       path = Path.Combine(path1: _options.OutputFilePath, path2: fileName);
-                using var sw   = File.CreateText(path: path);
-
-                foreach (var item in col)
+                lock (s_lock)
                 {
-                    sw.WriteLine(value: item.Key);
+                    var path = Path.Combine(path1: _options.OutputFilePath, path2: fileName);
+                    using var sw = File.CreateText(path: path);
+                    foreach (var item in col)
+                    {
+                        sw.WriteLine(value: item.Key);
+                    }
                 }
             }
         }
-    }
 }

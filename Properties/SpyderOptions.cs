@@ -1,5 +1,7 @@
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
+
+
 #region
 
 using System.ComponentModel.DataAnnotations;
@@ -11,24 +13,17 @@ using Microsoft.Extensions.Logging;
 
 namespace KC.Apps.Properties;
 
+
+
 /// <summary>
 /// </summary>
 public class SpyderOptions
 {
-    public SpyderOptions()
-    {
-        ValidateCrawlerOptions();
-    }
-
-
-
-
-
     /// <summary>
     /// </summary>
     [Required]
     [AllowNull]
-    public string CacheLocation { get; set; } = Directory.GetCurrentDirectory();
+    public string CacheLocation { get; set; }
 
     /// <summary>
     /// </summary>
@@ -55,6 +50,7 @@ public class SpyderOptions
     /// <summary>
     ///     Option to instruct Spyder to crawl each link in the input file
     /// </summary>
+    /// <returns>Boolean</returns>
     public bool CrawlInputFile { get; set; }
 
     /// <summary>
@@ -133,8 +129,8 @@ public class SpyderOptions
     /// </summary>
     [Required]
     public bool UseLocalCache { get; set; }
-[Required]
-    public int QueueCapacity { get; set; }
+
+    [Required] public int QueueCapacity { get; set; }
 
 
 
@@ -143,33 +139,30 @@ public class SpyderOptions
     /// <summary>
     /// </summary>
     /// <returns></returns>
-    public List<string> ValidateCrawlerOptions()
-    {
-        var errors = new List<string>();
-
-
-
-        if (string.IsNullOrEmpty(value: this.LogPath) || string.IsNullOrEmpty(value: this.OutputFilePath))
+    public List<string> ValidateInitialOptions()
         {
-            errors.Add(item: "Check LogPath and OutputPath ");
-        }
+            var errors = new List<string>();
+            if (string.IsNullOrEmpty(this.LogPath) || string.IsNullOrEmpty(this.OutputFilePath))
+            {
+                errors.Add("Check LogPath and OutputPath ");
+            }
 
-        if (string.IsNullOrEmpty(value: this.CapturedSeedUrlsFilename) && this.CaptureSeedLinks)
-        {
-            errors.Add(item: "Captured seed filename must not be null when CaptureSeeds is enabled..");
-        }
+            if (string.IsNullOrEmpty(this.CapturedSeedUrlsFilename) && this.CaptureSeedLinks)
+            {
+                errors.Add("Captured seed filename must not be null when CaptureSeeds is enabled..");
+            }
 
-        if (string.IsNullOrEmpty(value: this.CapturedExternalLinksFilename) && this.CaptureExternalLinks)
-        {
-            errors.Add(
-                       item: "Captured External filename must not be null when Capture External links is enabled..");
-        }
+            if (string.IsNullOrEmpty(this.CapturedExternalLinksFilename) && this.CaptureExternalLinks)
+            {
+                errors.Add(
+                    "Captured External filename must not be null when Capture External links is enabled..");
+            }
 
-        if (this.ScrapeDepthLevel <= 1)
-        {
-            errors.Add(item: "Your depth level is low, verify your setting is correct");
-        }
+            if (this.ScrapeDepthLevel <= 1)
+            {
+                errors.Add("Your depth level is low, verify your setting is correct");
+            }
 
-        return errors;
-    }
+            return errors;
+        }
 }

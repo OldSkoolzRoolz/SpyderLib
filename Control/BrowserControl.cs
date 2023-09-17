@@ -1,4 +1,5 @@
 #region
+
 // ReSharper disable All
 using System.Net.WebSockets;
 
@@ -11,12 +12,13 @@ using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 
 
-
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
 
 #endregion
 
 namespace KC.Apps.Control;
+
+
 
 /// <summary>
 ///     Control class for puppeteer sharp
@@ -34,11 +36,11 @@ internal class BrowserControl : IAsyncDisposable, IDisposable
 
 
     internal BrowserControl()
-    {
-        // _myLoggerFactory = SpyderControl.Factory; 
-        _logger = SpyderControlService.Factory.CreateLogger(categoryName: "BrowserControl");
-        _browser = new(() => OpenBrowserAsync().Result);
-    }
+        {
+            // _myLoggerFactory = SpyderControl.Factory; 
+            _logger = SpyderControlService.Factory.CreateLogger(categoryName: "BrowserControl");
+            _browser = new(() => OpenBrowserAsync().Result);
+        }
 
 
 
@@ -51,53 +53,51 @@ internal class BrowserControl : IAsyncDisposable, IDisposable
 
 
 
-    private async Task<IPage> CreatePageAsync()
-    {
-        var page = await this.Browser.NewPageAsync().ConfigureAwait(false);
-        page.DefaultTimeout = 120_000;
-        await page.SetUserAgentAsync(userAgent: USER_AGENT).ConfigureAwait(false);
-        await page.SetJavaScriptEnabledAsync(true).ConfigureAwait(false);
-
-        return page;
-    }
+    public async ValueTask DisposeAsync()
+        {
+            await DisposeAsyncCore().ConfigureAwait(false);
+            Dispose(false);
+            GC.SuppressFinalize(this);
+        }
 
 
 
 
 
     public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+
+
+
+
+    private async Task<IPage> CreatePageAsync()
+        {
+            var page = await this.Browser.NewPageAsync().ConfigureAwait(false);
+            page.DefaultTimeout = 120_000;
+            await page.SetUserAgentAsync(userAgent: USER_AGENT).ConfigureAwait(false);
+            await page.SetJavaScriptEnabledAsync(true).ConfigureAwait(false);
+            return page;
+        }
 
 
 
 
 
     protected virtual void Dispose(bool disposing)
-    {
-        if (disposing)
         {
-            this.Browser?.Dispose();
-            if (this.LoggerFactory is IDisposable disposableFactory)
+            if (disposing)
             {
-                disposableFactory.Dispose();
+                this.Browser?.Dispose();
+                if (this.LoggerFactory is IDisposable disposableFactory)
+                {
+                    disposableFactory.Dispose();
+                }
             }
         }
-    }
-
-
-
-
-
-    public async ValueTask DisposeAsync()
-    {
-        await DisposeAsyncCore().ConfigureAwait(false);
-
-        Dispose(false);
-        GC.SuppressFinalize(this);
-    }
 
 
 
@@ -107,112 +107,106 @@ internal class BrowserControl : IAsyncDisposable, IDisposable
     ///     Contains the high-cost dispose logic
     /// </summary>
     protected virtual async ValueTask DisposeAsyncCore()
-    {
-        await _browser.Value.DisposeAsync().ConfigureAwait(false);
-    }
+        {
+            await _browser.Value.DisposeAsync().ConfigureAwait(false);
+        }
 
 
 
 
 
     public async Task<ConcurrentScrapedUrlCollection> ExtractHyperLinksAsync2(string url)
-    {
-        var scrapedUrls = new ConcurrentScrapedUrlCollection();
-
-
-        using (var page = await CreatePageAsync().ConfigureAwait(false))
         {
-            try
+            var scrapedUrls = new ConcurrentScrapedUrlCollection();
+            using (var page = await CreatePageAsync().ConfigureAwait(false))
             {
-                // Navigate to the desired address
-                await page.GoToAsync(url: url, waitUntil: WaitUntilNavigation.Networkidle2)
-                          .ConfigureAwait(false);
-
-                // Extract all hyperlinks from the page
-                var jsSelectAllAnchors = @"Array.from(document.querySelectorAll('a')).map(a => a.href);";
-                var urls = await page.EvaluateExpressionAsync<string[]>(script: jsSelectAllAnchors)
-                                     .ConfigureAwait(false);
-                if (urls is not null)
+                try
                 {
-                    scrapedUrls.AddArray(array: urls);
+                    // Navigate to the desired address
+                    await page.GoToAsync(url: url, waitUntil: WaitUntilNavigation.Networkidle2)
+                        .ConfigureAwait(false);
+
+                    // Extract all hyperlinks from the page
+                    var jsSelectAllAnchors = @"Array.from(document.querySelectorAll('a')).map(a => a.href);";
+                    var urls = await page.EvaluateExpressionAsync<string[]>(script: jsSelectAllAnchors)
+                        .ConfigureAwait(false);
+
+                    if (urls is not null)
+                    {
+                        scrapedUrls.AddArray(array: urls);
+                    }
+
+                    await page.CloseAsync().ConfigureAwait(false);
+                }
+                catch (WebSocketException wse)
+                {
+                    _logger.LogError(102, message: wse.Message, wse);
+                }
+                catch (Exception ex)
+                {
+                    // If an error occurs, log it and continue execution
+                    _logger.LogError(104, message: ex.Message, ex);
                 }
 
-                await page.CloseAsync().ConfigureAwait(false);
+                return scrapedUrls;
             }
-            catch (WebSocketException wse)
-            {
-                _logger.LogError(102, message: wse.Message, wse);
-            }
-            catch (Exception ex)
-            {
-                // If an error occurs, log it and continue execution
-                _logger.LogError(104, message: ex.Message, ex);
-            }
-
-            return scrapedUrls;
         }
-    }
 
 
 
 
 
     private LaunchOptions GetLaunchOptions()
-    {
-        return new()
-               {
-                   Headless = true,
-                   IgnoreHTTPSErrors = true,
-                   LogProcess = false,
-                   DefaultViewport = null,
-                   UserDataDir = "/Data/Chrome/userdata",
-                   ExecutablePath = "/Data/Chrome/Linux-1069273/chrome-linux/chrome",
-                   Args = new[]
-                          {
-                              "--no-sandbox", "--no-zygote", "--disable-setupid-sandbox"
-                          },
-                   EnqueueTransportMessages = false
-               };
-    }
+        {
+            return new()
+            {
+                Headless = true, IgnoreHTTPSErrors = true, LogProcess = false, DefaultViewport = null
+                , UserDataDir = "/Data/Chrome/userdata"
+                , ExecutablePath = "/Data/Chrome/Linux-1069273/chrome-linux/chrome", Args = new[]
+                {
+                    "--no-sandbox", "--no-zygote", "--disable-setupid-sandbox"
+                }
+                , EnqueueTransportMessages = false
+            };
+        }
 
 
 
 
 
     public async Task<HtmlDocument> GetPageDocumentAsync(string url)
-    {
-        // Creating a new HtmlDocument and ConcurrentScrapedUrlCollection instances
-        var htmlDocument = new HtmlDocument();
-
-        using (var page = await CreatePageAsync().ConfigureAwait(false))
         {
-            try
+            // Creating a new HtmlDocument and ConcurrentScrapedUrlCollection instances
+            var htmlDocument = new HtmlDocument();
+            using (var page = await CreatePageAsync().ConfigureAwait(false))
             {
-                //var response = await page.GoToAsync(url: url, waitUntil: WaitUntilNavigation.DOMContentLoaded);
-                var pageContent = await page.GetContentAsync().ConfigureAwait(false);
-                htmlDocument.LoadHtml(html: pageContent);
-                await page.CloseAsync().ConfigureAwait(false);
+                try
+                {
+                    //var response = await page.GoToAsync(url: url, waitUntil: WaitUntilNavigation.DOMContentLoaded);
+                    var pageContent = await page.GetContentAsync().ConfigureAwait(false);
+                    htmlDocument.LoadHtml(html: pageContent);
+                    await page.CloseAsync().ConfigureAwait(false);
+                }
+                catch (WebSocketException wse)
+                {
+                    _logger.LogError(9888, exception: wse, message: "Web Socket Exception in Puppeteer");
+                }
+                catch (Exception ex)
+                {
+                    // If an error occurs, log it and continue execution
+                    _logger.LogError(new(600), exception: ex, message: "General Exception in GetDocument");
+                }
             }
-            catch (WebSocketException wse)
-            {
-                _logger.LogError(9888, exception: wse, message: "Web Socket Exception in Puppeteer");
-            }
-            catch (Exception ex)
-            {
-                // If an error occurs, log it and continue execution
-                _logger.LogError(new(600), exception: ex, message: "General Exception in GetDocument");
-            }
-        }
 
-        return htmlDocument;
-    }
+            return htmlDocument;
+        }
 
 
 
 
 
     private async Task<IBrowser> OpenBrowserAsync()
-    {
-        return await Puppeteer.LaunchAsync(GetLaunchOptions()).ConfigureAwait(false);
-    }
+        {
+            return await Puppeteer.LaunchAsync(GetLaunchOptions()).ConfigureAwait(false);
+        }
 }

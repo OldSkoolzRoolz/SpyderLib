@@ -1,5 +1,7 @@
 // ReSharper disable All
 
+
+
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
@@ -13,6 +15,8 @@ using KC.Apps.Properties;
 #endregion
 
 namespace SpyderLib.Modules;
+
+
 
 /// <summary>
 /// </summary>
@@ -36,12 +40,15 @@ public interface IFileOperations : IDisposable
     void VerifyCache();
 }
 
+
+
+
 [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed")]
 public class FileOperations : IDisposable
 {
     private const string FILENAME = "Spyder_Cache_Index.json";
-    private readonly object _fileLock = new();
     private static readonly object s_lock = new();
+    private readonly object _fileLock = new();
     public string Name { get; } = "FileOperations";
     public static SpyderOptions? Options { get; set; }
 
@@ -51,45 +58,45 @@ public class FileOperations : IDisposable
 
     /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
     public void Dispose()
-    {
-        // TODO release managed resources here
-    }
+        {
+            // TODO release managed resources here
+        }
 
 
 
 
 
     public string GenerateUniqueFilename()
-    {
-        string filename;
-        lock (s_lock)
         {
-            do
+            string filename;
+            lock (s_lock)
             {
-                filename = Path.GetRandomFileName();
-            } while (File.Exists(Path.Combine(path1: Options.CacheLocation, path2: filename)));
-        }
+                do
+                {
+                    filename = Path.GetRandomFileName();
+                } while (File.Exists(Path.Combine(path1: Options.CacheLocation, path2: filename)));
+            }
 
-        return filename;
-    }
+            return filename;
+        }
 
 
 
 
 
     public string[] LoadLinksFromInputFile(string filename)
-    {
-        lock (s_lock)
         {
-            try
+            lock (s_lock)
             {
-                return File.ReadAllLines(Path.Combine(path1: Options.OutputFilePath, path2: Options.InputFileName));
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(value: e);
-                return Array.Empty<string>();
+                try
+                {
+                    return File.ReadAllLines(Path.Combine(path1: Options.OutputFilePath, path2: Options.InputFileName));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(value: e);
+                    return Array.Empty<string>();
+                }
             }
         }
-    }
 }

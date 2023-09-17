@@ -6,6 +6,8 @@ using KC.Apps.Models;
 
 namespace KC.Apps.Interfaces;
 
+
+
 public interface IOutputControl
 {
     ConcurrentScrapedUrlCollection CapturedExternalLinks { get; set; }

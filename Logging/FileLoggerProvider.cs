@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 
 namespace KC.Apps.Logging;
 
+
+
 /// <summary>
 ///     <see cref="ILoggerProvider" /> which outputs to a log file.
 /// </summary>
@@ -22,9 +24,9 @@ public class FileLoggerProvider : ILoggerProvider
     /// </summary>
     /// <param name="filePath">The log file path.</param>
     public FileLoggerProvider(string filePath)
-    {
-        _output = new(fileName: filePath);
-    }
+        {
+            _output = new FileLoggingOutput(filePath);
+        }
 
 
 
@@ -32,9 +34,9 @@ public class FileLoggerProvider : ILoggerProvider
 
     /// <inheritdoc />
     public ILogger CreateLogger(string categoryName)
-    {
-        return new FileLogger(output: _output, category: categoryName);
-    }
+        {
+            return new FileLogger(_output, categoryName);
+        }
 
 
 
@@ -42,10 +44,13 @@ public class FileLoggerProvider : ILoggerProvider
 
     /// <inheritdoc />
     public void Dispose()
-    {
-        _output.Dispose();
-    }
+        {
+            _output.Dispose();
+        }
 }
+
+
+
 
 /// <summary>
 ///     Extension methods to configure ILoggingBuilder with FileLoggerProvider
@@ -60,11 +65,10 @@ public static class FileLoggerProviderExtensions
     /// <returns>The logging builder.</returns>
     public static ILoggingBuilder AddFile(
         this ILoggingBuilder builder,
-        string               filePathName)
-    {
-        ArgumentNullException.ThrowIfNull(argument: builder);
-
-        builder.AddProvider(new FileLoggerProvider(filePath: filePathName));
-        return builder;
-    }
+        string filePathName)
+        {
+            ArgumentNullException.ThrowIfNull(builder);
+            builder.AddProvider(new FileLoggerProvider(filePathName));
+            return builder;
+        }
 }

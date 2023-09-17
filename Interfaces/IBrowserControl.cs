@@ -12,6 +12,8 @@ using PuppeteerSharp;
 
 namespace KC.Apps.Interfaces;
 
+
+
 internal interface IBrowserControl
 {
     IBrowser Browser { get; }

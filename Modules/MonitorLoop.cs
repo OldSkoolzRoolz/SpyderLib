@@ -1,17 +1,13 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-
-
 namespace KC.Apps.Modules;
-
-
 
 public sealed class MonitorLoop
 {
-    private readonly IBackgroundTaskQueue _taskQueue;
-    private readonly ILogger<MonitorLoop> _logger;
     private readonly CancellationToken _cancellationToken;
+    private readonly ILogger<MonitorLoop> _logger;
+    private readonly IBackgroundTaskQueue _taskQueue;
 
     public MonitorLoop(
         IBackgroundTaskQueue taskQueue,
@@ -37,10 +33,8 @@ public sealed class MonitorLoop
         {
             var keyStroke = Console.ReadKey();
             if (keyStroke.Key == ConsoleKey.W)
-            {
                 // Enqueue a background work item
                 await _taskQueue.QueueBackgroundWorkItemAsync(BuildWorkItemAsync);
-            }
         }
     }
 
@@ -49,7 +43,7 @@ public sealed class MonitorLoop
         // Simulate three 5-second tasks to complete
         // for each enqueued work item
 
-        int delayLoop = 0;
+        var delayLoop = 0;
         var guid = Guid.NewGuid();
 
         _logger.LogInformation("Queued work item {Guid} is starting.", guid);
@@ -65,12 +59,12 @@ public sealed class MonitorLoop
                 // Prevent throwing if the Delay is cancelled
             }
 
-            ++ delayLoop;
+            ++delayLoop;
 
             _logger.LogInformation("Queued work item {Guid} is running. {DelayLoop}/3", guid, delayLoop);
         }
 
-        string format = delayLoop switch
+        var format = delayLoop switch
         {
             3 => "Queued Background Task {Guid} is complete.",
             _ => "Queued Background Task {Guid} was cancelled."
