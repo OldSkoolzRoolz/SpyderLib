@@ -49,6 +49,7 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageReference Include="PuppeteerSharp" Version="11.0.5"/>
         <PackageReference Include="System.Runtime.caching" Version="7.0.0"/>
+        <PackageReference Include="TextFileLogging.1.0.0-alpha.nupkg" Version="*-*"/>
     </ItemGroup>
 
     <ItemGroup>
