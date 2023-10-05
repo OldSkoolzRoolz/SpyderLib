@@ -1,24 +1,29 @@
-namespace KC.Apps.Logging ;
+namespace KC.Apps.Logging;
 
-    public class TextFileLoggerConfiguration
+
+
+
+public class TextFileLoggerConfiguration
     {
-        public bool UseUtcTime { get; set; }
-        public bool UseSingleLogFile { get; set; }
+        #region Prop
+
+        public string? EntryPrefix { get; set; }
+        public string? EntrySuffix { get; set; }
+        public bool IncludeScopes { get; set; }
         public LogRotationPolicy LogRotationPolicy { get; set; }
         public string? TimestampFormat { get; set; }
-        internal string? EntryPrefix { get; set; }
-        internal string? EntrySuffix { get; set; }
-        public bool IncludeScopes { get; set; }
+        public bool UseSingleLogFile { get; set; }
+        public bool UseUtcTime { get; set; }
+
+        #endregion
     }
 
 
 
 
-    public enum LogRotationPolicy
+public enum LogRotationPolicy
     {
-        Hourly = 0
-        ,
-        Daily = 1
-        ,
+        Hourly = 0,
+        Daily = 1,
         Weekly = 2
     }

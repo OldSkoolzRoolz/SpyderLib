@@ -2,29 +2,38 @@
 
 #endregion
 
-namespace KC.Apps.Interfaces;
+
+
+
+namespace KC.Apps.SpyderLib.Modules;
+
 
 
 
 public interface ISpyderWeb
-{
-    /// <summary>
-    /// </summary>
-    Task ProcessInputFileAsync();
+    {
+        #region Methods
+
+        /// <summary>
+        ///     Generic method for processing tasks with throttling
+        /// </summary>
+        /// <param name="tasks"></param>
+        Task ProcessTasksAsync(IEnumerable<Task> tasks);
 
 
 
 
 
-    Task ScrapePageForHtmlTagAsync(string url);
+        /// <summary>
+        /// </summary>
+        /// <exception cref="@_0"></exception>
+        Task StartScrapingInputFileAsync();
 
 
 
 
 
-    /// <summary>
-    ///     Main spyder method starts crawling the given link according to options set
-    /// </summary>
-    /// <param name="startingLink"></param>
-    Task StartSpyderAsync(string startingLink);
-}
+        Task StartSpyderAsync(string startingLink);
+
+        #endregion
+    }

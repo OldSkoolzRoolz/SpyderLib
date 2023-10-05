@@ -12,91 +12,91 @@ using System.Collections.Concurrent;
 
 using KC.Apps.Properties;
 
+
 #endregion
 
-namespace SpyderLib.Modules;
+namespace SpyderLib.Modules ;
+
+    /// <summary>
+    /// </summary>
+    public interface IFileOperations : IDisposable
+    {
+        string GenerateUniqueFilename();
 
 
-
-/// <summary>
-/// </summary>
-public interface IFileOperations : IDisposable
-{
-    string GenerateUniqueFilename();
+        ConcurrentDictionary<string, string> LoadCacheIndex();
 
 
-    ConcurrentDictionary<string, string> LoadCacheIndex();
+        string[] LoadLinksFromInputFile(string filename);
 
 
-    string[] LoadLinksFromInputFile(string filename);
+        bool SafeFileWrite(string path, string contents);
 
 
-    bool SafeFileWrite(string path, string contents);
+        void SaveCache(object? state);
 
 
-    void SaveCache(object? state);
-
-
-    void VerifyCache();
-}
-
-
-
-
-[SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed")]
-public class FileOperations : IDisposable
-{
-    private const string FILENAME = "Spyder_Cache_Index.json";
-    private static readonly object s_lock = new();
-    private readonly object _fileLock = new();
-    public string Name { get; } = "FileOperations";
-    public static SpyderOptions? Options { get; set; }
+        void VerifyCache();
+    }
 
 
 
 
+    [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed")]
+    public class FileOperations : IDisposable
+    {
+        #region Volotiles
 
-    /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
-    public void Dispose()
-        {
-            // TODO release managed resources here
-        }
+        private readonly object _fileLock = new();
+        private const string FILENAME = "Spyder_Cache_Index.json";
+        private static readonly object s_lock = new();
 
+        #endregion
 
+        public string Name { get; } = "FileOperations";
+        public static SpyderOptions? Options { get; set; }
 
+        #region Setup/Teardown
 
-
-    public string GenerateUniqueFilename()
-        {
-            string filename;
-            lock (s_lock)
+        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+        public void Dispose()
             {
-                do
-                {
-                    filename = Path.GetRandomFileName();
-                } while (File.Exists(Path.Combine(path1: Options.CacheLocation, path2: filename)));
+                // TODO release managed resources here
             }
 
-            return filename;
-        }
+        #endregion
 
-
-
-
-
-    public string[] LoadLinksFromInputFile(string filename)
-        {
-            lock (s_lock)
+        public string GenerateUniqueFilename()
             {
-                try
+                string filename;
+                lock (s_lock)
                 {
-                    return File.ReadAllLines(Path.Combine(path1: Options.OutputFilePath, path2: Options.InputFileName));
+                    do
+                    {
+                        filename = Path.GetRandomFileName();
+                    } while (File.Exists(Path.Combine(path1: Options.CacheLocation, path2: filename)));
                 }
-                catch (Exception e)
+                return filename;
+            }
+
+
+
+
+
+        public string[] LoadLinksFromInputFile(string filename)
+            {
+                lock (s_lock)
                 {
-                    Console.WriteLine(value: e);
-                    return Array.Empty<string>();
+                    try
+                    {
+                        return
+                            File.ReadAllLines(Path.Combine(path1: Options.OutputFilePath, path2: Options.InputFileName));
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(value: e);
+                        return Array.Empty<string>();
+                    }
                 }
             }
-        }
-}
+    }

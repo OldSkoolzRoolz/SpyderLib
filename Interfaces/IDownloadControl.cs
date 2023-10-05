@@ -1,17 +1,32 @@
 #region
 
-using KC.Apps.Models;
+#endregion
+
+
+
+
+#region
+
+using KC.Apps.SpyderLib.Models;
 
 #endregion
+
+
+
 
 namespace KC.Apps.Interfaces;
 
 
 
+
 internal interface IDownloadControl
-{
-    void AddDownloadItem(DownloadItem item);
+    {
+        #region Methods
+
+        void AddDownloadItem(DownloadItem item);
 
 
-    void SetInputComplete();
-}
+        void SetInputComplete();
+
+        #endregion
+    }

@@ -4,66 +4,77 @@ using Microsoft.Extensions.Hosting;
 
 #endregion
 
-namespace KC.Apps.Interfaces;
+
+
+
+namespace KC.Apps.SpyderLib.Interfaces;
+
 
 
 
 public interface ISpyderControl : IHostedService
-{
-    /// <summary>Triggered when the application host is ready to start the service.</summary>
-    /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
-    Task IHostedService.StartAsync(CancellationToken cancellationToken)
-        {
-            return StartAsync(cancellationToken);
-        }
+    {
+        #region Methods
+
+        /// <summary>
+        ///     Instructs Spyder to crawl each link in the input file
+        /// </summary>
+        /// <returns></returns>
+        Task BeginProcessingInputFileAsync();
 
 
 
 
 
-    /// <summary>Triggered when the application host is performing a graceful shutdown.</summary>
-    /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
-    Task IHostedService.StopAsync(CancellationToken cancellationToken)
-        {
-            return StopAsync(cancellationToken);
-        }
+        /// <summary>
+        ///     Set the depth and the starting url and crawl the web
+        /// </summary>
+        /// <param name="seedUrl"></param>
+        Task BeginSpyder(string seedUrl);
 
 
 
 
 
-    /// <summary>
-    ///     Instructs Spyder to crawl each link in the input file
-    /// </summary>
-    /// <returns></returns>
-    Task BeginProcessingInputFileAsync();
+        /// Worker
+        /// <summary>
+        /// </summary>
+        Task ScrapeSingleSiteAsync();
 
 
 
 
 
-    /// <summary>
-    ///     Set the depth and the starting url and crawl the web
-    /// </summary>
-    /// <param name="seedUrl"></param>
-    Task BeginSpyder(string seedUrl);
+        /// <summary>
+        ///     Starts Crawler according to options already set during initialization
+        /// </summary>
+        /// <returns>Task</returns>
+        Task StartCrawlingAsync();
+
+        #endregion
+
+
+
+
+        #region Methods
+
+        /// <summary>Triggered when the application host is ready to start the service.</summary>
+        /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
+        Task IHostedService.StartAsync(CancellationToken cancellationToken)
+            {
+                return StartAsync(cancellationToken);
+            }
 
 
 
 
 
-    /// Worker
-    /// <summary>
-    /// </summary>
-    Task ScrapeSingleSiteAsync();
+        /// <summary>Triggered when the application host is performing a graceful shutdown.</summary>
+        /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
+        Task IHostedService.StopAsync(CancellationToken cancellationToken)
+            {
+                return StopAsync(cancellationToken);
+            }
 
-
-
-
-
-    /// <summary>
-    ///     Starts Crawler according to options already set during initialization
-    /// </summary>
-    /// <returns>Task</returns>
-    Task StartCrawlingAsync();
-}
+        #endregion
+    }

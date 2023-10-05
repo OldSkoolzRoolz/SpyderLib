@@ -1,43 +1,47 @@
 #region
 
-// ReSharper disable All
-using KC.Apps.Interfaces;
 using KC.Apps.Logging;
-using KC.Apps.Models;
-using KC.Apps.Modules;
-using KC.Apps.Properties;
+using KC.Apps.SpyderLib.Modules;
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using PuppeteerSharp;
-
 #endregion
 
-namespace KC.Apps.Control
-{
-    public interface IDownloadControlService
+
+
+
+namespace KC.Apps.SpyderLib.Services;
+
+
+
+
+public interface IDownloadControlService
     {
     }
 
 
 
 
-    public class DownloadControlService : BackgroundService, IDownloadControlService
+public class DownloadControlService : BackgroundService, IDownloadControlService
     {
+        #region Instance variables
+
         private readonly ILogger<DownloadControlService> _logger;
         private readonly IBackgroundTaskQueue _taskQue;
+
+        #endregion
 
 
 
 
 
         public DownloadControlService(
-            ILoggerFactory factory, IBackgroundTaskQueue taskQue,
+            IBackgroundTaskQueue taskQue,
             IOptions<SpyderOptions> options)
             {
-                _logger = factory.CreateLogger<DownloadControlService>();
+                _logger = SpyderControlService.LoggerFactory.CreateLogger<DownloadControlService>();
                 _taskQue = taskQue;
             }
 
@@ -45,17 +49,22 @@ namespace KC.Apps.Control
 
 
 
+        #region Methods
+
         public override async Task StopAsync(CancellationToken stoppingToken)
             {
                 _logger.LogInformation(
                     $"{nameof(DownloadControlService)} is stopping.");
 
-                await base.StopAsync(stoppingToken);
+                await base.StopAsync(stoppingToken).ConfigureAwait(false);
             }
 
+        #endregion
 
 
 
+
+        #region Methods
 
         /// <summary>
         ///     This method is called when the <see cref="T:Microsoft.Extensions.Hosting.IHostedService" /> starts. The
@@ -71,10 +80,11 @@ namespace KC.Apps.Control
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
             {
                 while (!stoppingToken.IsCancellationRequested)
-                {
-                    await Task.Delay(14000);
-                    _logger.DebugTestingMessage("Polling Download Que");
-                }
+                    {
+                        await Task.Delay(14000).ConfigureAwait(false);
+                        _logger.DebugTestingMessage("Polling Download Que");
+                    }
             }
+
+        #endregion
     }
-}

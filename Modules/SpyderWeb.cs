@@ -1,319 +1,286 @@
 #region
 
-// ReSharper disable All
 using System.Diagnostics;
 
 using HtmlAgilityPack;
 
-using KC.Apps.Control;
-using KC.Apps.Interfaces;
 using KC.Apps.Logging;
-using KC.Apps.Models;
-using KC.Apps.Properties;
+using KC.Apps.SpyderLib.Control;
+using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Services;
 
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-
-using SpyderLib.Modules;
 
 #endregion
 
-namespace KC.Apps.Modules;
+
+
+
+namespace KC.Apps.SpyderLib.Modules;
+
 
 
 
 /// <summary>
 /// </summary>
 public class SpyderWeb : ISpyderWeb
-{
-    private readonly IndexCacheService _cacheControl;
-    private readonly ILogger _logger;
-    private readonly SpyderOptions _options;
-    private readonly IOutputControl _output;
-    private readonly SemaphoreSlim _semaphore;
-    private readonly IBackgroundTaskQueue _taskQue;
-    private ConcurrentScrapedUrlCollection NewlyScrapedUrls = new();
-    private ConcurrentScrapedUrlCollection ScrapingTargets = new();
+    {
+        #region Instance variables
+
+        private readonly List<Task> _backgroundTasks = new();
+
+        private readonly IndexCacheService _cacheControl;
+        private int _HtmlTagHits;
+        private int _linksCapturedThisSession;
+        private readonly ILogger _logger;
+        private static SpyderOptions _options;
+        private readonly SemaphoreSlim _semaphore;
+        private readonly IBackgroundTaskQueue _taskQue;
+        private int _urlsProcessedThisSession;
+        private readonly ConcurrentScrapedUrlCollection NewlyScrapedUrls = new();
+        private readonly ConcurrentScrapedUrlCollection ScrapingTargets = new();
+
+        #endregion
 
 
 
 
 
-    /// <summary>
-    /// </summary>
-    /// <param name="logger"></param>
-    /// <param name="options"></param>
-    /// <param name="cacheControl"></param>
-    /// <exception cref="ArgumentNullException"></exception>
-    public SpyderWeb(
-        ILogger logger, IOptions<SpyderOptions> options, IndexCacheService cacheControl
-    )
-        {
-            ArgumentNullException.ThrowIfNull(argument: logger);
-            ArgumentNullException.ThrowIfNull(argument: options);
-            ArgumentNullException.ThrowIfNull(argument: cacheControl);
-            //_taskQue = taskQueue;
-            _logger = logger;
-            _options = options.Value;
-            _cacheControl = cacheControl;
-            _output = new OutputControl(options: _options);
-            _logger.LogDebug(message: "SpyderWeb Initialized");
-            _semaphore = new(5, 5);
-        }
-
-
-
-
-
-    /// <summary>
-    /// </summary>
-    public async Task ProcessInputFileAsync()
-        {
-            using var fo = new FileOperations();
-            //Load links from file
-            var links = fo.LoadLinksFromInputFile(filename: _options.InputFileName);
-
-            // Ensure valid url string structure
-            var cleanlinks = links.Select(link => link)
-                .Where(predicate: SpyderHelpers.IsValidUrl);
-
-            // Create scraping tasks
-            var tasks = cleanlinks.Select(selector: GetPageSourceAndParseForLinksAsync);
-
-            // Process all the tasks with throttling
-            await ProcessTasksAsync(tasks: tasks);
-            Console.WriteLine(value: "Finished processing input file links");
-            _output.OnLibraryShutdown();
-        }
-
-
-
-
-
-    /// <summary>
-    ///     Search for tag identified in Spyder Options
-    /// </summary>
-    /// <param name="url"></param>
-    async Task ISpyderWeb.ScrapePageForHtmlTagAsync(string url)
-        {
-            try
+        /// <summary>
+        /// </summary>
+        /// <param name="options"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public SpyderWeb(SpyderOptions options, IndexCacheService cache)
             {
-                HtmlDocument doc = new();
-                var htmlDoc = await _cacheControl.GetAndSetContentFromCacheAsync(address: url).ConfigureAwait(false);
-                doc.LoadHtml(html: htmlDoc);
-                if (HtmlParser.SearchPageForTagName(htmlDocument: doc, tag: _options.HtmlTagToSearchFor))
-                {
-                    _output.CapturedVideoLinks.Add(url: url);
-                }
+                ArgumentNullException.ThrowIfNull(options);
+                _logger = SpyderControlService.LoggerFactory.CreateLogger<SpyderWeb>();
+                _options = options;
+                _logger.LogDebug("SpyderWeb Initialized");
+                _semaphore = new SemaphoreSlim(5, 5);
+                _cacheControl = cache;
             }
-            catch (Exception)
+
+
+
+
+
+        #region Methods
+
+        /// <summary>
+        ///     Generic method for processing tasks with throttling
+        /// </summary>
+        /// <param name="tasks"></param>
+        public async Task ProcessTasksAsync(IEnumerable<Task> tasks)
             {
-                _logger.SpyderWebException($"Unknown error was during crawl of a page {url}");
-                // Log and continue Failed tasks won't hang up the flow. Possible retry?            
+                foreach (var task in tasks)
+                    {
+                        await _semaphore.WaitAsync().ConfigureAwait(false);
+                        await task.ContinueWith(
+                            t =>
+                                {
+                                    // Always release the semaphore 
+                                    // regardless of the task result.
+                                    _semaphore.Release();
+                                }).ConfigureAwait(false);
+
+                        await task.ConfigureAwait(false);
+                    }
             }
-        }
 
 
 
 
 
-    /// <summary>
-    ///     Main spyder method starts crawling the given link according to options set
-    /// </summary>
-    /// <param name="startingLink"></param>
-    async Task ISpyderWeb.StartSpyderAsync(string startingLink)
-        {
-            _options.StartingUrl = startingLink;
-            try
+        /// <summary>
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="SpyderOptionsException"></exception>
+        public Task StartScrapingInputFileAsync()
             {
-                ScrapingTargets.Add(url: startingLink);
-                await ExploreWebPagesAsync();
-                _logger.GeneralSpyderMessage(message: "Scraping Complete");
-            }
-            catch (Exception)
-            {
-                _logger.SpyderWebException(message: "Unhandled exception during scraping of a webpage");
-            }
-            finally
-            {
-                _output.OnLibraryShutdown();
-            }
-        }
+                if ((_options.CrawlInputFile && string.IsNullOrWhiteSpace(_options.InputFileName)) ||
+                    !File.Exists(_options.InputFileName))
+                    {
+                        throw new SpyderOptionsException("Check settings and try again.");
+                    }
+
+                var links = SpyderHelpers.LoadLinksFromFile(_options.InputFileName);
+                if (links is null)
+                    {
+                        _logger.GeneralSpyderMessage("No links found in input file. check your file and try again");
+                        return Task.CompletedTask;
+                    }
 
 
+                var urls = links.Select(link => link.Key);
+                try
+                    {
+                        var tasks = urls.Select(StartSpyderAsync);
+                        Task.WaitAll(tasks.ToArray());
+                    }
+                catch (Exception e)
+                    {
+                        _logger.SpyderWebException("General exception, crawling aborted.");
+                    }
 
-
-
-    /// <summary>
-    ///     Gets links from local cache or the web and populates newlinks
-    ///     Links are filtered according to options set in SpyderOptions
-    /// </summary>
-    /// <param name="link"></param>
-    internal async Task GetPageSourceAndParseForLinksAsync(string link)
-        {
-            HtmlDocument htmlDoc = new();
-            try
-            {
-                var pageSource = await _cacheControl.GetAndSetContentFromCacheAsync(link).ConfigureAwait(false);
-                if (!string.IsNullOrEmpty(value: pageSource))
-                {
-                    htmlDoc.LoadHtml(html: pageSource);
-                }
-
-                var links = HtmlParser.GetHrefLinksFromDocument(doc: htmlDoc);
-                if (links is { Count: > 0 })
-                {
-                    //Filter out links according to SpyderOptions
-                    var filteredlinks = SpyderHelpers.FilterScrapedCollection(
-                        collection: links, spyderOptions: _options);
-
-                    //Add clean links to our global collection for next round          
-                    NewlyScrapedUrls.AddRange(filteredlinks);
-                    //Save Index
-                }
-            }
-            catch (TaskCanceledException tce)
-            {
-                _logger.SpyderWebException(message: tce.Message);
-            }
-            catch (Exception)
-            {
-                // Log error and Continue to next url
-                _logger.SpyderWebException(message: "Unknown error occured during link filtering");
-            }
-        }
-
-
-
-
-
-    /// <summary>
-    /// </summary>
-    Task StartScrapingInputFileAsync()
-        {
-            var links = SpyderHelpers.LoadLinksFromFile(filename: _options.InputFileName);
-            if (links is null)
-            {
-                _logger.GeneralSpyderMessage(message: "No links found in input file. check your file and try again");
                 return Task.CompletedTask;
             }
 
-            //LINQ
-            var urls = links.Select(link => link.Key);
-            try
+
+
+
+
+        /// <summary>
+        ///     Main spyder method starts crawling the given link according to options set
+        /// </summary>
+        /// <param name="startingLink"></param>
+        public async Task StartSpyderAsync(string startingLink)
             {
-                //   var tasks = urls.Select(selector: StartSpyderAsync);
-                // Task.WaitAll(tasks.ToArray());
-            }
-            catch (Exception)
-            {
-                _logger.SpyderWebException(message: "General exception, crawling aborted.");
-            }
-            finally
-            {
-                _output.OnLibraryShutdown();
-            }
-
-            return Task.CompletedTask;
-        }
-
-
-
-
-
-    /// <summary>
-    /// </summary>
-    private async Task ExploreWebPagesAsync()
-        {
-            var depthLevel = 0;
-            while (ScrapingTargets.Any() && depthLevel < _options.ScrapeDepthLevel)
-            {
-                await ScrapeCurrentDepthLevel();
-            }
-        }
-
-
-
-
-
-    /// <summary>
-    ///     Generic method for processing tasks with throttling
-    /// </summary>
-    /// <param name="tasks"></param>
-    public async Task ProcessTasksAsync(IEnumerable<Task> tasks)
-        {
-            foreach (var task in tasks)
-            {
-                await _semaphore.WaitAsync();
-                await task.ContinueWith(
-                    t =>
+                _logger.LogTrace("Crawler loading up starting url");
+                try
                     {
-                        // Always release the semaphore 
-                        // regardless of the task result.
-                        _semaphore.Release();
-                    });
+                        var sw = new Stopwatch();
+                        sw.Start();
 
-                await task;
+                        // Add initial url (level 0)
+                        ScrapingTargets.Add(startingLink);
+                        _logger.LogDebug("Engaging crawler for seed url: {0}", startingLink);
+                        await EngagePageCrawlerAsync(CancellationToken.None).ConfigureAwait(false);
+                        sw.Stop();
+                        _logger.LogTrace("Finished crawling tasks.");
+                        _logger.GeneralSpyderMessage("Scraping Complete");
+                        Console.WriteLine($"Links Captured: {_linksCapturedThisSession}");
+                        Console.WriteLine($"Links Crawled:  {_urlsProcessedThisSession}");
+                        Console.WriteLine($"Html Tag Search hits  {_HtmlTagHits}");
+                        Console.WriteLine($"Cache Hits this session: {IndexCacheService.CacheHits}");
+                        Console.WriteLine($"Cache Misses this session: {IndexCacheService.CacheMisses}");
+                        Console.WriteLine($"Elapsed Time: {sw.Elapsed.ToString()}");
+                    }
+                catch (Exception)
+                    {
+                        _logger.SpyderWebException("Unhandled exception during scraping of a webpage");
+                    }
             }
-        }
+
+        #endregion
 
 
 
 
+        #region Methods
 
-    private async Task ScrapeAndLog(string link)
-        {
-            ArgumentNullException.ThrowIfNull(argument: link);
-            await GetPageSourceAndParseForLinksAsync(link: link);
-        }
-
-
-
-
-
-    private async Task ScrapeCurrentDepthLevel()
-        {
-            var scrapeTasks =
-                ScrapingTargets.Select((link, index) => ScrapeAndLog(link: link.Key));
-
-            await Task.WhenAll(tasks: scrapeTasks);
-            _cacheControl.SaveCacheIndex();
-            //Link shuffle for next level
-            ScrapingTargets.Clear();
-            // Add new scraped links to looping collection
-            ScrapingTargets.AddRange(itemsToAdd: NewlyScrapedUrls);
-            // Add newly scraped links to output collection
-            _output.UrlsScrapedThisSession.AddRange(itemsToAdd: NewlyScrapedUrls);
-            NewlyScrapedUrls.Clear();
-        }
-
-
-
-
-
-    /// <summary>
-    ///     Method gets the page source and parses it for video lnks
-    /// </summary>
-    /// <param name="url"></param>
-    public async Task ScrapePageForVideoLinksAsync(Uri url)
-        {
-            await _semaphore.WaitAsync();
-            try
+        private ConcurrentScrapedUrlCollection ParsePageContentForLinks(PageContent pageContent)
             {
-                //Method gets page from cache or from the web.
-                // This should never be null
-                var strdoc = await _cacheControl.GetAndSetContentFromCacheAsync(address: url.AbsoluteUri);
-                Debug.Assert(!string.IsNullOrEmpty(value: strdoc));
+                ArgumentNullException.ThrowIfNull(pageContent);
+
                 var doc = new HtmlDocument();
-                doc.LoadHtml(html: strdoc);
-                var videoLinks = HtmlParser.GetVideoLinksFromDocument(doc: doc);
-                _output.CapturedVideoLinks.AddArray(array: videoLinks);
-                _output.OnLibraryShutdown();
+                doc.LoadHtml(pageContent.Content);
+                if (_options.EnableTagSearch && !string.IsNullOrWhiteSpace(_options.HtmlTagToSearchFor))
+                    {
+                        _backgroundTasks.Add(SearchDocForHtmlTagAsync(doc, pageContent.Url));
+                    }
+
+                var filteredlinks = SpyderHelpers.ClassifyScrapedUrls(
+                    HtmlParser.GetHrefLinksFromDocument(doc)!, _options);
+
+                _linksCapturedThisSession += filteredlinks.Count;
+                return filteredlinks;
             }
-            finally
+
+
+
+
+
+        /// <summary>
+        ///     Control loop for the depth of site scrapes
+        /// </summary>
+        /// <param name="token">CancellationToken to abort operations</param>
+        private async Task EngagePageCrawlerAsync(CancellationToken token)
             {
-                _semaphore.Release();
+                token.ThrowIfCancellationRequested();
+                _logger.LogDebug("Engaging page crawler, starting first level");
+                var depthLevel = 0;
+                while (ScrapingTargets.Any() && depthLevel < _options.ScrapeDepthLevel)
+                    {
+                        _logger.LogDebug(
+                            "Now crawling level {0} count of {1} links", depthLevel, ScrapingTargets.Count);
+
+                        await ScrapeCurrentDepthLevel(token).ConfigureAwait(false);
+
+                        _logger.LogTrace("Saving cache index");
+                        _cacheControl.SaveCacheIndex();
+                        depthLevel++;
+                        token.ThrowIfCancellationRequested();
+                    }
+
+                _logger.LogTrace("Crawler shutting down");
             }
-        }
-}
+
+
+
+
+
+        private async Task ScrapeAndLog(string link)
+            {
+                _urlsProcessedThisSession++;
+                ArgumentNullException.ThrowIfNull(link);
+
+                var pageContent = await _cacheControl.GetAndSetContentFromCacheAsync(link).ConfigureAwait(false);
+
+                NewlyScrapedUrls.AddRange(ParsePageContentForLinks(pageContent));
+            }
+
+
+
+
+
+        /// <summary>
+        ///     creates a list of task to perform for each target in the ScrapingTargets collection.
+        /// </summary>
+        private async Task ScrapeCurrentDepthLevel(CancellationToken token)
+            {
+                token.ThrowIfCancellationRequested();
+
+                await ProcessTasksAsync(ScrapingTargets.Select(link => ScrapeAndLog(link.Key))).ConfigureAwait(false);
+
+                //Clear targets just scanned
+                ScrapingTargets.Clear();
+
+                // Add links just captured to be scraped next
+                ScrapingTargets.AddRange(NewlyScrapedUrls);
+
+                // Add newly scraped links to output collection
+                OutputControl.UrlsScrapedThisSession.AddRange(NewlyScrapedUrls);
+                NewlyScrapedUrls.Clear();
+            }
+
+
+
+
+
+        /// <summary>
+        ///     Search <see cref="HtmlDocument" /> for tag identified in Spyder Options
+        /// </summary>
+        /// <param name="doc"></param>
+        /// <param name="url"></param>
+        private Task SearchDocForHtmlTagAsync(HtmlDocument doc, string url)
+            {
+                try
+                    {
+                        if (HtmlParser.SearchPageForTagName(doc, _options.HtmlTagToSearchFor))
+                            {
+                                OutputControl.CapturedVideoLinks.Add(url);
+                                _HtmlTagHits++;
+                            }
+                    }
+                catch (Exception)
+                    {
+                        _logger.SpyderWebException($"Eerror parsing page document {url}");
+
+                        // Log and continue Failed tasks won't hang up the flow. Possible retry?            
+                    }
+
+                return Task.CompletedTask;
+            }
+
+        #endregion
+    }

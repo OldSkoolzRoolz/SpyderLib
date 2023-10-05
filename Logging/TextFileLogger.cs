@@ -1,18 +1,38 @@
 #region
 
+#endregion
 
+
+
+
+#region
+
+using KC.Apps.SpyderLib.Services;
+
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 #endregion
 
-namespace KC.Apps.Logging ;
 
-    /// <summary>
-    ///     A logger that writes messages to a text file.
-    /// </summary>
-    internal class TextFileLogger : ILogger
+
+
+namespace KC.Apps.Logging;
+
+
+
+
+/// <summary>
+///     A logger that writes messages to a text file.
+/// </summary>
+internal class TextFileLogger : ILogger
     {
-        [ThreadStatic] private static StreamWriter? t_streamWriter;
+        #region Instance variables
+
         private readonly string _name;
+        [ThreadStatic] private static StreamWriter? t_streamWriter;
+
+        #endregion
 
 
 
@@ -21,30 +41,30 @@ namespace KC.Apps.Logging ;
         internal TextFileLogger(
             string name,
             TextFileFormatter formatter,
-            IExternalScopeProvider? scopeProvider,
             TextFileLoggerConfiguration config)
             {
-                if (formatter is null)
-                {
-                    throw new ArgumentNullException(nameof(formatter));
-                }
                 _name = name;
-                this.Formatter = formatter;
+                this.Formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
                 this.Config = config;
-                this.ScopeProvider = scopeProvider;
             }
 
 
 
 
 
-        internal TextFileFormatter Formatter { get; set; }
-        internal IExternalScopeProvider? ScopeProvider { get; set; }
-        internal TextFileLoggerConfiguration Config { get; set; }
+        #region Prop
+
+        private TextFileLoggerConfiguration Config { get; }
+
+
+        private TextFileFormatter Formatter { get; }
+
+        #endregion
 
 
 
 
+        #region Methods
 
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull
             {
@@ -80,35 +100,40 @@ namespace KC.Apps.Logging ;
             Func<TState, Exception?, string> formatter)
             {
                 if (!IsEnabled(logLevel))
-                {
-                    return;
-                }
-                var logName = GetLogFileName();
+                    {
+                        return;
+                    }
+
                 ArgumentNullException.ThrowIfNull(formatter);
-                t_streamWriter = new StreamWriter(logName, true);
-                var logEntry = new LogEntry<TState>(logLevel, _name, eventId, state, exception, formatter);
-                this.Formatter.Write(in logEntry, this.ScopeProvider, t_streamWriter);
+                var logName = GetLogFileName();
+                using (t_streamWriter = new StreamWriter(logName, true))
+                    {
+                        var logEntry = new LogEntry<TState>(logLevel, _name, eventId, state, exception, formatter);
+                        this.Formatter.Write(in logEntry, t_streamWriter);
+                    }
             }
 
+        #endregion
 
 
 
+
+        #region Methods
 
         private string GetLogFileName()
             {
                 var name = "";
-                if (this.Config.UseSingleLogFile)
-                {
-                    name = "FileLogger-UnifiedLog.log";
-                }
-                else
-                {
-                    //create separate Log file for each category 
-                    name = $"FileLogger-{_name}.log";
-                }
-                return name;
+                name = this.Config.UseSingleLogFile
+                    ? "FileLogger-UnifiedLog.log"
+                    :
 
-// TODO: Implement log rotator.
-// Log name to incorporate date/time
+                    //create separate Log file for each category 
+                    $"FileLogger-{_name}.log";
+
+                //return path and filename
+                name = Path.Combine(SpyderControlService.CrawlerOptions.LogPath, name);
+                return name;
             }
+
+        #endregion
     }

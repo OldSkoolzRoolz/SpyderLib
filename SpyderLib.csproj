@@ -29,15 +29,10 @@
     <ItemGroup>
         <PackageReference Include="HtmlAgilityPack" Version="1.11.52"/>
         <PackageReference Include="Jetbrains.Annotations" Version="2023.2.0"/>
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0-beta1.23364.2">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="*">
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0-preview.23420.2">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="*"/>
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="*"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="*"/>
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="*"/>
@@ -45,21 +40,16 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="*"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="*"/>
         <PackageReference Include="Microsoft.Extensions.Options" Version="*"/>
-        <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="7.0.0"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
-        <PackageReference Include="PuppeteerSharp" Version="11.0.5"/>
         <PackageReference Include="System.Runtime.caching" Version="7.0.0"/>
-        <PackageReference Include="TextFileLogging.1.0.0-alpha.nupkg" Version="*-*"/>
+
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="Modules\temp.js"/>
-        <None Remove="Annotations.Rider"/>
+        <Compile Remove="Modules\FileOperations.cs"/>
+        <Compile Remove="Services\CacheControlService.cs"/>
+        <Compile Remove="Services\CacheControlServiceBase.cs"/>
     </ItemGroup>
 
-
-    <ItemGroup>
-        <Compile Remove="Modules\MonitorLoop.cs"/>
-    </ItemGroup>
 
 </Project>

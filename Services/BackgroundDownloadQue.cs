@@ -7,23 +7,30 @@ using Microsoft.Extensions.Logging;
 
 #endregion
 
-//ReSharper disable All
-namespace KC.Apps.Modules;
+
+
+
+namespace KC.Apps.SpyderLib.Modules;
+
 
 
 
 public interface IBackgroundTaskQueue
-{
-    ValueTask QueueBackgroundWorkItemAsync(
-        Func<CancellationToken, ValueTask> workItem);
+    {
+        #region Methods
+
+        ValueTask<Func<CancellationToken, ValueTask>> DequeueAsync(
+            CancellationToken cancellationToken);
 
 
 
 
 
-    ValueTask<Func<CancellationToken, ValueTask>> DequeueAsync(
-        CancellationToken cancellationToken);
-}
+        ValueTask QueueBackgroundWorkItemAsync(
+            Func<CancellationToken, ValueTask> workItem);
+
+        #endregion
+    }
 
 
 
@@ -32,61 +39,69 @@ public interface IBackgroundTaskQueue
 ///     Download que
 /// </summary>
 public sealed class BackgroundDownloadQue : IBackgroundTaskQueue
-{
-    private readonly ILogger<BackgroundDownloadQue> _logger;
+    {
+        #region Instance variables
+
+        private readonly ILogger<BackgroundDownloadQue> _logger;
 
 
-    private Channel<Func<CancellationToken, ValueTask>> _queue;
+        private Channel<Func<CancellationToken, ValueTask>> _queue;
 
-
-
-
-
-    public BackgroundDownloadQue(ILogger<BackgroundDownloadQue> logger)
-        {
-            _logger = logger;
-            SetupQue(150);
-        }
+        #endregion
 
 
 
 
 
-    public async ValueTask QueueBackgroundWorkItemAsync(Func<CancellationToken, ValueTask> workItem)
-        {
-            if (workItem is null)
+        public BackgroundDownloadQue(ILogger<BackgroundDownloadQue> logger)
             {
-                throw new ArgumentNullException(nameof(workItem));
+                _logger = logger;
+                SetupQue(150);
             }
 
-            await _queue.Writer.WriteAsync(workItem);
-        }
 
 
 
 
+        #region Methods
 
-    public async ValueTask<Func<CancellationToken, ValueTask>> DequeueAsync(
-        CancellationToken cancellationToken)
-        {
-            Func<CancellationToken, ValueTask>? workItem =
-                await _queue.Reader.ReadAsync(cancellationToken);
-
-            return workItem;
-        }
-
-
-
-
-
-    [MemberNotNull("_queue")]
-    public void SetupQue(int capacity)
-        {
-            BoundedChannelOptions options = new(capacity)
+        public async ValueTask<Func<CancellationToken, ValueTask>> DequeueAsync(
+            CancellationToken cancellationToken)
             {
-                FullMode = BoundedChannelFullMode.Wait
-            };
+                var workItem =
+                    await _queue.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
 
-            _queue = Channel.CreateBounded<Func<CancellationToken, ValueTask>>(options);
-        }
-}
+                return workItem;
+            }
+
+
+
+
+
+        public async ValueTask QueueBackgroundWorkItemAsync(Func<CancellationToken, ValueTask> workItem)
+            {
+                if (workItem is null)
+                    {
+                        throw new ArgumentNullException(nameof(workItem));
+                    }
+
+                await _queue.Writer.WriteAsync(workItem).ConfigureAwait(false);
+            }
+
+
+
+
+
+        [MemberNotNull("_queue")]
+        public void SetupQue(int capacity)
+            {
+                BoundedChannelOptions options = new(capacity)
+                    {
+                        FullMode = BoundedChannelFullMode.Wait
+                    };
+
+                _queue = Channel.CreateBounded<Func<CancellationToken, ValueTask>>(options);
+            }
+
+        #endregion
+    }
