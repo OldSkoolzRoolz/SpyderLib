@@ -18,6 +18,14 @@ namespace KC.Apps.SpyderLib;
 /// </summary>
 public class SpyderHelpers
 {
+    protected SpyderHelpers()
+        {
+        }
+
+
+
+
+
     /// <summary>
     ///     Method organizes and cleans the links in the collection and filters out links according to SpyderOptions
     /// </summary>
@@ -149,13 +157,13 @@ public class SpyderHelpers
     /// <returns></returns>
     internal static ConcurrentScrapedUrlCollection LoadLinksFromFile(string filename)
         {
-            string path = ""; //= Path.Combine(path1: s_options.OutputFilePath, path2: filename);
+            string path = "";
             ConcurrentScrapedUrlCollection temp = new();
             try
                 {
                     if (!File.Exists(path: path))
                         {
-                            return null;
+                            return temp;
                         }
 
                     var file = File.ReadAllLines(path: path);

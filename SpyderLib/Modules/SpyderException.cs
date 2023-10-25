@@ -7,6 +7,7 @@ using System.Runtime.Serialization;
 
 namespace KC.Apps.SpyderLib.Modules;
 
+[Serializable]
 public class SpyderException : Exception
 {
     /// <summary>Initializes a new instance of the <see cref="T:System.Exception" /> class.</summary>

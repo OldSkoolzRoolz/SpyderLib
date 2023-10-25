@@ -38,8 +38,6 @@ internal class TextFileLogger : ILogger
 
 
 
-    [ThreadStatic] private static StreamWriter _tStreamWriter;
-
     private TextFileLoggerConfiguration Config { get; }
 
 
@@ -93,11 +91,11 @@ internal class TextFileLogger : ILogger
 
             ArgumentNullException.ThrowIfNull(formatter);
             var logName = GetLogFileName();
-            using (_tStreamWriter = new StreamWriter(logName, true))
-                {
-                    var logEntry = new LogEntry<TState>(logLevel, _name, eventId, state, exception, formatter);
-                    this.Formatter.Write(in logEntry, _tStreamWriter);
-                }
+            var _tStreamWriter = new StreamWriter(logName, true);
+
+            var logEntry = new LogEntry<TState>(logLevel, _name, eventId, state, exception, formatter);
+            this.Formatter.Write(in logEntry, _tStreamWriter);
+
         }
 
 
