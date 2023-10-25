@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace KC.Apps.SpyderLib.Modules;
 
-public class FileOperations : IDisposable
+public class FileOperations
 {
     private readonly SpyderOptions _options;
 
@@ -12,18 +12,9 @@ public class FileOperations : IDisposable
 
 
 
-    public FileOperations(SpyderOptions options)
+    internal FileOperations(SpyderOptions options)
         {
             _options = options;
-        }
-
-
-
-
-
-    public void Dispose()
-        {
-            // TODO release managed resources here
         }
 
 
@@ -98,8 +89,8 @@ public class FileOperations : IDisposable
 
 
 
-    public void SafeSerializeAndWrite(string newfile, string originalfile, string backupfile,
-                                      ConcurrentDictionary<string, string> indexCache)
+    private void SafeSerializeAndWrite(string newfile, string originalfile, string backupfile,
+                                       ConcurrentDictionary<string, string> indexCache)
         {
 
             var allObjects = indexCache.ToDictionary(

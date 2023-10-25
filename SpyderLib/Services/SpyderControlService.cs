@@ -25,8 +25,7 @@ namespace KC.Apps.SpyderLib.Services;
 /// </summary>
 public class SpyderControlService : ServiceBase, IHostedService
 {
-    // ReSharper disable once NotAccessedField.Local TODO: Passed in as param
-    private readonly CacheIndexService _cache;
+    // ReSharper disable once NotAccessedField.Local 
     private readonly ILogger _logger;
     private readonly IServiceProvider _provider;
     private readonly IBackgroundDownloadQue _taskQue;
@@ -54,7 +53,6 @@ public class SpyderControlService : ServiceBase, IHostedService
             this.AppLifetime.ApplicationStopping.Register(OnStopping);
 
             _provider = provider;
-            _cache = cache;
             _taskQue = taskQue;
             CrawlOptions = options.Value;
         }
@@ -85,19 +83,7 @@ public class SpyderControlService : ServiceBase, IHostedService
             _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _logger.LogInformation("Spyder Control loaded");
 
-            // Internal console menu launched in background thread to enable the completion of
-            // the method and won't hold up any other service starting.
-            /*      _ = Task.Run(
-                      () =>
-                          {
-                              while (!_cancellationTokenSource.IsCancellationRequested)
-                                  {
-                                #pragma warning disable CS4014 //
-                                      PrintMenu(cancellationToken);
-                                    #pragma warning restore CS4014 //
-                                  }
-                          }, cancellationToken);
-                            */
+
 
             return Task.CompletedTask;
         }
@@ -257,8 +243,8 @@ public class SpyderControlService : ServiceBase, IHostedService
                                 break;
                             case "4":
                                 Console.Write("Enter Url to download from:: ");
-                                //var url = Console.ReadLine();
-                                //  await _spyderWeb.DownloadVideoTagsFromUrl(url).ConfigureAwait(false);
+                                var url = Console.ReadLine();
+                                await _spyderWeb.DownloadVideoTagsFromUrl(url).ConfigureAwait(false);
                                 break;
 
                             case "9":
@@ -311,7 +297,7 @@ public class SpyderControlService : ServiceBase, IHostedService
                                     break;
                                 }
 
-                            newpath += suffix;
+                            newpath = string.Concat(newpath, suffix);
                             suffix++;
                         }
 

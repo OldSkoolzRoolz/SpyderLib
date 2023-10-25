@@ -13,9 +13,9 @@ public class ServiceBase
 {
     public ServiceBase(ILoggerFactory factory, SpyderOptions options, IHostApplicationLifetime lifetime)
         {
-            _factory = factory;
-            _options = options;
-            _appLifetime = lifetime;
+            this.LoggerFactory = factory;
+            this.Options = options;
+            this.AppLifetime = lifetime;
         }
 
 
@@ -30,12 +30,9 @@ public class ServiceBase
 
 
 
-    protected static ILoggerFactory _factory = null!;
-    private static SpyderOptions _options = null!;
-    protected static IHostApplicationLifetime _appLifetime;
+    protected ILoggerFactory LoggerFactory { get; }
 
-    protected ILoggerFactory LoggerFactory => _factory;
-    protected SpyderOptions Options => _options;
+    protected SpyderOptions Options { get; }
 
-    protected IHostApplicationLifetime AppLifetime => _appLifetime;
+    protected IHostApplicationLifetime AppLifetime { get; }
 }

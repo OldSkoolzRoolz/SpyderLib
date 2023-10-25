@@ -15,7 +15,7 @@ namespace KC.Apps.SpyderLib.Modules;
 public class HtmlParser
 {
     /// <summary>Initializes a new instance of the <see cref="T:System.Object" /> class.</summary>
-    public HtmlParser()
+    protected HtmlParser()
         {
         }
 
@@ -23,17 +23,16 @@ public class HtmlParser
 
 
 
+    /// <summary>Initializes a new instance of the <see cref="T:System.Object" /> class.</summary>
     public static ConcurrentScrapedUrlCollection GetHrefLinksFromDocument(HtmlDocument doc)
         {
             if (doc is null)
                 {
-                    return null;
+                    return new();
                 }
 
-            var capturedLinks = new ConcurrentScrapedUrlCollection();
             var nodes = doc.DocumentNode.Descendants(name: "a").ToArray();
-            capturedLinks = SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
-            return capturedLinks;
+            return SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
         }
 
 
@@ -45,11 +44,13 @@ public class HtmlParser
             var doc = CreateHtmlDocument(content);
             if (doc == null)
                 {
-                    throw new ArgumentNullException(nameof(doc));
+                    yield break;
                 }
 
-            var videoNodes = doc.DocumentNode.Descendants("video");
-            return videoNodes;
+            foreach (var node in doc.DocumentNode.Descendants("video"))
+                {
+                    yield return node;
+                }
         }
 
 

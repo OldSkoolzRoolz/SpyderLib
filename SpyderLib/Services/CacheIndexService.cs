@@ -15,7 +15,6 @@ public class CacheIndexService : ServiceBase
 {
     private readonly MyHttpClient _client;
     private readonly ILogger _logger;
-    private FileOperations _fileOperations;
 
 
 
@@ -48,7 +47,7 @@ public class CacheIndexService : ServiceBase
 
 
 
-    public ConcurrentDictionary<string, string> IndexCache { get; private set; }
+    private ConcurrentDictionary<string, string> IndexCache { get; set; }
 
 
 
@@ -56,20 +55,16 @@ public class CacheIndexService : ServiceBase
 
     private ConcurrentDictionary<string, string> LoadCacheIndex()
         {
-            _fileOperations = new FileOperations(this.Options);
+            var fileOperations = new FileOperations(this.Options);
             try
                 {
                     // load the cache asynchronously to avoid blocking the constructor
-                    return _fileOperations.LoadCacheIndexAsync().Result;
+                    return fileOperations.LoadCacheIndexAsync().Result;
                 }
             catch (Exception e)
                 {
                     Console.WriteLine(e);
                     throw;
-                }
-            finally
-                {
-                    _fileOperations.Dispose();
                 }
         }
 
@@ -97,7 +92,8 @@ public class CacheIndexService : ServiceBase
 
     public void SaveCacheIndexPublicWrapper()
         {
-            _fileOperations.SaveCacheIndex(this.Options, this.IndexCache);
+            var fileOperations = new FileOperations(this.Options);
+            fileOperations.SaveCacheIndex(this.Options, this.IndexCache);
         }
 
 
@@ -201,7 +197,7 @@ public class CacheIndexService : ServiceBase
                 {
                     // Load content from web
                     _logger.LogTrace("WEB: Loading page {0}", address);
-                    var content = await _client.GetContentFromWebWithRetryAsync(address);
+                    var content = await _client.GetContentFromWebWithRetryAsync(address).ConfigureAwait(false);
 
                     return await SetContentCacheAsync(content, address).ConfigureAwait(false);
                 }
@@ -234,6 +230,7 @@ public class CacheIndexService : ServiceBase
 
     private async Task<PageContent> SetContentCacheAsync(string content, string address)
         {
+            var fileOperations = new FileOperations(this.Options);
             PageContent resultObj = new(address);
             resultObj.FromCache = false;
             resultObj.Content = content;
@@ -251,8 +248,8 @@ public class CacheIndexService : ServiceBase
                             resultObj.CacheFileName = filename;
 
                             var filesaved = await
-                                _fileOperations.SafeFileWriteAsync(Path.Combine(this.Options.CacheLocation, filename),
-                                                                   resultObj.Content);
+                                fileOperations.SafeFileWriteAsync(Path.Combine(this.Options.CacheLocation, filename),
+                                                                  resultObj.Content).ConfigureAwait(false);
                             if (filesaved)
                                 {
                                     this.IndexCache.TryAdd(address, filename);

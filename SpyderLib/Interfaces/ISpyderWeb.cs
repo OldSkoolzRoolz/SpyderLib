@@ -16,4 +16,9 @@ public interface ISpyderWeb
 
 
     Task StartSpyderAsync(string startingLink, CancellationToken token);
+
+
+
+
+    Task DownloadVideoTagsFromUrl(string url);
 }
