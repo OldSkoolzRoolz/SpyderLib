@@ -15,11 +15,10 @@ namespace KC.Apps.Logging;
 [ProviderAlias("TextFileLogging")]
 public class TextFileLoggerProvider : ILoggerProvider
 {
+    private readonly IOptions<TextFileLoggerConfiguration> _currentConfig;
     private readonly TextFileFormatter _formatter;
     private readonly ConcurrentDictionary<string, TextFileLogger> _loggers = new(StringComparer.OrdinalIgnoreCase);
-    private readonly IDisposable _onChangeToken;
-
-    private TextFileLoggerConfiguration _currentConfig;
+    private bool _disposed;
 
 
 
@@ -29,11 +28,11 @@ public class TextFileLoggerProvider : ILoggerProvider
     ///     Creates an instance of <see cref="TextFileLoggerProvider" />
     /// </summary>
     /// <param name="config"></param>
-    public TextFileLoggerProvider(IOptionsMonitor<TextFileLoggerConfiguration> config)
+    public TextFileLoggerProvider(IOptions<TextFileLoggerConfiguration> config)
         {
-            _currentConfig = config.CurrentValue;
-            _onChangeToken = config.OnChange(updatedConfig => _currentConfig = updatedConfig);
+
             _formatter = new TextFileFormatter(config);
+            _currentConfig = config;
         }
 
 
@@ -42,7 +41,7 @@ public class TextFileLoggerProvider : ILoggerProvider
 
     public TextFileLoggerProvider(TextFileLoggerConfiguration options)
         {
-            _currentConfig = options;
+
             _formatter = new TextFileFormatter(options);
         }
 
@@ -52,8 +51,30 @@ public class TextFileLoggerProvider : ILoggerProvider
 
     public void Dispose()
         {
-            _loggers.Clear();
-            _onChangeToken?.Dispose();
+
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+
+
+
+
+    protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                {
+                    return;
+                }
+
+            if (disposing)
+                {
+                    _loggers.Clear();
+                }
+
+            // Clean up unmanaged resources here if required.
+
+            _disposed = true;
         }
 
 
@@ -73,6 +94,6 @@ public class TextFileLoggerProvider : ILoggerProvider
 
     private TextFileLoggerConfiguration GetCurrentConfig()
         {
-            return _currentConfig;
+            return _currentConfig.Value;
         }
 }

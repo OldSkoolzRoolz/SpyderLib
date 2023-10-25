@@ -44,8 +44,7 @@ public sealed class CustomColorFormatter : ConsoleFormatter, IDisposable
 
     private bool ConsoleColorFormattingEnabled =>
         _formatterOptions.ColorBehavior == LoggerColorBehavior.Enabled ||
-        (_formatterOptions.ColorBehavior == LoggerColorBehavior.Default &&
-         Console.IsOutputRedirected == false);
+        _formatterOptions.ColorBehavior == LoggerColorBehavior.Default;
 
 
 

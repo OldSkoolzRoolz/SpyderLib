@@ -2,8 +2,6 @@
 
 using System.Collections.Concurrent;
 using System.Globalization;
-using System.Reflection;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
@@ -13,7 +11,7 @@ using Microsoft.Extensions.Logging.Console;
 
 namespace KC.Apps.Logging;
 
-public class LogFormatter : ConsoleFormatter, IDisposable
+public class LogFormatter : ConsoleFormatter
 {
     private readonly LogFormatterOptions _formatterOptions;
 
@@ -24,16 +22,6 @@ public class LogFormatter : ConsoleFormatter, IDisposable
     public LogFormatter(LogFormatterOptions options) : base("SpyderFormatter")
         {
             _formatterOptions = options;
-        }
-
-
-
-
-
-    /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
-    public void Dispose()
-        {
-            // TODO release managed resources here
         }
 
 
@@ -74,7 +62,7 @@ public class LogFormatter : ConsoleFormatter, IDisposable
             // If exception exists, include it in the message 
             if (logEntry.Exception != null)
                 {
-                    formattedMessage += Environment.NewLine + PrintException(logEntry.Exception);
+                    formattedMessage += Environment.NewLine + logEntry.Exception;
                 }
 
             // Prepend custom prefix from formatter options, if it exists
@@ -120,31 +108,6 @@ public class LogFormatter : ConsoleFormatter, IDisposable
 
 
     /// <summary>
-    ///     Utility function to convert an exception into printable format, including expanding and formatting any nested
-    ///     sub-expressions.
-    /// </summary>
-    /// <param name="exception">The exception to be printed.</param>
-    /// <returns>
-    ///     Formatted string representation of the exception, including expanding and formatting any nested
-    ///     sub-expressions.
-    /// </returns>
-    internal static string PrintException(Exception exception)
-        {
-            if (exception == null)
-                {
-                    return "";
-                }
-
-            var sb = new StringBuilder();
-            PrintException_Helper(sb, exception, 0);
-            return sb.ToString();
-        }
-
-
-
-
-
-    /// <summary>
     ///     Utility function to convert a <c>DateTime</c> object into printable time format used by the Logger subsystem.
     /// </summary>
     /// <param name="date">The <c>DateTime</c> value to be printed.</param>
@@ -166,69 +129,5 @@ public class LogFormatter : ConsoleFormatter, IDisposable
     internal static void SetExceptionDecoder(Type exceptionType, Func<Exception, string> decoder)
         {
             SExceptionDecoders.TryAdd(exceptionType, decoder);
-        }
-
-
-
-
-
-    private static void PrintException_Helper(StringBuilder sb, Exception exception, int level)
-        {
-            while (true)
-                {
-                    if (exception == null)
-                        {
-                            return;
-                        }
-
-                    var message = SExceptionDecoders.TryGetValue(exception.GetType(), out var decoder)
-                        ? decoder(exception)
-                        : exception.Message;
-
-                    sb.Append($"{Environment.NewLine}Exc level {level}: {exception.GetType()}: {message}");
-                    if (exception.StackTrace is { } stack)
-                        {
-                            sb.Append($"{Environment.NewLine}{stack}");
-                        }
-
-                    if (exception is ReflectionTypeLoadException typeLoadException)
-                        {
-                            var loaderExceptions = typeLoadException.LoaderExceptions;
-                            if (loaderExceptions.Length == 0)
-                                {
-                                    sb.Append("No LoaderExceptions found");
-                                }
-                            else
-                                {
-                                    foreach (var inner in loaderExceptions)
-
-                                        // call recursively on all loader exceptions. Same level for all.
-                                        {
-                                            PrintException_Helper(sb, inner, level + 1);
-                                        }
-                                }
-                        }
-                    else if (exception.InnerException != null)
-                        {
-                            if (exception is AggregateException { InnerExceptions: { Count: > 1 } innerExceptions })
-                                {
-                                    foreach (var inner in innerExceptions)
-
-                                        // call recursively on all inner exceptions. Same level for all.
-                                        {
-                                            PrintException_Helper(sb, inner, level + 1);
-                                        }
-                                }
-                            else
-                                {
-                                    // call recursively on a single inner exception.
-                                    exception = exception.InnerException;
-                                    level = level + 1;
-                                    continue;
-                                }
-                        }
-
-                    break;
-                }
         }
 }

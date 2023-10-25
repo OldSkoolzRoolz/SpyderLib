@@ -143,36 +143,4 @@ public static class SpyderLibExtensions
                         }
                 }
         }
-
-
-
-
-
-/*
-
-        private static ILoggerFactory GetFactory(SpyderOptions options)
-            {
-                var ffactory = Microsoft.Extensions.Logging.LoggerFactory.Create(
-                    configg =>
-                        {
-                            configg.ClearProviders();
-                            configg.AddConsole();
-                            configg.AddSpyderLogging(
-                                config =>
-                                    {
-                                        config.EntryPrefix = "~~<";
-                                        config.EntrySuffix = ">~~";
-                                        config.UseUtcTime = false;
-                                        config.UseSingleLogFile = true;
-                                        config.TimestampFormat = "MM/dd hh:mm";
-                                    });
-
-                            configg.SetMinimumLevel(LogLevel.Trace);
-                            configg.AddFilter("Microsoft", LogLevel.Information);
-                        });
-
-                return ffactory;
-            }
-
-*/
 }

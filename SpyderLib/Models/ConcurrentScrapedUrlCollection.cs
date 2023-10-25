@@ -24,6 +24,12 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
 
 
 
+    const byte DefaultValue = 0;
+
+
+
+
+
     internal void AddArray(string[] array)
         {
             for (var i = 0; i < array.Length; i++)
@@ -44,10 +50,19 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
         {
             foreach (var item in array)
                 {
-                    if (IsValidUrl(url: item.Key))
-                        {
-                            TryAdd(key: item.Key, 0);
-                        }
+                    TryAddIfKeyIsValidUrl(item);
+                }
+        }
+
+
+
+
+
+    private void TryAddIfKeyIsValidUrl(KeyValuePair<string, byte> item)
+        {
+            if (IsValidUrl(url: item.Key))
+                {
+                    TryAdd(key: item.Key, DefaultValue);
                 }
         }
 

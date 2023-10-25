@@ -37,7 +37,7 @@ public static class Log
         [CallerFilePath]   string path       = "")
         {
             var b42 = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.ForegroundColor = ConsoleColor.DarkRed;
             Console.WriteLine("{0}::{1} : {3}. Line #{2}", message, memberName, line, path);
             Console.ForegroundColor = b42;
         }
@@ -100,7 +100,7 @@ public static class Log
         [CallerFilePath]   string path       = "")
         {
             var b42 = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.ForegroundColor = ConsoleColor.Blue;
             Console.WriteLine("{0}::{1} : {3}. Line #{2}", message, memberName, line, path);
             Console.ForegroundColor = b42;
         }
@@ -116,7 +116,7 @@ public static class Log
         [CallerFilePath]   string path       = "")
         {
             var b42 = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.ForegroundColor = ConsoleColor.Magenta;
             Console.WriteLine("{0}::{1} : {3}. Line #{2}", message, memberName, line, path);
             Console.ForegroundColor = b42;
         }
