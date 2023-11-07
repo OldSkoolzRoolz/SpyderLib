@@ -10,15 +10,6 @@ namespace KC.Apps.SpyderLib.Modules;
 [Serializable]
 public class SpyderException : Exception
 {
-    /// <summary>Initializes a new instance of the <see cref="T:System.Exception" /> class.</summary>
-    public SpyderException()
-        {
-        }
-
-
-
-
-
     /// <summary>Initializes a new instance of the <see cref="T:System.Exception" /> class with serialized data.</summary>
     /// <param name="info">
     ///     The <see cref="T:System.Runtime.Serialization.SerializationInfo" /> that holds the serialized object
@@ -35,7 +26,20 @@ public class SpyderException : Exception
     ///     The class name is <see langword="null" /> or
     ///     <see cref="P:System.Exception.HResult" /> is zero (0).
     /// </exception>
-    protected SpyderException(SerializationInfo info, StreamingContext context) : base(info, context)
+    protected SpyderException(
+        SerializationInfo info,
+        StreamingContext  context) : base(info, context)
+        {
+        }
+
+
+
+
+
+    #region Public Methods
+
+    /// <summary>Initializes a new instance of the <see cref="T:System.Exception" /> class.</summary>
+    public SpyderException()
         {
         }
 
@@ -45,7 +49,8 @@ public class SpyderException : Exception
 
     /// <summary>Initializes a new instance of the <see cref="T:System.Exception" /> class with a specified error message.</summary>
     /// <param name="message">The message that describes the error.</param>
-    public SpyderException(string message) : base(message)
+    public SpyderException(
+        string message) : base(message)
         {
         }
 
@@ -62,7 +67,11 @@ public class SpyderException : Exception
     ///     The exception that is the cause of the current exception, or a null reference (
     ///     <see langword="Nothing" /> in Visual Basic) if no inner exception is specified.
     /// </param>
-    public SpyderException(string message, Exception innerException) : base(message, innerException)
+    public SpyderException(
+        string    message,
+        Exception innerException) : base(message, innerException)
         {
         }
+
+    #endregion
 }

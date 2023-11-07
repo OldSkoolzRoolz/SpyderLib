@@ -1,53 +1,39 @@
 #region
 
 using KC.Apps.Logging;
+using KC.Apps.Properties;
+using KC.Apps.SpyderLib.Control;
 using KC.Apps.SpyderLib.Interfaces;
 using KC.Apps.SpyderLib.Services;
+
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 #endregion
 
 
 namespace KC.Apps.SpyderLib.Modules;
 
-/// <summary>
-/// </summary>
+
 public class SpyderWeb : ServiceBase, ISpyderWeb
 {
+    #region Other Fields
+
+    private readonly IWebCrawlerController _crawlerController;
+
     private readonly ILogger _logger;
+    private readonly SpyderOptions _options;
+    private readonly CancellationToken _cancellationToken = new();
 
+    #endregion
 
-    private readonly IServiceProvider _provider;
-    private readonly IBackgroundDownloadQue _taskQue;
+    #region Interface Members
 
-
-
-
-
-    /// <summary>
-    /// </summary>
-    /// <param name="taskQue"></param>
-    /// <param name="factory"></param>
-    /// <param name="provider"></param>
-    public SpyderWeb(IBackgroundDownloadQue taskQue, ILoggerFactory factory, IServiceProvider provider)
+   
+    public Task StartScrapingInputFileAsync(CancellationToken token)
         {
-            _provider = provider;
-            _taskQue = taskQue;
-            _logger = factory.CreateLogger(nameof(SpyderWeb));
-            _logger.LogDebug("SpyderWeb Initialized");
 
-        }
-
-
-
-
-
-    /// <summary>
-    /// </summary>
-    /// <returns></returns>
-    /// <exception cref="SpyderOptionsException"></exception>
-    public Task StartScrapingInputFileAsync()
-        {
+            token.ThrowIfCancellationRequested();
             if ((this.Options.CrawlInputFile && string.IsNullOrWhiteSpace(this.Options.InputFileName)) ||
                 !File.Exists(this.Options.InputFileName))
                 {
@@ -58,6 +44,8 @@ public class SpyderWeb : ServiceBase, ISpyderWeb
             if (links is null)
                 {
                     _logger.GeneralSpyderMessage("No links found in input file. check your file and try again");
+
+
                     return Task.CompletedTask;
                 }
 
@@ -68,15 +56,16 @@ public class SpyderWeb : ServiceBase, ISpyderWeb
                     List<Task> tasks = new();
                     foreach (var url in urls)
                         {
-                            tasks.Add(StartSpyderAsync(url, CancellationToken.None));
+                            tasks.Add(StartSpyderAsync(url, _cancellationToken));
                         }
 
-                    Task.WaitAll(tasks.ToArray());
+                    Task.WaitAll(tasks.ToArray(), _cancellationToken);
                 }
             catch (Exception e)
                 {
                     _logger.SpyderWebException($"General exception, crawling aborted. {e.Message}");
                 }
+
 
             return Task.CompletedTask;
         }
@@ -90,7 +79,9 @@ public class SpyderWeb : ServiceBase, ISpyderWeb
     /// </summary>
     /// <param name="startingLink"></param>
     /// <param name="token"></param>
-    public async Task StartSpyderAsync(string startingLink, CancellationToken token)
+    public async Task StartSpyderAsync(
+        string            startingLink,
+        CancellationToken token)
         {
             _logger.LogTrace("Crawler loading up starting url");
             try
@@ -113,14 +104,46 @@ public class SpyderWeb : ServiceBase, ISpyderWeb
 
 
 
-    public async Task DownloadVideoTagsFromUrl(string url)
+    public Task DownloadVideoTagsFromUrl(
+        string url)
         {
+            return Task.CompletedTask;
 
+        }
+
+    #endregion
+
+    #region Public Methods
+
+    /// <summary>
+    ///     Constructs an instance of the <see cref="SpyderWeb" /> class.
+    /// </summary>
+    /// <param name="spyderOptions">An instance that provides spyder options configurations.</param>
+    /// <param name="logger">An instance of a logger configured for the `SpyderWeb` class.</param>
+    /// <param name="crawlerController">An instance that provides web crawling functionalities.</param>
+    public SpyderWeb(
+        IOptions<SpyderOptions> spyderOptions,
+        ILogger<SpyderWeb>      logger,
+        IWebCrawlerController   crawlerController)
+
+        {
+            StartupComplete = new TaskCompletionSource<bool>();
+            _options = spyderOptions.Value;
+            _crawlerController = crawlerController;
+            _logger = logger;
+            _logger.LogDebug("SpyderWeb Initialized");
+            StartupComplete.TrySetResult(true);
         }
 
 
 
 
+
+    public static TaskCompletionSource<bool> StartupComplete { get; set; } = new();
+
+    #endregion
+
+    #region Private Methods
 
     //#####################################
 
@@ -137,31 +160,26 @@ public class SpyderWeb : ServiceBase, ISpyderWeb
     /// </summary>
     /// <param name="token">CancellationToken to abort operations</param>
     /// <returns>Task</returns>
-    private async Task EngagePageCrawlerAsync(CancellationToken token)
+    private async Task EngagePageCrawlerAsync(
+        CancellationToken token)
         {
-            var _pageCrawler = new PageCrawler(_taskQue, this.LoggerFactory.CreateLogger<PageCrawler>());
-            _pageCrawler.InitializeCrawler(this.Options, token, _provider);
+token.ThrowIfCancellationRequested();
 
             _logger.LogDebug("Engaging page crawler, starting first level");
 
             try
                 {
-                    await _pageCrawler.BeginCrawlingAsync(token).ConfigureAwait(false);
+                    await _crawlerController.StartCrawlingAsync(_options.LinkDepthLimit,token).ConfigureAwait(false);
+
                 }
-            catch (Exception e)
+            catch (Exception )
                 {
                     // This should not execute. Error handling should be internal to the crawler
                     _logger.LogError("A critical error was not handled properly. Details in next log entry.");
-                    Log.AndContinue(e);
 
                 }
-            finally
-                {
-                    _pageCrawler = null;
-                }
-
-            _logger.LogTrace("Crawler shutting down");
-
 
         }
+
+    #endregion
 }

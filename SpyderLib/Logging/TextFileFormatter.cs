@@ -1,10 +1,5 @@
 #region
 
-#endregion
-
-
-#region
-
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
@@ -17,13 +12,16 @@ namespace KC.Apps.Logging;
 /// <inheritdoc cref="ConsoleFormatter" />
 internal class TextFileFormatter
 {
+    #region Other Fields
+
     private readonly TextFileLoggerConfiguration _formatterOptions;
 
+    #endregion
 
+    #region Public Methods
 
-
-
-    public TextFileFormatter(IOptions<TextFileLoggerConfiguration> options)
+    public TextFileFormatter(
+        IOptions<TextFileLoggerConfiguration> options)
         {
             _formatterOptions = options.Value;
         }
@@ -32,7 +30,8 @@ internal class TextFileFormatter
 
 
 
-    public TextFileFormatter(TextFileLoggerConfiguration config)
+    public TextFileFormatter(
+        TextFileLoggerConfiguration config)
         {
             _formatterOptions = config;
         }
@@ -54,26 +53,20 @@ internal class TextFileFormatter
         StreamWriter        textWriter)
         {
             string stamp;
-            if (_formatterOptions.UseUtcTime)
-                {
-                    stamp = DateTimeOffset.UtcNow.ToString(_formatterOptions.TimestampFormat);
-                }
-            else
-                {
-                    stamp = DateTimeOffset.Now.ToString(_formatterOptions.TimestampFormat);
-                }
-
-            var message =
-                logEntry.Formatter(
-                                   logEntry.State, logEntry.Exception);
-
-            if (string.IsNullOrWhiteSpace(message))
-                {
-                    return;
-                }
-
             try
                 {
+                    stamp = _formatterOptions.UseUtcTime ? DateTimeOffset.UtcNow.ToString(_formatterOptions.TimestampFormat) : DateTimeOffset.Now.ToString(_formatterOptions.TimestampFormat);
+
+                    var message =
+                        logEntry.Formatter(
+                                           logEntry.State, logEntry.Exception);
+
+                    if (string.IsNullOrWhiteSpace(message))
+                        {
+                            return;
+                        }
+
+
                     // Using the new interpolated string format we can simplify the method and easier to catch formatting issues
                     //  Is there any performance hits associated with this technique?
                     var formattedlog =
@@ -83,19 +76,20 @@ internal class TextFileFormatter
                     // text log files typically are single line entries so multi-line is not an option in this logger
                     // only Writeline method is used.
                     textWriter.WriteLine(formattedlog);
+                    textWriter.Flush();
                 }
             catch (Exception e)
                 {
                     //Make sure there is a console
-                    Console.WriteLine(e);
 
-                    // pointless to log an error about a broken logger with our broken logger...... Paradox? Conundrum? Migraine!
+                    if (Console.IsOutputRedirected == false)
+                        {
+                            Console.WriteLine(e.Message);
+                        }
+
+
                 }
         }
 
-
-
-
-
-    /// <summary>Allows an object to try to free resources and perform other cleanup operations before it is reclaimed by garbage collection.</summary>
+    #endregion
 }

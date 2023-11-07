@@ -1,10 +1,12 @@
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
 
+
 #region
 
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+
 using Microsoft.Extensions.Logging;
 
 #endregion
@@ -16,6 +18,19 @@ namespace KC.Apps.Properties;
 /// </summary>
 public class SpyderOptions
 {
+    #region Public Enums
+
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    public enum HtmlTagList
+    {
+        video,
+        img
+    }
+
+    #endregion
+
+    #region Public Methods
+
     /// <summary>
     /// </summary>
     [Required]
@@ -37,12 +52,18 @@ public class SpyderOptions
     /// <summary>
     /// </summary>
     [Required]
-    public bool CaptureExternalLinks { get; init; }
+    public bool KeepExternalLinks { get; init; }
 
     /// <summary>
     /// </summary>
     [Required]
-    public bool CaptureSeedLinks { get; init; }
+    public bool KeepBaseLinks { get; init; }
+
+
+    /// <summary>
+    ///     Concurrent limit on number of active crawlers
+    /// </summary>
+    public int ConcurrentCrawlingTasks { get; set; } = 5;
 
     /// <summary>
     ///     Option to instruct Spyder to crawl each link in the input file
@@ -58,10 +79,10 @@ public class SpyderOptions
     public bool EnableTagSearch { get; init; }
 
     /// <summary>
-    ///     Crawler will add links from hosts other than seedurl to active crawler
+    ///     Crawler will add links from hosts other than seed url to active crawler
     /// </summary>
     [Required]
-    public bool FollowExternalLinks { get; init; }
+    public bool FollowExternalLinks { get; init; } = false;
 
 
     [Required] [AllowNull] public string HtmlTagToSearchFor { get; init; }
@@ -71,6 +92,7 @@ public class SpyderOptions
     [Required]
     [AllowNull]
     public string InputFileName { get; init; }
+
 
     /// <summary>
     /// </summary>
@@ -102,18 +124,24 @@ public class SpyderOptions
     [Required] public int QueueCapacity { get; set; } = 100;
 
     /// <summary>
+    /// The depth that links will be followed
     /// </summary>
     [Required]
-    public int ScrapeDepthLevel { get; set; } = 2;
+    public int LinkDepthLimit { get; set; } = 2;
 
 
     /// <summary>
+    /// The Base url or seed url, Depth Level 0
     /// </summary>
     [Url]
     [Required]
     public string StartingUrl { get; set; } = string.Empty;
 
     /// <summary>
+    /// Should we save a copy of the page returned local
+    /// It is highly recommended to use a cache when using spyder
+    /// in any development or testing environment. In a set and forget
+    /// environment it will not improve the performance.
     /// </summary>
     [Required]
     public bool UseLocalCache { get; set; } = false;
@@ -122,44 +150,5 @@ public class SpyderOptions
 
 
 
-    /// <summary>
-    /// </summary>
-    /// <returns></returns>
-    public List<string> ValidateInitialOptions()
-        {
-            var errors = new List<string>();
-            if (string.IsNullOrEmpty(this.LogPath) || string.IsNullOrEmpty(this.OutputFilePath))
-                {
-                    errors.Add("Check LogPath and OutputPath ");
-                }
-
-            if (string.IsNullOrEmpty(this.CapturedSeedUrlsFilename) && this.CaptureSeedLinks)
-                {
-                    errors.Add("Captured seed filename must not be null when CaptureSeeds is enabled..");
-                }
-
-            if (string.IsNullOrEmpty(this.CapturedExternalLinksFilename) && this.CaptureExternalLinks)
-                {
-                    errors.Add(
-                               "Captured External filename must not be null when Capture External links is enabled..");
-                }
-
-            if (this.ScrapeDepthLevel <= 1)
-                {
-                    errors.Add("Your depth level is low, verify your setting is correct");
-                }
-
-            return errors;
-        }
-
-
-
-
-
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
-    public enum HtmlTagList
-    {
-        video,
-        img
-    }
+    #endregion
 }

@@ -9,6 +9,8 @@ namespace KC.Apps.Logging;
 
 public static class ConsoleLoggerExtensions
 {
+    #region Public Methods
+
     public static ILoggingBuilder AddCustomFormatter(
         this ILoggingBuilder  builder,
         Action<CustomOptions> configure)
@@ -16,4 +18,6 @@ public static class ConsoleLoggerExtensions
             return builder.AddConsole(options => options.FormatterName = "customName")
                           .AddConsoleFormatter<CustomFormatter, CustomOptions>(configure);
         }
+
+    #endregion
 }

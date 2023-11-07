@@ -9,9 +9,12 @@ namespace KC.Apps.SpyderLib.Interfaces;
 
 public interface ISpyderControl : IHostedService
 {
+    #region Interface Members
+
     /// <summary>Triggered when the application host is ready to start the service.</summary>
     /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
-    Task IHostedService.StartAsync(CancellationToken cancellationToken)
+    Task IHostedService.StartAsync(
+        CancellationToken cancellationToken)
         {
             return StartAsync(cancellationToken);
         }
@@ -22,14 +25,15 @@ public interface ISpyderControl : IHostedService
 
     /// <summary>Triggered when the application host is performing a graceful shutdown.</summary>
     /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
-    Task IHostedService.StopAsync(CancellationToken cancellationToken)
+    Task IHostedService.StopAsync(
+        CancellationToken cancellationToken)
         {
             return StopAsync(cancellationToken);
         }
 
+    #endregion
 
-
-
+    #region Public Methods
 
     /// <summary>
     ///     Instructs Spyder to crawl each link in the input file
@@ -45,7 +49,8 @@ public interface ISpyderControl : IHostedService
     ///     Set the depth and the starting url and crawl the web
     /// </summary>
     /// <param name="seedUrl"></param>
-    Task BeginSpyder(string seedUrl);
+    Task BeginSpyder(
+        string seedUrl);
 
 
 
@@ -65,4 +70,6 @@ public interface ISpyderControl : IHostedService
     /// </summary>
     /// <returns>Task</returns>
     Task StartCrawlingAsync();
+
+    #endregion
 }

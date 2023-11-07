@@ -2,7 +2,10 @@ namespace KC.Apps.SpyderLib.Models;
 
 public record struct PageContent
 {
-    public PageContent(string url) : this()
+    #region Public Methods
+
+    public PageContent(
+        string url) : this()
         {
             this.Url = url;
             this.CacheFileName = string.Empty;
@@ -20,4 +23,6 @@ public record struct PageContent
 
 
     public string Url { get; init; }
+
+    #endregion
 }

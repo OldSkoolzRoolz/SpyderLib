@@ -1,6 +1,7 @@
 #region
 
 using KC.Apps.SpyderLib.Models;
+
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -11,12 +12,14 @@ namespace KC.Apps.SpyderLib.Services;
 
 public sealed class QueueProcessingService : BackgroundService
 {
+    #region Other Fields
+
     private readonly ILogger<QueueProcessingService> _logger;
     private readonly IBackgroundDownloadQue _taskQueue;
 
+    #endregion
 
-
-
+    #region Public Methods
 
     public QueueProcessingService(
         IBackgroundDownloadQue          taskQueue,
@@ -27,11 +30,12 @@ public sealed class QueueProcessingService : BackgroundService
             _logger = logger;
         }
 
+    #endregion
 
+    #region Private Methods
 
-
-
-    private async Task ProcessTaskQueueAsync(CancellationToken stoppingToken)
+    private async Task ProcessTaskQueueAsync(
+        CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
                 {
@@ -43,7 +47,7 @@ public sealed class QueueProcessingService : BackgroundService
                                     var workItem = await _taskQueue.DequeueAsync(stoppingToken)
                                                                    .ConfigureAwait(false);
 
-                                    await DownloadworkItem(workItem, stoppingToken);
+                                    await DownloadworkItem(workItem, stoppingToken).ConfigureAwait(false);
                                 }
 
                             await Task.Delay(10_000);
@@ -66,15 +70,19 @@ public sealed class QueueProcessingService : BackgroundService
 
 
 
-    private async Task DownloadworkItem(DownloadItem workItem, CancellationToken stoppingToken)
+    private async Task DownloadworkItem(
+        DownloadItem      workItem,
+        CancellationToken stoppingToken)
         {
             stoppingToken.ThrowIfCancellationRequested();
-
+            ArgumentNullException.ThrowIfNull(workItem.Link);
+            _logger.LogDebug($"Attempting to download {workItem.Link}");
             var cli = new HttpClient();
-            using (var fl = new FileStream(workItem.SavePath, FileMode.Create))
+            var path = Path.Combine(workItem.SavePath, Path.GetFileName(workItem.Link));
+            await using (var fl = new FileStream(path, FileMode.Create))
                 {
-                    var strm = await cli.GetStreamAsync(workItem.Link).ConfigureAwait(false);
-                    await strm.CopyToAsync(fl).ConfigureAwait(false);
+                    var stream = await cli.GetStreamAsync(workItem.Link, stoppingToken).ConfigureAwait(false);
+                    await stream.CopyToAsync(fl, stoppingToken).ConfigureAwait(false);
                 }
         }
 
@@ -82,11 +90,17 @@ public sealed class QueueProcessingService : BackgroundService
 
 
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(
+        CancellationToken stoppingToken)
         {
 
 
 
-            return ProcessTaskQueueAsync(stoppingToken);
+             await ProcessTaskQueueAsync(stoppingToken).ConfigureAwait(false);
+
+
+
         }
+
+    #endregion
 }

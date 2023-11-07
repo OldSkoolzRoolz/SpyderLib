@@ -1,10 +1,5 @@
 #region
 
-#endregion
-
-
-#region
-
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -18,7 +13,11 @@ namespace KC.Apps.Logging;
 /// </summary>
 internal class TextFileLogger : ILogger
 {
+    #region Other Fields
+
     private readonly string _name;
+
+    #endregion
 
 
 
@@ -38,20 +37,23 @@ internal class TextFileLogger : ILogger
 
 
 
+    #region Properteez
+
     private TextFileLoggerConfiguration Config { get; }
 
 
     private TextFileFormatter Formatter { get; }
 
+    #endregion
 
-
-
+    #region Interface Members
 
     /// <summary>Begins a logical operation scope.</summary>
     /// <param name="state">The identifier for the scope.</param>
     /// <typeparam name="TState">The type of the state to begin scope for.</typeparam>
     /// <returns>An <see cref="T:System.IDisposable" /> that ends the logical operation scope on dispose.</returns>
-    public IDisposable BeginScope<TState>(TState state) where TState : notnull
+    public IDisposable BeginScope<TState>(
+        TState state) where TState : notnull
         {
             return default;
         }
@@ -60,7 +62,8 @@ internal class TextFileLogger : ILogger
 
 
 
-    public bool IsEnabled(LogLevel logLevel)
+    public bool IsEnabled(
+        LogLevel logLevel)
         {
             return logLevel != LogLevel.None;
         }
@@ -91,16 +94,16 @@ internal class TextFileLogger : ILogger
 
             ArgumentNullException.ThrowIfNull(formatter);
             var logName = GetLogFileName();
-            var _tStreamWriter = new StreamWriter(logName, true);
+            var tStreamWriter = new StreamWriter(logName, true);
 
             var logEntry = new LogEntry<TState>(logLevel, _name, eventId, state, exception, formatter);
-            this.Formatter.Write(in logEntry, _tStreamWriter);
+            this.Formatter.Write(in logEntry, tStreamWriter);
 
         }
 
+    #endregion
 
-
-
+    #region Private Methods
 
     private string GetLogFileName()
         {
@@ -114,6 +117,10 @@ internal class TextFileLogger : ILogger
 
             //return path and filename
             name = Path.Combine(this.Config.LogLocation, name);
+
+
             return name;
         }
+
+    #endregion
 }

@@ -1,8 +1,10 @@
 #region
 
 using HtmlAgilityPack;
-using KC.Apps.Logging;
+
+using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Models;
+
 
 
 // ReSharper disable All
@@ -12,26 +14,26 @@ using KC.Apps.SpyderLib.Models;
 
 namespace KC.Apps.SpyderLib.Modules;
 
-public class HtmlParser
+public static class HtmlParser
 {
-    /// <summary>Initializes a new instance of the <see cref="T:System.Object" /> class.</summary>
-    protected HtmlParser()
-        {
-        }
+    #region Public Methods
 
-
-
-
-
-    /// <summary>Initializes a new instance of the <see cref="T:System.Object" /> class.</summary>
-    public static ConcurrentScrapedUrlCollection GetHrefLinksFromDocument(HtmlDocument doc)
+    /// <summary>
+    ///     extracts hyperlinks from the HtmlDocument
+    /// </summary>
+    /// <param name="doc"></param>
+    /// <returns>Hyperlinks contained in web page</returns>
+    public static string[] GetHrefLinksFromDocument(
+        HtmlDocument doc)
         {
             if (doc is null)
                 {
-                    return new();
+                    return new string[] { };
                 }
 
             var nodes = doc.DocumentNode.Descendants(name: "a").ToArray();
+
+
             return SpyderHelpers.ExtractHyperLinksFromNodes(nodes: nodes);
         }
 
@@ -39,7 +41,8 @@ public class HtmlParser
 
 
 
-    public static IEnumerable<HtmlNode> GetVideoLinksFromDocumentSource(string content)
+    public static IEnumerable<HtmlNode> GetVideoLinksFromDocumentSource(
+        string content)
         {
             var doc = CreateHtmlDocument(content);
             if (doc == null)
@@ -70,7 +73,8 @@ public class HtmlParser
     /// </summary>
     /// <param name="collection"></param>
     /// <returns></returns>
-    public static List<string> ParseNodeCollectionForSources(IEnumerable<HtmlNode> collection)
+    public static List<string> ParseNodeCollectionForSources(
+        IEnumerable<HtmlNode> collection)
         {
             List<string> sources = new();
 
@@ -99,6 +103,7 @@ public class HtmlParser
                                          }
                                  });
 
+
             return sources.Distinct().ToList();
         }
 
@@ -111,13 +116,13 @@ public class HtmlParser
     /// </summary>
     /// <param name="node"></param>
     /// <returns>List</returns>
-    public static List<string> ParseNodeForSourceAttributes(HtmlNode node)
+    public static List<string> ParseNodeForSourceAttributes(
+        HtmlNode node)
         {
             ArgumentNullException.ThrowIfNull(argument: node);
             List<string> urls = new();
-            try
-                {
-                    var sourceAttributes = node.GetAttributes("source", "src");
+
+            var sourceAttributes = node.GetAttributes("source", "src");
                     foreach (var attr in sourceAttributes)
                         {
                             if (attr is null)
@@ -128,13 +133,9 @@ public class HtmlParser
                             var clean = SpyderHelpers.StripQueryFragment(url: attr.Value);
                             urls.Add(item: clean);
                         }
-                }
-            catch (Exception)
-                {
-                    //Swallow
-                }
-
             return urls;
+           
+
         }
 
 
@@ -145,7 +146,8 @@ public class HtmlParser
     ///     Iteration Wrapper overload for single node method
     /// </summary>
     /// <param name="nodes">IEnumerable</param>
-    public static List<string> ParseNodesForVideoSourceAttributes(IEnumerable<HtmlNode> nodes)
+    public static List<string> ParseNodesForVideoSourceAttributes(
+        IEnumerable<HtmlNode> nodes)
         {
             List<string> temp = new();
             foreach (var node in nodes)
@@ -154,6 +156,7 @@ public class HtmlParser
                     temp.AddRange(collection: results);
                 }
 
+
             return temp;
         }
 
@@ -161,7 +164,9 @@ public class HtmlParser
 
 
 
-    public static bool SearchPageForTagName(string content, string tag)
+    public static bool SearchPageForTagName(
+        string content,
+        string tag)
         {
             var doc = CreateHtmlDocument(content);
 
@@ -180,6 +185,7 @@ public class HtmlParser
                     Log.AndContinue(e);
                 }
 
+
             return false;
         }
 
@@ -188,7 +194,9 @@ public class HtmlParser
 
 
     public static bool TryExtractUserTagFromDocument(
-        HtmlDocument doc, string optionsHtmlTagToSearchFor, out ConcurrentScrapedUrlCollection links)
+        HtmlDocument                       doc,
+        string                             optionsHtmlTagToSearchFor,
+        out ConcurrentScrapedUrlCollection links)
         {
             links = new();
             var tagnodes = doc.DocumentNode.Descendants(optionsHtmlTagToSearchFor);
@@ -203,14 +211,16 @@ public class HtmlParser
                     return true;
                 }
 
+
             return false;
         }
 
+    #endregion
 
+    #region Private Methods
 
-
-
-    internal static HtmlDocument CreateHtmlDocument(string content)
+    internal static HtmlDocument CreateHtmlDocument(
+        string content)
         {
             var doc = new HtmlDocument();
             doc.OptionReadEncoding = true;
@@ -220,6 +230,9 @@ public class HtmlParser
 
             doc.LoadHtml(content);
 
+
             return doc;
         }
+
+    #endregion
 }

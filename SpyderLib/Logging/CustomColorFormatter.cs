@@ -12,15 +12,35 @@ namespace KC.Apps.Logging;
 
 public sealed class CustomColorFormatter : ConsoleFormatter, IDisposable
 {
+    #region Other Fields
+
     private readonly IDisposable _optionsReloadToken;
 
     private CustomColorOptions _formatterOptions;
 
+    #endregion
 
+    #region Properteez
 
+    private bool ConsoleColorFormattingEnabled =>
+        _formatterOptions.ColorBehavior == LoggerColorBehavior.Enabled ||
+        _formatterOptions.ColorBehavior == LoggerColorBehavior.Default;
 
+    #endregion
 
-    public CustomColorFormatter(IOptionsMonitor<CustomColorOptions> options)
+    #region Interface Members
+
+    public void Dispose()
+        {
+            _optionsReloadToken?.Dispose();
+        }
+
+    #endregion
+
+    #region Public Methods
+
+    public CustomColorFormatter(
+            IOptionsMonitor<CustomColorOptions> options)
 
         // Case insensitive
         : base("customName")
@@ -28,23 +48,6 @@ public sealed class CustomColorFormatter : ConsoleFormatter, IDisposable
             (_optionsReloadToken, _formatterOptions) =
                 (options.OnChange(ReloadLoggerOptions), options.CurrentValue);
         }
-
-
-
-
-
-    public void Dispose()
-        {
-            _optionsReloadToken?.Dispose();
-        }
-
-
-
-
-
-    private bool ConsoleColorFormattingEnabled =>
-        _formatterOptions.ColorBehavior == LoggerColorBehavior.Enabled ||
-        _formatterOptions.ColorBehavior == LoggerColorBehavior.Default;
 
 
 
@@ -68,11 +71,12 @@ public sealed class CustomColorFormatter : ConsoleFormatter, IDisposable
             textWriter.WriteLine(message);
         }
 
+    #endregion
 
+    #region Private Methods
 
-
-
-    private void ReloadLoggerOptions(CustomColorOptions options)
+    private void ReloadLoggerOptions(
+        CustomColorOptions options)
         {
             _formatterOptions = options;
         }
@@ -81,7 +85,8 @@ public sealed class CustomColorFormatter : ConsoleFormatter, IDisposable
 
 
 
-    private void CustomLogicGoesHere(TextWriter textWriter)
+    private void CustomLogicGoesHere(
+        TextWriter textWriter)
         {
             if (this.ConsoleColorFormattingEnabled)
                 {
@@ -95,4 +100,6 @@ public sealed class CustomColorFormatter : ConsoleFormatter, IDisposable
                     textWriter.Write(_formatterOptions.CustomPrefix);
                 }
         }
+
+    #endregion
 }

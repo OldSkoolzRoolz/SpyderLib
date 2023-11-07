@@ -1,45 +1,83 @@
 #region
 
-using KC.Apps.Properties;
 using KC.Apps.SpyderLib.Models;
-using KC.Apps.SpyderLib.Services;
 
 #endregion
 
 
 namespace KC.Apps.SpyderLib.Control;
 
-public static class OutputControl
+public interface IOutputControl
 {
-    private static readonly object SLock = new();
+    #region Public Methods
 
-    private static SpyderOptions Options => SpyderControlService.CrawlOptions;
+    ConcurrentScrapedUrlCollection CapturedExternalLinks { get; set; }
 
-    // These properties store the captured links
-    internal static ConcurrentScrapedUrlCollection CapturedExternalLinks { get; set; } = new();
-    internal static ConcurrentScrapedUrlCollection CapturedSeedLinks { get; set; } = new();
-    public static ConcurrentScrapedUrlCollection CapturedUrlWithSearchResults { get; set; } = new();
-    internal static ConcurrentScrapedUrlCollection CapturedVideoLinks { get; set; } = new();
-    internal static ConcurrentScrapedUrlCollection FailedCrawlerUrls { get; set; } = new();
+    ConcurrentScrapedUrlCollection CapturedSeedLinks { get; set; }
+
+    ConcurrentScrapedUrlCollection CapturedUrlWithSearchResults { get; set; }
+
+    ConcurrentScrapedUrlCollection CapturedVideoLinks { get; set; }
+
+    ConcurrentScrapedUrlCollection FailedCrawlerUrls { get; set; }
 
     // Internal collection used for exclusion purposes
-    internal static ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; set; } = new();
+    ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; set; }
+
+
+
+    void OnLibraryShutdown();
 
 
 
 
 
-    // This method is called when the library is shutting down
-    internal static void OnLibraryShutdown()
+    #endregion
+}
+
+public class OutputControl : IOutputControl
+{
+    #region Feeelldzz
+
+    private static readonly IOutputControl _instance = new OutputControl();
+
+    #endregion
+
+
+
+
+
+    private OutputControl()
+        {
+        }
+
+
+
+
+
+    #region Interface Members
+
+    public ConcurrentScrapedUrlCollection CapturedExternalLinks { get; set; } = new();
+    public ConcurrentScrapedUrlCollection CapturedSeedLinks { get; set; } = new();
+    public ConcurrentScrapedUrlCollection CapturedVideoLinks { get; set; } = new();
+    public ConcurrentScrapedUrlCollection FailedCrawlerUrls { get; set; } = new();
+    public ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; set; } = new();
+    public ConcurrentScrapedUrlCollection CapturedUrlWithSearchResults { get; set; } = new();
+
+
+
+
+
+    public void OnLibraryShutdown()
         {
             var collectionDictionary = new Dictionary<ConcurrentScrapedUrlCollection, string>
                 {
-                    { CapturedVideoLinks, "TestingVideoLinks.txt" },
-                    { UrlsScrapedThisSession, "AllUrlsCaptured.txt" },
-                    { FailedCrawlerUrls, "FailedCrawlerUrls.txt" },
-                    { CapturedExternalLinks, Options?.CapturedExternalLinksFilename ?? "ExternalLinksTesting.txt" },
-                    { CapturedSeedLinks, Options?.CapturedSeedUrlsFilename ?? "CapturedSeedUrlsFilename.txt" },
-                    { CapturedUrlWithSearchResults, "PositiveTagSearchResults.txt" }
+                    { this.CapturedVideoLinks, "TestingVideoLinks.txt" },
+                    { this.UrlsScrapedThisSession, "AllUrlsCaptured.txt" },
+                    { this.FailedCrawlerUrls, "FailedCrawlerUrls.txt" },
+                    { this.CapturedExternalLinks, "ExternalLinksTesting.txt" },
+                    { this.CapturedSeedLinks, "CapturedSeedUrlsFilename.txt" },
+                    { this.CapturedUrlWithSearchResults, "PositiveTagSearchResults.txt" }
                 };
 
             foreach (var entry in collectionDictionary)
@@ -53,31 +91,33 @@ public static class OutputControl
             Console.WriteLine("Output written");
         }
 
+    #endregion
 
+    #region Public Methods
 
+    public static IOutputControl Instance => _instance;
 
+    #endregion
 
-    /// <summary>
-    ///     Save the given collection to a file.
-    /// </summary>
-    /// <param name="col">The collection to save.</param>
-    /// <param name="fileName">The name of the file to save to.</param>
-    private static void SaveCollectionToFile(ConcurrentScrapedUrlCollection col, string fileName)
+    #region Private Methods
+
+    private void SaveCollectionToFile(ConcurrentScrapedUrlCollection col, string fileName)
         {
             if (col is not { IsEmpty: true })
                 {
-                    lock (SLock)
+
+                    var path = Path.Combine(Environment.CurrentDirectory, fileName);
+
+                    using var fs = new FileStream(path, FileMode.Append);
+                    using var sw = new StreamWriter(fs);
+                    foreach (var item in col)
                         {
-                            if (Options != null)
-                                {
-                                    var path = Path.Combine(Options.OutputFilePath, fileName);
-                                    using var sw = File.CreateText(path);
-                                    foreach (var item in col)
-                                        {
-                                            sw.WriteLine(item.Key);
-                                        }
-                                }
+                            sw.WriteLine(item.Key);
                         }
+
+                    sw.Flush();
                 }
         }
+
+    #endregion
 }

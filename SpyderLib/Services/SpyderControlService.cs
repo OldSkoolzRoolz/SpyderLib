@@ -1,10 +1,11 @@
 #region
 
 using System.Diagnostics.CodeAnalysis;
+
 using KC.Apps.Properties;
 using KC.Apps.SpyderLib.Control;
 using KC.Apps.SpyderLib.Interfaces;
-using KC.Apps.SpyderLib.Modules;
+
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -25,60 +26,23 @@ namespace KC.Apps.SpyderLib.Services;
 /// </summary>
 public class SpyderControlService : ServiceBase, IHostedService
 {
-    // ReSharper disable once NotAccessedField.Local 
+    #region Other Fields
+
     private readonly ILogger _logger;
-    private readonly IServiceProvider _provider;
+    private readonly ISpyderWeb _spyderWeb;
     private readonly IBackgroundDownloadQue _taskQue;
     private CancellationTokenSource _cancellationTokenSource;
-    private ISpyderWeb _spyderWeb = null!;
+
+ 
 
 
+    #endregion
 
-
-
-    public SpyderControlService(
-        ILoggerFactory           factory,
-        IOptions<SpyderOptions>  options,
-        CacheIndexService        cache,
-        IHostApplicationLifetime appLifetime,
-        IServiceProvider         provider,
-        IBackgroundDownloadQue   taskQue) : base(factory, options.Value, appLifetime)
-        {
-            ArgumentNullException.ThrowIfNull(options);
-            ArgumentNullException.ThrowIfNull(factory);
-            _logger = factory.CreateLogger<SpyderControlService>();
-
-
-            this.AppLifetime.ApplicationStarted.Register(OnStarted);
-            this.AppLifetime.ApplicationStopping.Register(OnStopping);
-
-            _provider = provider;
-            _taskQue = taskQue;
-            CrawlOptions = options.Value;
-        }
-
-
-
-
-
-    internal static SpyderOptions CrawlOptions { get; private set; }
-
-
-
-
-
-    private async Task BeginSpyder(string seedUrl, CancellationToken token)
-        {
-            await _spyderWeb.StartSpyderAsync(seedUrl, token).ConfigureAwait(false);
-            Console.WriteLine("Finished crawling");
-        }
-
-
-
-
+    #region Interface Members
 
     [MemberNotNull(nameof(_cancellationTokenSource))]
-    public Task StartAsync(CancellationToken cancellationToken)
+    public Task StartAsync(
+        CancellationToken cancellationToken)
         {
             _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _logger.LogInformation("Spyder Control loaded");
@@ -92,16 +56,71 @@ public class SpyderControlService : ServiceBase, IHostedService
 
 
 
+    public Task StopAsync(
+        CancellationToken cancellationToken)
+        {
+            Console.WriteLine(
+                              cancellationToken.IsCancellationRequested
+                                  ? "Immediate (non gracefull) exit is reqeusted"
+                                  : "Spyder is exiting gracefully");
+
+
+            return Task.CompletedTask;
+        }
+
+    #endregion
+
+    #region Public Methods
+
+    public SpyderControlService(
+        ILoggerFactory           factory,
+        IOptions<SpyderOptions>  options,
+        IHostApplicationLifetime appLifetime,
+        IBackgroundDownloadQue   taskQue,
+        ISpyderWeb               spyderWeb) : base(factory, options.Value, appLifetime)
+        {
+            appLifetime.ApplicationStarted.Register(OnStarted);
+            appLifetime.ApplicationStopping.Register(OnStopping);
+            ArgumentNullException.ThrowIfNull(options);
+            ArgumentNullException.ThrowIfNull(factory);
+
+            _logger = factory.CreateLogger<SpyderControlService>();
+            _taskQue = taskQue;
+            _spyderWeb = spyderWeb;
+            // HACK Ensure property values exist
+            // Must re-think DI and coupling
+
+
+        }
+
+
+
+
+
+    public static event EventHandler LibraryHostShuttingDown;
+
+
+
+    public static bool CrawlersActive { get; set; }
+
+    #endregion
+
+    #region Private Methods
+
     /// <summary>
+    /// Start Crawling
     /// </summary>
-    private Task StartCrawlingAsync(CancellationToken token)
+    private async Task StartCrawlingAsync(
+        CancellationToken token)
         {
 
-            if (this.Options is null || this.Options.ScrapeDepthLevel <= 1 || this.Options.StartingUrl is null ||
+            if (this.Options is null || this.Options.LinkDepthLimit <= 1 || this.Options.StartingUrl is null ||
                 this.Options.LogPath is null)
                 {
                     _logger.LogCritical("Spyder Options Exception, Crawler aborting... Check settings and try again.");
-                    return Task.CompletedTask;
+
+
+                    return;
                 }
             // Options required
             // Log Path
@@ -109,33 +128,8 @@ public class SpyderControlService : ServiceBase, IHostedService
             //
             //
 
-            return BeginSpyder(this.Options.StartingUrl, token);
-        }
 
-
-
-
-
-    public Task StopAsync(CancellationToken cancellationToken)
-        {
-            Console.WriteLine(
-                              cancellationToken.IsCancellationRequested
-                                  ? "Immediate (non gracefull) exit is reqeusted"
-                                  : "Spyder is exiting gracefully");
-
-            return Task.CompletedTask;
-        }
-
-
-
-
-
-    private void Initialize()
-        {
-            VerifyPaths();
-            RotateLogFiles();
-            _spyderWeb = new SpyderWeb(_taskQue, this.LoggerFactory, _provider);
-            _logger.LogTrace("Spyder Initialization Complete!");
+            await _spyderWeb.StartSpyderAsync(this.Options.StartingUrl, token).ConfigureAwait(false);
         }
 
 
@@ -165,9 +159,16 @@ public class SpyderControlService : ServiceBase, IHostedService
 
     private void OnStarted()
         {
-            Initialize();
-            PrintConfig();
+            Console.WriteLine("Waiting for all modules to load...");
+            // SpyderWeb.StartupComplete.Task.Wait();
+            // CrawlerController.StartupComplete.Task.Wait();
+            //            DownloadController.StartupComplete.Task.Wait();
 
+            _logger.LogInformation("Dependencies loaded!");
+
+            VerifyPaths();
+            // RotateLogFiles();
+            PrintConfig();
             Task.Run(() => PrintMenu(_cancellationTokenSource!.Token));
         }
 
@@ -175,10 +176,10 @@ public class SpyderControlService : ServiceBase, IHostedService
 
 
 
-    private static void OnStopping()
+    private void OnStopping()
         {
-            OutputControl.OnLibraryShutdown();
             Console.WriteLine("output triggered");
+LibraryHostShuttingDown?.Invoke(this,EventArgs.Empty);
         }
 
 
@@ -216,7 +217,8 @@ public class SpyderControlService : ServiceBase, IHostedService
 
 
 
-    private async Task PrintMenu(CancellationToken cancellationToken)
+    private async Task PrintMenu(
+        CancellationToken cancellationToken)
         {
             string userInput;
             do
@@ -234,26 +236,42 @@ public class SpyderControlService : ServiceBase, IHostedService
                         {
                             case "1":
                                 await StartCrawlingAsync(_cancellationTokenSource!.Token).ConfigureAwait(false);
+
+
                                 break;
+
                             case "2":
                                 ProcessPotential();
+
+
                                 break;
+
                             case "3":
                                 Console.WriteLine("3");
+
+
                                 break;
+
                             case "4":
                                 Console.Write("Enter Url to download from:: ");
                                 var url = Console.ReadLine();
                                 await _spyderWeb.DownloadVideoTagsFromUrl(url).ConfigureAwait(false);
+
+
                                 break;
 
                             case "9":
                                 // Exit scenario
                                 this.AppLifetime.StopApplication();
+
+
                                 break;
+
                             default:
                                 Console.WriteLine("Invalid choice. Press a key to try again...");
                                 Console.ReadKey();
+
+
                                 break;
                         }
                 } while (userInput != "9" && !cancellationToken.IsCancellationRequested);
@@ -304,4 +322,6 @@ public class SpyderControlService : ServiceBase, IHostedService
                     File.Move(log, newpath);
                 }
         }
+
+    #endregion
 }

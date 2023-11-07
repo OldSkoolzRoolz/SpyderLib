@@ -1,7 +1,9 @@
 #region
 
 using System.Threading.Channels;
+
 using KC.Apps.SpyderLib.Models;
+
 using Microsoft.Extensions.Logging;
 
 #endregion
@@ -11,12 +13,9 @@ namespace KC.Apps.SpyderLib.Services;
 
 public interface IBackgroundDownloadQue
 {
+    #region Public Methods
+
     int Count { get; }
-
-
-
-
-    ValueTask QueueBackgroundWorkItemAsync(DownloadItem workItem);
 
 
 
@@ -24,6 +23,15 @@ public interface IBackgroundDownloadQue
 
     ValueTask<DownloadItem> DequeueAsync(
         CancellationToken cancellationToken);
+
+
+
+
+
+    ValueTask QueueBackgroundWorkItemAsync(
+        DownloadItem workItem);
+
+    #endregion
 }
 
 /// <summary>
@@ -31,26 +39,13 @@ public interface IBackgroundDownloadQue
 /// </summary>
 public class BackgroundDownloadQue : IBackgroundDownloadQue
 {
+    #region Other Fields
+
     private readonly Channel<DownloadItem> _queue;
 
+    #endregion
 
-
-
-
-    public BackgroundDownloadQue(ILogger<BackgroundDownloadQue> logger)
-        {
-            BoundedChannelOptions options = new(100)
-                {
-                    FullMode = BoundedChannelFullMode.Wait
-                };
-
-            _queue = Channel.CreateBounded<DownloadItem>(options);
-            logger.LogInformation("Background download Que is loaded");
-        }
-
-
-
-
+    #region Interface Members
 
     public int Count => _queue.Reader.Count;
 
@@ -58,7 +53,8 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
 
 
 
-    public async ValueTask QueueBackgroundWorkItemAsync(DownloadItem workItem)
+    public async ValueTask QueueBackgroundWorkItemAsync(
+        DownloadItem workItem)
         {
             if (workItem is null)
                 {
@@ -78,6 +74,25 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
             var workItem =
                 await _queue.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
 
+
             return workItem;
         }
+
+    #endregion
+
+    #region Public Methods
+
+    public BackgroundDownloadQue(
+        ILogger<BackgroundDownloadQue> logger)
+        {
+            BoundedChannelOptions options = new(100)
+                {
+                    FullMode = BoundedChannelFullMode.Wait
+                };
+
+            _queue = Channel.CreateBounded<DownloadItem>(options);
+            logger.LogInformation("Background download Que is loaded");
+        }
+
+    #endregion
 }

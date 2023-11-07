@@ -2,12 +2,14 @@
 
 public static class TextWriterExtensions
 {
+    #region Feeelldzz
+
     private const string DEFAULT_BACKGROUND_COLOR = "\x1B[49m";
     private const string DEFAULT_FOREGROUND_COLOR = "\x1B[39m\x1B[22m";
 
+    #endregion
 
-
-
+    #region Public Methods
 
     public static void WriteWithColor(
         this TextWriter textWriter,
@@ -45,11 +47,12 @@ public static class TextWriterExtensions
                 }
         }
 
+    #endregion
 
+    #region Private Methods
 
-
-
-    private static string GetBackgroundColorEscapeCode(ConsoleColor color)
+    private static string GetBackgroundColorEscapeCode(
+        ConsoleColor color)
         {
             return color switch
                 {
@@ -65,7 +68,8 @@ public static class TextWriterExtensions
 
 
 
-    private static string GetForegroundColorEscapeCode(ConsoleColor color)
+    private static string GetForegroundColorEscapeCode(
+        ConsoleColor color)
         {
             return color switch
                 {
@@ -79,4 +83,6 @@ public static class TextWriterExtensions
                     ConsoleColor.White => "\x1B[1m\x1B[37m", _ => DEFAULT_FOREGROUND_COLOR
                 };
         }
+
+    #endregion
 }

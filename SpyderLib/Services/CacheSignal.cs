@@ -2,11 +2,13 @@ namespace KC.Apps.SpyderLib.Services;
 
 public sealed class CacheSignal
 {
+    #region Other Fields
+
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
+    #endregion
 
-
-
+    #region Public Methods
 
     /// <summary>
     ///     Exposes the ability to signal the release of the <see cref="WaitAsync" />'s operation.
@@ -30,4 +32,6 @@ public sealed class CacheSignal
         {
             return _semaphore.WaitAsync();
         }
+
+    #endregion
 }

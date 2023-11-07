@@ -1,6 +1,7 @@
 #region
 
 using KC.Apps.Properties;
+
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -11,7 +12,10 @@ namespace KC.Apps.SpyderLib.Services;
 
 public class ServiceBase
 {
-    public ServiceBase(ILoggerFactory factory, SpyderOptions options, IHostApplicationLifetime lifetime)
+    protected ServiceBase(
+        ILoggerFactory           factory,
+        SpyderOptions            options,
+        IHostApplicationLifetime lifetime)
         {
             this.LoggerFactory = factory;
             this.Options = options;
@@ -22,17 +26,21 @@ public class ServiceBase
 
 
 
+    #region Properteez
+
+    protected ILoggerFactory LoggerFactory { get; set; }
+
+    protected SpyderOptions Options { get; set; }
+
+    protected IHostApplicationLifetime AppLifetime { get; set; }
+
+    #endregion
+
+    #region Public Methods
+
     public ServiceBase()
         {
         }
 
-
-
-
-
-    protected ILoggerFactory LoggerFactory { get; }
-
-    protected SpyderOptions Options { get; }
-
-    protected IHostApplicationLifetime AppLifetime { get; }
+    #endregion
 }

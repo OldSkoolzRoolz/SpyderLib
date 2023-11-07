@@ -11,7 +11,16 @@ namespace KC.Apps.SpyderLib.Models;
 /// <inheritdoc />
 public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
 {
-    internal void Add(string url)
+    #region Feeelldzz
+
+    const byte DefaultValue = 0;
+
+    #endregion
+
+    #region Private Methods
+
+    internal void Add(
+        string url)
         {
             // weeds out relative urls, only adding absolute urls
             if (IsValidUrl(url: url))
@@ -24,13 +33,8 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
 
 
 
-    const byte DefaultValue = 0;
-
-
-
-
-
-    internal void AddArray(string[] array)
+    internal void AddArray(
+        string[] array)
         {
             for (var i = 0; i < array.Length; i++)
                 {
@@ -46,7 +50,8 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
 
 
 
-    internal void AddArray(IEnumerable<KeyValuePair<string, byte>> array)
+    internal void AddArray(
+        IEnumerable<KeyValuePair<string, byte>> array)
         {
             foreach (var item in array)
                 {
@@ -58,7 +63,8 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
 
 
 
-    private void TryAddIfKeyIsValidUrl(KeyValuePair<string, byte> item)
+    private void TryAddIfKeyIsValidUrl(
+        KeyValuePair<string, byte> item)
         {
             if (IsValidUrl(url: item.Key))
                 {
@@ -70,7 +76,8 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
 
 
 
-    internal void AddRange(ConcurrentDictionary<string, byte> itemsToAdd)
+    internal void AddRange(
+        ConcurrentDictionary<string, byte> itemsToAdd)
         {
             if (itemsToAdd == null) return;
 
@@ -93,10 +100,13 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
     /// </summary>
     /// <param name="url"></param>
     /// <returns></returns>
-    private bool IsValidUrl(string url)
+    private bool IsValidUrl(
+        string url)
         {
             return Uri.IsWellFormedUriString(uriString: url, uriKind: UriKind.Absolute)
                    && Uri.TryCreate(uriString: url, uriKind: UriKind.Absolute, out var uriResult)
                    && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
         }
+
+    #endregion
 }

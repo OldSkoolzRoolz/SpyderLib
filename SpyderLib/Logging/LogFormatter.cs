@@ -2,6 +2,7 @@
 
 using System.Collections.Concurrent;
 using System.Globalization;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
@@ -13,20 +14,7 @@ namespace KC.Apps.Logging;
 
 public class LogFormatter : ConsoleFormatter
 {
-    private readonly LogFormatterOptions _formatterOptions;
-
-
-
-
-
-    public LogFormatter(LogFormatterOptions options) : base("SpyderFormatter")
-        {
-            _formatterOptions = options;
-        }
-
-
-
-
+    #region Feeelldzz
 
     private const string
         DATE_FORMAT =
@@ -34,8 +22,24 @@ public class LogFormatter : ConsoleFormatter
             TIME_FORMAT; // Example: 2010-09-02 09:50:43.341 GMT - Variant of UniversalSorta­bleDateTimePat­tern
 
     internal const int MAX_LOG_MESSAGE_SIZE = 20000;
-    private static readonly ConcurrentDictionary<Type, Func<Exception, string>> SExceptionDecoders = new();
     private const string TIME_FORMAT = "HH:mm:ss.fff 'GMT'"; // Example: 09:50:43.341 GMT
+    private static readonly ConcurrentDictionary<Type, Func<Exception, string>> _sExceptionDecoders = new();
+
+    #endregion
+
+    #region Other Fields
+
+    private readonly LogFormatterOptions _formatterOptions;
+
+    #endregion
+
+    #region Public Methods
+
+    public LogFormatter(
+        LogFormatterOptions options) : base("SpyderFormatter")
+        {
+            _formatterOptions = options;
+        }
 
 
 
@@ -50,7 +54,9 @@ public class LogFormatter : ConsoleFormatter
     /// <param name="textWriter">The string writer embedding ansi code for colors.</param>
     /// <typeparam name="TState">The type of the object to be written.</typeparam>
     public override void Write<TState>(
-        in LogEntry<TState> logEntry, IExternalScopeProvider scopeProvider, TextWriter textWriter)
+        in LogEntry<TState>    logEntry,
+        IExternalScopeProvider scopeProvider,
+        TextWriter             textWriter)
         {
             var logLevel = logEntry.LogLevel;
             var logMessage = logEntry.Formatter(logEntry.State, logEntry.Exception);
@@ -75,16 +81,17 @@ public class LogFormatter : ConsoleFormatter
             textWriter.WriteLine(formattedMessage);
         }
 
+    #endregion
 
-
-
+    #region Private Methods
 
     /// <summary>
     ///     Parses a date.
     /// </summary>
     /// <param name="dateStr">The date string.</param>
     /// <returns>The parsed date.</returns>
-    internal static DateTime ParseDate(string dateStr)
+    internal static DateTime ParseDate(
+        string dateStr)
         {
             return DateTime.ParseExact(dateStr, DATE_FORMAT, CultureInfo.InvariantCulture);
         }
@@ -98,7 +105,8 @@ public class LogFormatter : ConsoleFormatter
     /// </summary>
     /// <param name="date">The <c>DateTime</c> value to be printed.</param>
     /// <returns>Formatted string representation of the input data, in the printable format used by the Logger subsystem.</returns>
-    internal static string PrintDate(DateTime date)
+    internal static string PrintDate(
+        DateTime date)
         {
             return date.ToString(DATE_FORMAT, CultureInfo.InvariantCulture);
         }
@@ -112,7 +120,8 @@ public class LogFormatter : ConsoleFormatter
     /// </summary>
     /// <param name="date">The <c>DateTime</c> value to be printed.</param>
     /// <returns>Formatted string representation of the input data, in the printable format used by the Logger subsystem.</returns>
-    internal static string PrintTime(DateTime date)
+    internal static string PrintTime(
+        DateTime date)
         {
             return date.ToString(TIME_FORMAT, CultureInfo.InvariantCulture);
         }
@@ -126,8 +135,12 @@ public class LogFormatter : ConsoleFormatter
     /// </summary>
     /// <param name="exceptionType">The exception type to configure a decoder for.</param>
     /// <param name="decoder">The decoder.</param>
-    internal static void SetExceptionDecoder(Type exceptionType, Func<Exception, string> decoder)
+    internal static void SetExceptionDecoder(
+        Type                    exceptionType,
+        Func<Exception, string> decoder)
         {
-            SExceptionDecoders.TryAdd(exceptionType, decoder);
+            _sExceptionDecoders.TryAdd(exceptionType, decoder);
         }
+
+    #endregion
 }

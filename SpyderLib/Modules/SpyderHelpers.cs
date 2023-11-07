@@ -2,9 +2,13 @@
 
 // ReSharper disable All
 using System.Diagnostics.Eventing.Reader;
+
 using HtmlAgilityPack;
+
+using KC.Apps.Logging;
 using KC.Apps.Properties;
 using KC.Apps.SpyderLib.Control;
+using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Modules;
 using KC.Apps.SpyderLib.Services;
@@ -14,34 +18,25 @@ using KC.Apps.SpyderLib.Services;
 
 namespace KC.Apps.SpyderLib;
 
-/// <summary>
-/// </summary>
+
 public class SpyderHelpers
 {
+  
+
+
+
+
+
     protected SpyderHelpers()
         {
+      
         }
 
 
 
 
 
-    /// <summary>
-    ///     Method organizes and cleans the links in the collection and filters out links according to SpyderOptions
-    /// </summary>
-    /// <param name="collection"></param>
-    /// <param name="spyderOptions"></param>
-    /// <returns></returns>
-    public static ConcurrentScrapedUrlCollection ClassifyScrapedUrls(
-        ConcurrentScrapedUrlCollection collection,
-        SpyderOptions                  spyderOptions)
-        {
-            return ClassifyScrapedUrlsCore(collection: collection, options: spyderOptions);
-        }
-
-
-
-
+    #region Public Methods
 
     /// <summary>
     ///     Process captured nodes and extracts Anchor Links
@@ -49,7 +44,8 @@ public class SpyderHelpers
     /// </summary>
     /// <param name="nodes">A collection of HtmlNodes containing Anchor links.</param>
     /// <returns>A collection of valid links</returns>
-    public static ConcurrentScrapedUrlCollection ExtractHyperLinksFromNodes(IEnumerable<HtmlNode> nodes)
+    public static string[] ExtractHyperLinksFromNodes(
+        IEnumerable<HtmlNode> nodes)
         {
             var htmlNodes = nodes as HtmlNode[] ?? nodes.ToArray();
 
@@ -59,9 +55,25 @@ public class SpyderHelpers
                             .Where(link => !string.IsNullOrEmpty(value: link) && IsValidUrl(url: link))
                             .ToArray();
 
-            ConcurrentScrapedUrlCollection scrapedUrls = new();
-            scrapedUrls.AddArray(array: validUrls);
-            return scrapedUrls;
+
+            return validUrls;
+        }
+
+
+
+
+
+    public static string GenerateFileName(
+        SpyderOptions options)
+        {
+            string filename;
+            do
+                {
+                    filename = Path.GetRandomFileName();
+                } while (File.Exists(Path.Combine(options.OutputFilePath, filename)));
+
+
+            return filename;
         }
 
 
@@ -91,7 +103,36 @@ public class SpyderHelpers
                 }
 
             var results = (Internal: internals, External: externals);
+
+
             return results;
+        }
+
+
+
+
+
+    public static async Task<IEnumerable<string>> GetLinksFromUrlAsync(
+        string            optionsStartingUrl,
+        CancellationToken token)
+        {
+            HtmlWeb web = new HtmlWeb();
+            string[] links = new string[] { };
+
+            try
+                {
+                    var doc = await web.LoadFromWebAsync(optionsStartingUrl);
+                    var nodes = doc.DocumentNode.Descendants("a");
+                    links = ExtractHyperLinksFromNodes(nodes);
+                }
+            catch (TaskCanceledException e)
+                {
+                    Log.AndContinue(e);
+
+                }
+
+
+            return links;
         }
 
 
@@ -106,9 +147,13 @@ public class SpyderHelpers
     /// <param name="urlLink"></param>
     /// <param name="startingurl"></param>
     /// <returns></returns>
-    public static bool IsExternalDomainLink(string urlLink, string startingurl)
+    public static bool IsExternalDomainLink(
+        string urlLink,
+        string startingurl)
         {
             var baseUri = new Uri(startingurl);
+
+
             return IsExternalDomainLinkCore(link: urlLink, baseUri: baseUri);
         }
 
@@ -121,11 +166,13 @@ public class SpyderHelpers
     /// </summary>
     /// <param name="url"></param>
     /// <returns></returns>
-    public static bool IsValidUrl(string url)
+    public static bool IsValidUrl(
+        string url)
         {
             bool success = Uri.IsWellFormedUriString(uriString: url, uriKind: UriKind.Absolute)
                            && Uri.TryCreate(uriString: url, uriKind: UriKind.Absolute, out var uriResult)
                            && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+
 
             return success;
         }
@@ -134,20 +181,48 @@ public class SpyderHelpers
 
 
 
-    public static string GenerateFileName(SpyderOptions options)
+    /// <summary>
+    ///     Search <see cref="HtmlDocument" /> for tag identified in Spyder Options
+    /// </summary>
+    /// <param name="doc"></param>
+    /// <param name="url"></param>
+    /// <param name="que"></param>
+    public static async Task SearchDocForHtmlTagAsync(
+        HtmlDocument           doc,
+        string                 url,
+        IBackgroundDownloadQue que)
         {
-            string filename;
-            do
+            try
                 {
-                    filename = Path.GetRandomFileName();
-                } while (File.Exists(Path.Combine(options.OutputFilePath, filename)));
+                    if (HtmlParser.TryExtractUserTagFromDocument(doc, "video",
+                                                                 out var extractedLinks))
+                        {
+                      //      _outputControl.CapturedVideoLinks.Add(url);
 
-            return filename;
+
+
+                            foreach (var link in extractedLinks)
+                                {
+                                    var dl = new DownloadItem(link.Key, "/Data/Spyder/Files");
+
+                                    //  await BuildDownloadTaskAsync(CancellationToken.None, link.Key)
+
+                                    await que.QueueBackgroundWorkItemAsync(dl);
+
+                                }
+                        }
+                }
+            catch (Exception)
+                {
+                    Log.Error($"Eerror parsing page document {url}");
+
+                    // Log and continue Failed tasks won't hang up the flow. Possible retry?            
+                }
         }
 
+    #endregion
 
-
-
+    #region Private Methods
 
     /// <summary>
     ///     Load links from given filename previously saved to disk
@@ -155,7 +230,8 @@ public class SpyderHelpers
     /// </summary>
     /// <param name="filename">Filename to load links from</param>
     /// <returns></returns>
-    internal static ConcurrentScrapedUrlCollection LoadLinksFromFile(string filename)
+    internal static ConcurrentScrapedUrlCollection LoadLinksFromFile(
+        string filename)
         {
             string path = "";
             ConcurrentScrapedUrlCollection temp = new();
@@ -174,18 +250,23 @@ public class SpyderHelpers
                     Console.WriteLine(value: e);
                 }
 
+
             return temp;
         }
 
 
 
 
-
-    /// <summary>
-    /// </summary>
-    /// <param name="url"></param>
-    /// <returns></returns>
-    internal static string StripQueryFragment(string url)
+/// <summary>
+/// Strips the query and fragment parts from the given URL.
+/// </summary>
+/// <param name="url">The URL to process.</param>
+/// <returns>The URL without the query and fragment parts. If the input URL is null or empty, the return value is the same as the input.</returns>
+/// <remarks>
+/// This method uses the Uri.GetLeftPart method with UriPartial.Path to strip the query and fragment parts.
+/// </remarks>
+    internal static string StripQueryFragment(
+        string url)
         {
             if (string.IsNullOrEmpty(value: url))
                 {
@@ -194,6 +275,8 @@ public class SpyderHelpers
 
             var uri = new Uri(uriString: url);
             var x = uri.GetLeftPart(part: UriPartial.Path);
+
+
             return x;
         }
 
@@ -201,6 +284,7 @@ public class SpyderHelpers
 
 
 
+/*
     /// <summary>
     /// </summary>
     /// <param name="collection"></param>
@@ -230,14 +314,19 @@ public class SpyderHelpers
                     results.AddRange(externalLinks);
                 }
 
+
             return results;
         }
 
+*/
 
 
 
 
-    private static bool IsExternalDomainLinkCore(string link, Uri baseUri)
+
+    private static bool IsExternalDomainLinkCore(
+        string link,
+        Uri    baseUri)
         {
             Uri.TryCreate(uriString: link, uriKind: UriKind.Absolute, out var uri);
             if (uri == null)
@@ -245,6 +334,9 @@ public class SpyderHelpers
                     throw new ArgumentException(message: "Invalid Uri");
                 }
 
+
             return !string.Equals(a: uri.Host, b: baseUri.Host);
         }
+
+    #endregion
 }

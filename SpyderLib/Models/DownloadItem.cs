@@ -4,7 +4,9 @@ namespace KC.Apps.SpyderLib.Models;
 /// </summary>
 public class DownloadItem
 {
-    internal DownloadItem(string link, string savepath)
+    internal DownloadItem(
+        string link,
+        string savepath)
         {
             ArgumentNullException.ThrowIfNull(link);
             if (savepath == null)
@@ -20,8 +22,12 @@ public class DownloadItem
 
 
 
+    #region Properteez
+
     internal long ActualBytes { get; set; }
     internal long? ExpectedBytes { get; set; }
     internal string Link { get; set; }
     internal string SavePath { get; set; }
+
+    #endregion
 }

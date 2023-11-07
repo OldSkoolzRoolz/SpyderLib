@@ -12,30 +12,33 @@ namespace KC.Apps.Logging;
 
 public sealed class CustomFormatter : ConsoleFormatter, IDisposable
 {
+    #region Other Fields
+
     private readonly IDisposable _optionsReloadToken;
 
     private CustomOptions _formatterOptions;
 
+    #endregion
 
+    #region Interface Members
 
+    public void Dispose()
+        {
+            _optionsReloadToken?.Dispose();
+        }
 
+    #endregion
 
-    public CustomFormatter(IOptionsMonitor<CustomOptions> options)
+    #region Public Methods
+
+    public CustomFormatter(
+            IOptionsMonitor<CustomOptions> options)
 
         // Case insensitive
         : base("customName")
         {
             (_optionsReloadToken, _formatterOptions) =
                 (options.OnChange(ReloadLoggerOptions), options.CurrentValue);
-        }
-
-
-
-
-
-    public void Dispose()
-        {
-            _optionsReloadToken?.Dispose();
         }
 
 
@@ -55,11 +58,12 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
             textWriter.WriteLine(message);
         }
 
+    #endregion
 
+    #region Private Methods
 
-
-
-    private void ReloadLoggerOptions(CustomOptions options)
+    private void ReloadLoggerOptions(
+        CustomOptions options)
         {
             _formatterOptions = options;
         }
@@ -68,8 +72,11 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
 
 
 
-    private void CustomLogicGoesHere(TextWriter textWriter)
+    private void CustomLogicGoesHere(
+        TextWriter textWriter)
         {
             textWriter.Write(_formatterOptions.CustomPrefix);
         }
+
+    #endregion
 }
