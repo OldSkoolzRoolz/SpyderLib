@@ -1,17 +1,10 @@
 #region
 
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-
 using HtmlAgilityPack;
-
-using KC.Apps.Logging;
-using KC.Apps.Properties;
-using KC.Apps.SpyderLib.Control;
 using KC.Apps.SpyderLib.Models;
+using KC.Apps.SpyderLib.Properties;
 using KC.Apps.SpyderLib.Services;
-
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 #endregion
@@ -49,9 +42,9 @@ public class PageCrawler : IPageCrawler
     private readonly ILogger<PageCrawler> _logger;
 
     private readonly Stopwatch _sw = new();
-    private ICacheIndexService _cache;
+    private readonly ICacheIndexService _cache;
 
-    private SpyderOptions _options;
+    private readonly SpyderOptions _options;
 
     #endregion
 
@@ -138,7 +131,7 @@ public class PageCrawler : IPageCrawler
             if (!string.IsNullOrWhiteSpace(pageContent.Content))
                 {
                     var links = ParsePageContentForLinksAsync(pageContent);
-                     ClassifyCapturedUrl(links);
+                     ClassifyCapturedUrl(links.ToArray());
                      if (_options.EnableTagSearch)
                          {
                             // await SearchDocForHtmlTagAsync(pageContent.Content, link);
@@ -157,8 +150,8 @@ public class PageCrawler : IPageCrawler
 /// <returns></returns>
     private void ClassifyCapturedUrl(string[] links)
         {
-            var cleaned = SpyderHelpers.ClassifyScrapedUrls(links, _options);
-            foreach (var key in cleaned.Keys)
+          //  var cleaned = SpyderHelpers.ClassifyScrapedUrls(links, _options);
+          //  foreach (var key in cleaned.Keys)
                 {
                  //   _crawlControl.AddCapturedUrl(key);
                 }
@@ -168,14 +161,14 @@ public class PageCrawler : IPageCrawler
 
 
 
-    private string[] ParsePageContentForLinksAsync(PageContent pageContent)
+    private IEnumerable<string> ParsePageContentForLinksAsync(PageContent pageContent)
         {
             ArgumentNullException.ThrowIfNull(pageContent);
 
             var doc = new HtmlDocument();
             doc.LoadHtml(pageContent.Content);
 
-            var hyperlinks =HtmlParser.GetHrefLinksFromDocument(doc);
+            var hyperlinks =HtmlParser.GetHrefLinksFromDocumentSource(pageContent.Content);
 
             return hyperlinks;
         }

@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 
 #endregion
 
-
 namespace KC.Apps.SpyderLib.Models;
 
 /// <summary>
@@ -46,8 +45,8 @@ public abstract class Model : INotifyPropertyChanged
     ///     equal).
     /// </returns>
     protected bool SetField<T>(
-        ref T                     field,
-        T                         value,
+        ref T field,
+        T value,
         [CallerMemberName] string propertyName = null)
         {
             if (EqualityComparer<T>.Default.Equals(field, value))
@@ -88,10 +87,7 @@ public abstract class Model : INotifyPropertyChanged
         PropertyChangedEventArgs e)
         {
             var handler = this.PropertyChanged;
-            if (handler != null)
-                {
-                    handler(this, e);
-                }
+            handler?.Invoke(this, e);
         }
 
 
@@ -111,8 +107,8 @@ public abstract class Model : INotifyPropertyChanged
     /// </param>
     /// <returns>True if the value has changed, false if the old and new value were equal.</returns>
     protected bool SetProperty<T>(
-        ref T                     field,
-        T                         value,
+        ref T field,
+        T value,
         [CallerMemberName] string propertyName = null)
         {
             if (Equals(field, value))
@@ -138,7 +134,7 @@ public abstract class Model : INotifyPropertyChanged
     ///     The property name of the property that has changed.
     ///     This optional parameter can be skipped because the compiler is able to create it automatically.
     /// </param>
-    protected void RaisePropertyChanged(
+    private void RaisePropertyChanged(
         [CallerMemberName] string propertyName = null)
         {
             OnPropertyChanged(new PropertyChangedEventArgs(propertyName));

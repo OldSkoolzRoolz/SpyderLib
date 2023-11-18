@@ -1,7 +1,7 @@
 #region
 
-using KC.Apps.Properties;
 using KC.Apps.SpyderLib.Interfaces;
+using KC.Apps.SpyderLib.Properties;
 using KC.Apps.SpyderLib.Services;
 
 using Microsoft.Extensions.Hosting;

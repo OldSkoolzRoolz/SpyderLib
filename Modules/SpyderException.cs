@@ -4,7 +4,6 @@ using System.Runtime.Serialization;
 
 #endregion
 
-
 namespace KC.Apps.SpyderLib.Modules;
 
 [Serializable]
@@ -28,7 +27,7 @@ public class SpyderException : Exception
     /// </exception>
     protected SpyderException(
         SerializationInfo info,
-        StreamingContext  context) : base(info, context)
+        StreamingContext context) : base(info, context)
         {
         }
 
@@ -68,7 +67,7 @@ public class SpyderException : Exception
     ///     <see langword="Nothing" /> in Visual Basic) if no inner exception is specified.
     /// </param>
     public SpyderException(
-        string    message,
+        string message,
         Exception innerException) : base(message, innerException)
         {
         }

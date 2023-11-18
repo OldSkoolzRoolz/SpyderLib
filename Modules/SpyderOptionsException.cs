@@ -23,7 +23,7 @@ public class SpyderOptionsException : Exception
 
 
     public SpyderOptionsException(
-        string    message,
+        string message,
         Exception inner)
         : base(message, inner)
         {

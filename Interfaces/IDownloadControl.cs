@@ -4,7 +4,6 @@ using KC.Apps.SpyderLib.Models;
 
 #endregion
 
-
 namespace KC.Apps.SpyderLib.Interfaces;
 
 internal interface IDownloadControl
