@@ -4,51 +4,65 @@
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>disable</Nullable>
-        <AssemblyVersion>1.00</AssemblyVersion>
-        <FileVersion>1.00</FileVersion>
+        <RootNamespace>KC.Apps.SpyderLib</RootNamespace>
+<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <Deterministic>false</Deterministic>
+        <VersionSuffix>1.0.0.$([System.DateTime]::UtcNow.ToString(mmff))</VersionSuffix>
+        <AssemblyVersion Condition=" '$(VersionSuffix)' == '' ">0.0.0.1</AssemblyVersion>
+        <AssemblyVersion Condition=" '$(VersionSuffix)' != '' ">$(VersionSuffix)</AssemblyVersion>
+        <Version Condition=" '$(VersionSuffix)' == '' ">0.0.1.0</Version>
+        <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionSuffix)</Version>
+
+    </PropertyGroup>
+    
+    <PropertyGroup>
         <Title>SpyderWire Net Recycler</Title>
         <Authors>Kyle Crowder</Authors>
         <Description>Spyder Wire is a network crawler</Description>
         <PackageProjectUrl>http://github.com/OldSkoolzRoolz/SpyderLib</PackageProjectUrl>
-
         <RepositoryUrl>http://github.com/OldSkoolzRoolz/SpyderLib</RepositoryUrl>
-
-        <RootNamespace>KC.Apps</RootNamespace>
-
+        <LangVersion>latest</LangVersion>
+        <PackageLicenseUrl>http://github.com/OldSkoolzRoolz/SpyderLib/License.md</PackageLicenseUrl>
+        <RepositoryType>Github</RepositoryType>
+        <PackageTags>web spider crawler</PackageTags>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
         <DefineConstants>DEBUG</DefineConstants>
         <DebugType>full</DebugType>
+        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
         <DefineConstants/>
+        <DebugType>none</DebugType>
+        <DocumentationFile>bin\Release\net7.0\SpyderLib.xml</DocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="HtmlAgilityPack" Version="1.11.54"/>
-        <PackageReference Include="Jetbrains.Annotations" Version="2023.3.0-eap4"/>
-        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0-preview.23472.1">
+        <PackageReference Include="Jetbrains.Annotations" Version="2023.3.0"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0-3.final"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0-preview.23525.2">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0-rc.2.23479.6"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0-rc.2.23479.6"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0-rc.2.23479.6"/>
-        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0-rc.2.23479.6"/>
-        <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.0-rc.2.23480.2"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="8.0.0-rc.2.23479.6"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0-rc.2.23479.6"/>
-        <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0-rc.2.23479.6"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Diagnostics" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+
+        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
-        <PackageReference Include="Roslynator.Analyzers" Version="4.6.1">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PackageReference Include="Roslynator.Analyzers" Version="4.6.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" Version="4.6.1">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" Version="4.6.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
 
     </ItemGroup>
@@ -60,12 +74,9 @@
         <Compile Remove="SpyderLib\Control\CrawlerController.cs"/>
         <Compile Remove="SpyderLib\Modules\PageCrawler.cs"/>
         <Compile Remove="SpyderLib\Modules\ModFactory.cs"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Reference Include="Microsoft.Extensions.Hosting">
-            <HintPath>..\..\..\home\merlin\.nuget\packages\microsoft.extensions.hosting\7.0.1\lib\net7.0\Microsoft.Extensions.Hosting.dll</HintPath>
-        </Reference>
+        <Compile Remove="Control\CrawlerController.cs"/>
+        <Compile Remove="Modules\ModFactory.cs"/>
+        <Compile Remove="Modules\PageCrawler.cs"/>
     </ItemGroup>
 
 
