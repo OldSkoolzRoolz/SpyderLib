@@ -1,5 +1,7 @@
 #region
 
+using System.Diagnostics;
+
 using KC.Apps.SpyderLib.Models;
 
 #endregion
@@ -16,27 +18,27 @@ public interface IOutputControl
     /// <summary>
     ///     Gets or sets the collection of captured external links
     /// </summary>
-    ConcurrentScrapedUrlCollection CapturedExternalLinks { get; set; }
+    ConcurrentScrapedUrlCollection CapturedExternalLinks { get; }
 
     /// <summary>
     ///     Gets or sets the collection of captured seed links
     /// </summary>
-    ConcurrentScrapedUrlCollection CapturedSeedLinks { get; set; }
+    ConcurrentScrapedUrlCollection CapturedSeedLinks { get; }
 
     /// <summary>
     ///     Gets or sets the collection of URLs which resulted producing search results
     /// </summary>
-    ConcurrentScrapedUrlCollection CapturedUrlWithSearchResults { get; set; }
+    ConcurrentScrapedUrlCollection CapturedUrlWithSearchResults { get; }
 
     /// <summary>
     ///     Gets or sets the collection of captured video links
     /// </summary>
-    ConcurrentScrapedUrlCollection CapturedVideoLinks { get; set; }
+    ConcurrentScrapedUrlCollection CapturedVideoLinks { get; }
 
     /// <summary>
     ///     Gets or sets the collection of URLs that the web crawler failed to process
     /// </summary>
-    ConcurrentScrapedUrlCollection FailedCrawlerUrls { get; set; }
+    ConcurrentScrapedUrlCollection FailedCrawlerUrls { get; }
 
 
 
@@ -55,29 +57,23 @@ public interface IOutputControl
     ///     Gets or sets the collection of URLs that have been scraped in the current session.
     ///     This collection is used for exclusion purposes.
     /// </summary>
-    ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; set; }
+    ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; }
 
     #endregion
 }
 
 public class OutputControl : IOutputControl
 {
-    private OutputControl()
-        {
-        }
-
-
-
+    private OutputControl() { }
 
 
     #region Interface Members
 
     public ConcurrentScrapedUrlCollection CapturedExternalLinks { get; set; } = new();
     public ConcurrentScrapedUrlCollection CapturedSeedLinks { get; set; } = new();
+    public ConcurrentScrapedUrlCollection CapturedUrlWithSearchResults { get; set; } = new();
     public ConcurrentScrapedUrlCollection CapturedVideoLinks { get; set; } = new();
     public ConcurrentScrapedUrlCollection FailedCrawlerUrls { get; set; } = new();
-    public ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; set; } = new();
-    public ConcurrentScrapedUrlCollection CapturedUrlWithSearchResults { get; set; } = new();
 
 
 
@@ -97,11 +93,17 @@ public class OutputControl : IOutputControl
 
             foreach (var entry in collectionDictionary.Where(entry => !entry.Key.IsEmpty))
                 {
-                    SaveCollectionToFile(entry.Key, entry.Value);
+                    SaveCollectionToFile(col: entry.Key, fileName: entry.Value);
                 }
 
-            Console.WriteLine("Output written");
+            Debug.WriteLine(value: "Output written");
         }
+
+
+
+
+
+    public ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; set; } = new();
 
     #endregion
 
@@ -115,14 +117,18 @@ public class OutputControl : IOutputControl
 
     private static void SaveCollectionToFile(ConcurrentScrapedUrlCollection col, string fileName)
         {
-            if (col is { IsEmpty: true }) return;
-            var path = Path.Combine(Environment.CurrentDirectory, fileName);
+            if (col is { IsEmpty: true })
+                {
+                    return;
+                }
 
-            using var fs = new FileStream(path, FileMode.Append);
-            using var sw = new StreamWriter(fs);
+            var path = Path.Combine(path1: Environment.CurrentDirectory, path2: fileName);
+
+            using var fs = new FileStream(path: path, mode: FileMode.Append);
+            using var sw = new StreamWriter(stream: fs);
             foreach (var item in col)
                 {
-                    sw.WriteLine(item.Key);
+                    sw.WriteLine(value: item.Key);
                 }
 
             sw.Flush();

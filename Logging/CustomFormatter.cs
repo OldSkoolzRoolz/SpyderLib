@@ -1,5 +1,7 @@
 ﻿#region
 
+using CommunityToolkit.Diagnostics;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
@@ -29,10 +31,11 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
             IOptionsMonitor<CustomOptions> options)
 
         // Case insensitive
-        : base("customName")
+        : base(name: "customName")
         {
+            Guard.IsNotNull(value: options);
             (_optionsReloadToken, _formatterOptions) =
-                (options.OnChange(ReloadLoggerOptions), options.CurrentValue);
+                (options.OnChange(listener: ReloadLoggerOptions), options.CurrentValue);
         }
 
 
@@ -44,32 +47,33 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
         IExternalScopeProvider scopeProvider,
         TextWriter textWriter)
         {
+            ArgumentNullException.ThrowIfNull(argument: textWriter);
             var message =
                 logEntry.Formatter.Invoke(
-                    logEntry.State, logEntry.Exception);
+                    arg1: logEntry.State, arg2: logEntry.Exception);
 
-            CustomLogicGoesHere(textWriter);
-            textWriter.WriteLine(message);
+            CustomLogicGoesHere(textWriter: textWriter);
+            textWriter.WriteLine(value: message);
         }
 
     #endregion
 
     #region Private Methods
 
-    private void ReloadLoggerOptions(
-        CustomOptions options)
+    private void CustomLogicGoesHere(
+        TextWriter textWriter)
         {
-            _formatterOptions = options;
+            textWriter.Write(value: _formatterOptions.CustomPrefix);
         }
 
 
 
 
 
-    private void CustomLogicGoesHere(
-        TextWriter textWriter)
+    private void ReloadLoggerOptions(
+        CustomOptions options)
         {
-            textWriter.Write(_formatterOptions.CustomPrefix);
+            _formatterOptions = options;
         }
 
     #endregion

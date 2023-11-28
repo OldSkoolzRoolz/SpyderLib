@@ -1,14 +1,16 @@
 #region
 
+using System.Diagnostics;
+
+using KC.Apps.SpyderLib.Modules;
+
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
 
 #endregion
 
 namespace KC.Apps.SpyderLib.Logging;
 
-/// <inheritdoc cref="ConsoleFormatter" />
 internal class TextFileFormatter
 {
     private readonly TextFileLoggerConfiguration _formatterOptions;
@@ -50,14 +52,14 @@ internal class TextFileFormatter
             try
                 {
                     var stamp = _formatterOptions.UseUtcTime
-                        ? DateTimeOffset.UtcNow.ToString(_formatterOptions.TimestampFormat)
-                        : DateTimeOffset.Now.ToString(_formatterOptions.TimestampFormat);
+                        ? DateTimeOffset.UtcNow.ToString(format: _formatterOptions.TimestampFormat)
+                        : DateTimeOffset.Now.ToString(format: _formatterOptions.TimestampFormat);
 
                     var message =
                         logEntry.Formatter(
-                            logEntry.State, logEntry.Exception);
+                            arg1: logEntry.State, arg2: logEntry.Exception);
 
-                    if (string.IsNullOrWhiteSpace(message))
+                    if (string.IsNullOrWhiteSpace(value: message))
                         {
                             return;
                         }
@@ -73,16 +75,16 @@ internal class TextFileFormatter
 
                     // text log files typically are single line entries so multi-line is not an option in this logger
                     // only Writeline method is used.
-                    textWriter.WriteLine(formattedlog);
+                    textWriter.WriteLine(value: formattedlog);
                     textWriter.Flush();
                 }
-            catch (Exception e)
+            catch (SpyderException e)
                 {
-                    //Make sure there is a console
+                    //Make sure there is a Debug
 
                     if (Console.IsOutputRedirected == false)
                         {
-                            Console.WriteLine(e.Message);
+                            Debug.WriteLine(value: e.Message);
                         }
                 }
         }

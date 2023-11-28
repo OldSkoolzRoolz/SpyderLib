@@ -7,9 +7,11 @@ public class DownloadItem
 {
     internal DownloadItem(
         string link,
-        string savePath, long actualBytes = 0, long expectedBytes = 0)
+        string savePath,
+        long actualBytes = 0,
+        long expectedBytes = 0)
         {
-            ArgumentNullException.ThrowIfNull(link);
+            ArgumentNullException.ThrowIfNull(argument: link);
 
             this.SavePath = savePath ?? throw new ArgumentNullException(nameof(savePath));
             this.ActualBytes = actualBytes;
@@ -23,8 +25,8 @@ public class DownloadItem
 
     #region Properteez
 
-    internal long ActualBytes { get; set; } = 0;
-    internal long ExpectedBytes { get; set; } = 0;
+    internal long ActualBytes { get; set; }
+    internal long ExpectedBytes { get; set; }
     internal string Link { get; }
     internal string SavePath { get; }
 

@@ -4,9 +4,7 @@ public class SpyderOptionsException : Exception
 {
     #region Public Methods
 
-    public SpyderOptionsException()
-        {
-        }
+    public SpyderOptionsException() { }
 
 
 
@@ -14,9 +12,7 @@ public class SpyderOptionsException : Exception
 
     public SpyderOptionsException(
         string message)
-        : base(message)
-        {
-        }
+        : base(message: message) { }
 
 
 
@@ -25,9 +21,7 @@ public class SpyderOptionsException : Exception
     public SpyderOptionsException(
         string message,
         Exception inner)
-        : base(message, inner)
-        {
-        }
+        : base(message: message, innerException: inner) { }
 
     #endregion
 }

@@ -1,13 +1,10 @@
-#region
-
-using System.Collections.Concurrent;
 using System.Globalization;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Logging;
 
@@ -19,16 +16,10 @@ public class LogFormatter : ConsoleFormatter
             TIME_FORMAT; // Example: 2010-09-02 09:50:43.341 GMT - Variant of UniversalSorta­bleDateTimePat­tern
 
     private const string TIME_FORMAT = "HH:mm:ss.fff 'GMT'"; // Example: 09:50:43.341 GMT
-    private static readonly ConcurrentDictionary<Type, Func<Exception, string>> s_sExceptionDecoders = new();
-    private readonly LogFormatterOptions _formatterOptions;
 
     #region Public Methods
 
-    public LogFormatter(
-        LogFormatterOptions options) : base("SpyderFormatter")
-        {
-            _formatterOptions = options;
-        }
+    public LogFormatter(LogFormatterOptions options) : base(name: "SpyderFormatter") { }
 
 
 
@@ -36,7 +27,7 @@ public class LogFormatter : ConsoleFormatter
 
     /// <summary>Writes the log message to the specified TextWriter.</summary>
     /// <remarks>
-    ///     if the formatter wants to write colors to the console, it can do so by embedding ANSI color codes into the string
+    ///     if the formatter wants to write colors to the Debug, it can do so by embedding ANSI color codes into the string
     /// </remarks>
     /// <param name="logEntry">The log entry.</param>
     /// <param name="scopeProvider">The provider of scope data.</param>
@@ -47,11 +38,13 @@ public class LogFormatter : ConsoleFormatter
         IExternalScopeProvider scopeProvider,
         TextWriter textWriter)
         {
+            ArgumentNullException.ThrowIfNull(argument: scopeProvider);
+            ArgumentNullException.ThrowIfNull(argument: textWriter);
             var logLevel = logEntry.LogLevel;
-            var logMessage = logEntry.Formatter(logEntry.State, logEntry.Exception);
+            var logMessage = logEntry.Formatter(arg1: logEntry.State, arg2: logEntry.Exception);
 
             // Format the log message
-            var formattedMessage = $"{PrintTime(DateTime.Now)} {logLevel}: {logMessage}";
+            var formattedMessage = $"{PrintTime(date: DateTime.Now)} {logLevel}: {logMessage}";
 
 
             // If exception exists, include it in the message 
@@ -61,13 +54,13 @@ public class LogFormatter : ConsoleFormatter
                 }
 
             // Prepend custom prefix from formatter options, if it exists
-            if (!string.IsNullOrEmpty(_formatterOptions.CustomPrefix))
+            if (!string.IsNullOrEmpty(value: LogFormatterOptions.CustomPrefix))
                 {
-                    formattedMessage = _formatterOptions.CustomPrefix + formattedMessage;
+                    formattedMessage = LogFormatterOptions.CustomPrefix + formattedMessage;
                 }
 
             // Write the log message to the provided TextWriter
-            textWriter.WriteLine(formattedMessage);
+            textWriter.WriteLine(value: formattedMessage);
         }
 
     #endregion
@@ -82,7 +75,7 @@ public class LogFormatter : ConsoleFormatter
     internal static DateTime ParseDate(
         string dateStr)
         {
-            return DateTime.ParseExact(dateStr, DATE_FORMAT, CultureInfo.InvariantCulture);
+            return DateTime.ParseExact(s: dateStr, format: DATE_FORMAT, provider: CultureInfo.InvariantCulture);
         }
 
 
@@ -97,7 +90,7 @@ public class LogFormatter : ConsoleFormatter
     internal static string PrintDate(
         DateTime date)
         {
-            return date.ToString(DATE_FORMAT, CultureInfo.InvariantCulture);
+            return date.ToString(format: DATE_FORMAT, provider: CultureInfo.InvariantCulture);
         }
 
 
@@ -112,7 +105,7 @@ public class LogFormatter : ConsoleFormatter
     private static string PrintTime(
         DateTime date)
         {
-            return date.ToString(TIME_FORMAT, CultureInfo.InvariantCulture);
+            return date.ToString(format: TIME_FORMAT, provider: CultureInfo.InvariantCulture);
         }
 
     #endregion

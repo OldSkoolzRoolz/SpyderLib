@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace KC.Apps.SpyderLib.Logging;
 
-public static class ConsoleLoggerExtensions
+public static class DebugLoggerExtensions
 {
     #region Public Methods
 
@@ -15,7 +15,7 @@ public static class ConsoleLoggerExtensions
         Action<CustomOptions> configure)
         {
             return builder.AddConsole(options => options.FormatterName = "customName")
-                .AddConsoleFormatter<CustomFormatter, CustomOptions>(configure);
+                .AddConsoleFormatter<CustomFormatter, CustomOptions>(configure: configure);
         }
 
     #endregion

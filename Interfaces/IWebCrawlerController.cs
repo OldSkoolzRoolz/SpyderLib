@@ -1,4 +1,4 @@
-namespace KC.Apps.SpyderLib.Control;
+namespace KC.Apps.SpyderLib.Interfaces;
 
 public interface IWebCrawlerController
 {

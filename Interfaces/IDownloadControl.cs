@@ -6,15 +6,14 @@ using KC.Apps.SpyderLib.Models;
 
 namespace KC.Apps.SpyderLib.Interfaces;
 
-internal interface IDownloadControl
+public interface IDownloadControl
 {
     #region Public Methods
 
-    void AddDownloadItem(
-        DownloadItem item);
+    Task AddDownloadItem(DownloadItem item);
 
 
-
+    Task SearchLocalCacheForHtmlTag();
 
 
     void SetInputComplete();

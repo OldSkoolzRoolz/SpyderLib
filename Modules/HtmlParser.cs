@@ -1,15 +1,15 @@
 #region
 
+using System.Diagnostics;
+
+using CommunityToolkit.Diagnostics;
+
 using HtmlAgilityPack;
 
 using KC.Apps.SpyderLib.Control;
 using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Services;
-
-
-
-// ReSharper disable All
 
 #endregion
 
@@ -23,53 +23,290 @@ public static class HtmlParser
     #region Public Methods
 
     /// <summary>
-    ///     extracts and sanitizes hyperlinks from the HtmlDocument
+    ///     Extracts the 'src' or 'source' attribute values from a given HTML Node collection.
+    ///     It only returns the values which are not null or empty and do not start with '/'.
     /// </summary>
-    /// <param name="docsource"></param>
-    /// <returns>Hyperlinks contained in web page</returns>
-    public static IEnumerable<string> GetHrefLinksFromDocumentSource(string docsource)
+    /// <param name="nodeCollection">The HtmlNodeCollection from which to extract the attribute value.</param>
+    /// <exception cref="ArgumentNullException">Thrown when nodeCollection is null.</exception>
+    /// <returns>A string array of attribute values.</returns>
+    public static string[] ExtractVideoNodeLinkSource(HtmlNodeCollection nodeCollection)
         {
-            if (string.IsNullOrEmpty(docsource))
-                {
-                    return new string[] { };
-                }
-        
-
-            var doc = CreateHtmlDocument(docsource);
-
-
-            var links = doc.DocumentNode.SelectNodes("//a[@href]")
-                .Select(a => a.GetAttributeValue("href", null))
-                .Where(u => !string.IsNullOrEmpty(u));
-
-            OutputControl.Instance.UrlsScrapedThisSession.AddRange(links);
-
-            Console.WriteLine($"raw link count :: {links.Count()}");
-            var sanitized = ValidateUrls(links);
-            Console.WriteLine($"sanitized raw link count :: {sanitized.Count()}");
-
-            var urlTuple = SeparateUrls(sanitized, new Uri(SpyderControlService.CrawlerOptions.StartingUrl));
-
-            OutputControl.Instance.CapturedExternalLinks.AddRange(urlTuple.OtherUrls);
-            OutputControl.Instance.CapturedSeedLinks.AddRange(urlTuple.BaseUrls);
-
-            if (!SpyderControlService.CrawlerOptions.FollowExternalLinks)
-                {
-                    return urlTuple.BaseUrls;
-                }
-
-            return sanitized;
+            ArgumentNullException.ThrowIfNull(argument: nodeCollection);
+            return nodeCollection
+                .Select(node =>
+                    node.GetAttributeValue(name: "src", node.GetAttributeValue(name: "source", def: string.Empty)))
+                .Where(link => !string.IsNullOrEmpty(value: link) && !link.StartsWith('/'))
+                .ToArray();
         }
 
 
 
 
 
-    public static async Task<IEnumerable<HtmlNode>> ExtractVideoNodesFromHtmlContentAsync(string htmlContent)
+    /// <summary>
+    ///     Asynchronously extracts video nodes from a given HTML source.
+    /// </summary>
+    /// <param name="source">The HTML source string to extract video nodes from.</param>
+    /// <returns>
+    ///     A task that represents the asynchronous operation. The task result contains a collection of video nodes
+    ///     extracted from the HTML source.
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when the source is null or empty.</exception>
+    public static async Task<HtmlNodeCollection> ExtractVideoNodesFromDocumentSource(string source)
         {
-            var htmlDoc = await Task.Run(() => CreateHtmlDocument(htmlContent));
+            Guard.IsNullOrEmpty(text: source);
 
-            return htmlDoc?.DocumentNode.Descendants("video") ?? Enumerable.Empty<HtmlNode>();
+            // Create HtmlDocument as hinted by "CreateHtmlDocument" method presence
+            var document = CreateHtmlDocument(content: source);
+
+            // As we are looking for video nodes, operation might be I/O heavy, hence Task.Run
+            return await Task.Run(() =>
+                {
+                    // assumed "video" to be the relevant node for this context
+                    var videoNodes = document.DocumentNode.SelectNodes(xpath: "//video");
+
+                    return videoNodes;
+                }).ConfigureAwait(false);
+        }
+
+
+
+
+
+    /// <summary>
+    ///     This method is used to extract all hyperlinks from the given html source. It parses the HTML,
+    ///     extracts 'href' values, filters out invalid URLs, and then categorizes them into two groups -
+    ///     external links and links of the same domain. It also updates the URL count on the OutputControl.
+    ///     Decides to either return only base URLs or both types based on a configuration flag.
+    /// </summary>
+    /// <param name="webPagesource">The source html from which links need to be extracted.</param>
+    /// <returns>
+    ///     Returns tuple of seed urls and external urls.
+    /// </returns>
+    public static (List<string> BaseUrls, List<string> OtherUrls) GetHrefLinksFromDocumentSource(string webPagesource)
+        {
+            Guard.IsNotNullOrWhiteSpace(text: webPagesource);
+            if (webPagesource.StartsWith(value: "Error", comparisonType: StringComparison.OrdinalIgnoreCase))
+                {
+                    return default;
+                }
+
+            var doc = CreateHtmlDocument(content: webPagesource);
+
+            try
+                {
+                    var links = doc.DocumentNode.SelectNodes("//a[@href]")
+                        .Select(a => a.GetAttributeValue(name: "href", null))
+                        .Where(u => !string.IsNullOrEmpty(value: u));
+
+                    var rawLinks = links as string[] ?? links.ToArray();
+
+                    Debug.WriteLine($"raw link count :: {rawLinks.Length}");
+                    var urlTuple = SeparateUrls(ValidateUrls(urls: rawLinks),
+                        new(uriString: SpyderControlService.CrawlerOptions.StartingUrl));
+
+
+                    OutputControl.Instance.UrlsScrapedThisSession.AddRange(itemsToAdd: rawLinks);
+                    OutputControl.Instance.CapturedExternalLinks.AddRange(itemsToAdd: urlTuple.OtherUrls);
+                    OutputControl.Instance.CapturedSeedLinks.AddRange(itemsToAdd: urlTuple.BaseUrls);
+
+                    return urlTuple;
+                }
+            catch (Exception)
+                {
+                    LoggingMessages.SpyderHelpersException(logger: SpyderControlService.Logger,
+                        message: "Error parsing page source, Resuming...");
+                    throw new SpyderException(message: "Error parsing page source");
+                }
+        }
+
+
+
+
+
+    public static IEnumerable<string> SanitizeUrls(IEnumerable<string> rawUrls)
+        {
+            var set1 = FilterLocalUrls(rawUrls: rawUrls);
+
+            var set2 = FilterUrlsByScheme(urls: set1);
+
+            var set3 = RemoveDuplicatedUrls(urls: set2);
+
+            return set3;
+        }
+
+
+
+
+
+    public static bool SearchPageForTagName(
+        string content,
+        string tag)
+        {
+            var doc = CreateHtmlDocument(content: content);
+
+            ArgumentNullException.ThrowIfNull(argument: doc);
+            ArgumentNullException.ThrowIfNull(argument: tag);
+            try
+                {
+                    var hasTags = doc.DocumentNode.Descendants(name: tag);
+                    if (hasTags.Any())
+                        {
+                            return true;
+                        }
+                }
+            catch (ArgumentNullException ae)
+                {
+                    Log.AndContinue(exception: ae);
+                }
+            catch (Exception e)
+                {
+                    Log.AndContinue(exception: e);
+                    throw;
+                }
+
+
+            return false;
+        }
+
+
+
+
+
+    public static bool TryExtractUserTagFromDocument(
+        HtmlDocument doc,
+        string tagToSearchFor,
+        out ConcurrentScrapedUrlCollection links)
+        {
+            Guard.IsNotNull(value: doc);
+            Guard.IsNotNull(value: tagToSearchFor);
+            links = new();
+            var tagnodes = doc.DocumentNode.Descendants(name: tagToSearchFor);
+            if (tagnodes is null)
+                {
+                    return false;
+                }
+
+            var att = ParseNodeCollectionForSources(collection: tagnodes);
+            foreach (var link in att)
+                {
+                    links.Add(url: link);
+                }
+
+            return links.Any();
+        }
+
+    #endregion
+
+    #region Private Methods
+
+    internal static HtmlDocument CreateHtmlDocument(
+        string content)
+        {
+            Guard.IsNotNull(value: content);
+
+            var doc = new HtmlDocument
+                {
+                    OptionReadEncoding = true,
+                    OptionOutputOriginalCase = true,
+                    DisableServerSideCode = true
+                };
+
+
+            doc.LoadHtml(html: content);
+
+
+            return doc;
+        }
+
+
+
+
+
+    private static IEnumerable<string> FilterLocalUrls(IEnumerable<string> rawUrls)
+        {
+            var aRawUrls = rawUrls.ToArray();
+            Guard.IsNotNull(value: aRawUrls);
+
+            return aRawUrls.Where(url =>
+                {
+                    try
+                        {
+                            return !url.Contains('#', comparisonType: StringComparison.Ordinal);
+                        }
+                    catch (FormatException)
+                        {
+                            return false;
+                        }
+                });
+        }
+
+
+
+
+
+    private static IEnumerable<string> FilterPatternsFromUrls(IEnumerable<string> urls)
+        {
+            var patterns = SpyderControlService.CrawlerOptions.LinkPatternExclusions;
+            return urls.Where(url =>
+                {
+                    try
+                        {
+                            return !patterns.Any(predicate: url.Contains);
+                        }
+                    catch (SpyderException)
+                        {
+                            return false;
+                        }
+                });
+        }
+
+
+
+
+
+    private static IEnumerable<string> FilterUrlsByScheme(IEnumerable<string> urls)
+        {
+            return urls.Where(url =>
+                {
+                    try
+                        {
+                            if (!url.StartsWith(value: "http", comparisonType: StringComparison.Ordinal))
+                                {
+                                    return false;
+                                }
+
+                            var uri = new Uri(uriString: url);
+
+
+                            return uri.IsWellFormedOriginalString();
+                        }
+                    catch (UriFormatException)
+                        {
+                            return false;
+                        }
+                });
+        }
+
+
+
+
+
+    /// <summary>
+    ///     validates a Url as an absolute and formatted correctly
+    /// </summary>
+    /// <param name="url"></param>
+    /// <returns></returns>
+    private static bool IsValidUrl(
+        string url)
+        {
+            Guard.IsNotNull(value: url);
+            var success = Uri.IsWellFormedUriString(uriString: url, uriKind: UriKind.Absolute) &&
+                          Uri.TryCreate(uriString: url, uriKind: UriKind.Absolute, out var uriResult) &&
+                          (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+
+
+            return success;
         }
 
 
@@ -89,7 +326,7 @@ public static class HtmlParser
     /// </summary>
     /// <param name="collection"></param>
     /// <returns></returns>
-    public static List<string> ParseNodeCollectionForSources(
+    private static List<string> ParseNodeCollectionForSources(
         IEnumerable<HtmlNode> collection)
         {
             List<string> sources = new();
@@ -99,8 +336,8 @@ public static class HtmlParser
                     return sources;
                 }
 
-            Parallel.ForEach(
-                collection, node =>
+            _ = Parallel.ForEach(
+                source: collection, node =>
                     {
                         // this sometimes returns null elements in the ienumerable
                         var attr = node.GetAttributes("src", "source");
@@ -110,9 +347,9 @@ public static class HtmlParser
                         sources.AddRange(attr.Select(att => att.Value));
 
                         var descendants = node.Descendants().ToList();
-                        var descendantSources = ParseNodeCollectionForSources(descendants);
+                        var descendantSources = ParseNodeCollectionForSources(collection: descendants);
 
-                        sources.AddRange(descendantSources);
+                        sources.AddRange(collection: descendantSources);
                     });
 
 
@@ -128,7 +365,7 @@ public static class HtmlParser
     /// </summary>
     /// <param name="node"></param>
     /// <returns>List</returns>
-    public static List<string> ParseNodeForSourceAttributes(
+    private static List<string> ParseNodeForSourceAttributes(
         HtmlNode node)
         {
             ArgumentNullException.ThrowIfNull(argument: node);
@@ -154,15 +391,44 @@ public static class HtmlParser
 
 
 
-    public static IEnumerable<string> SanitizeUrls(IEnumerable<string> rawUrls)
+    /// <summary>
+    ///     Iteration Wrapper overload for single node method
+    /// </summary>
+    /// <param name="nodes">IEnumerable</param>
+    private static List<string> ParseNodesForVideoSourceAttributes(
+        IEnumerable<HtmlNode> nodes)
         {
-            var set1 = FilterLocalUrls(rawUrls);
+            var htmlNodes = nodes as HtmlNode[] ?? nodes.ToArray();
+            Guard.IsNotNull(value: htmlNodes);
 
-            var set2 = FilterUrlsByScheme(set1);
+            List<string> temp = new();
+            foreach (var node in htmlNodes)
+                {
+                    var results = ParseNodeForSourceAttributes(node: node);
+                    if (results.Count > 0)
+                        temp.AddRange(collection: results);
+                }
 
-            var set3 = RemoveDuplicatedUrls(set2);
 
-            return set3;
+            return temp;
+        }
+
+
+
+
+
+    private static IEnumerable<string> RemoveDuplicatedUrls(IEnumerable<string> urls)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(nameof(urls));
+
+            //Make sure we don't have any duplicates in our new urls
+            if (!OutputControl.Instance.UrlsScrapedThisSession.IsEmpty)
+                {
+                    var distinctUrls = urls.Except(second: OutputControl.Instance.UrlsScrapedThisSession.Keys);
+                    return distinctUrls;
+                }
+
+            return urls;
         }
 
 
@@ -177,18 +443,15 @@ public static class HtmlParser
 
             foreach (var url in sanitizedUrls)
                 {
-                    if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                    if (Uri.TryCreate(uriString: url, uriKind: UriKind.Absolute, out var uri))
                         {
-                            var strippedUrl = uri.GetLeftPart(UriPartial.Path);
-                            if (baseUri.IsBaseOf(new Uri(strippedUrl)))
-                                baseUrls.Add(strippedUrl);
+                            var strippedUrl = uri.GetLeftPart(part: UriPartial.Path);
+                            if (baseUri.IsBaseOf(new(uriString: strippedUrl)))
+                                baseUrls.Add(item: strippedUrl);
                             else
-                                otherUrls.Add(strippedUrl);
+                                otherUrls.Add(item: strippedUrl);
                         }
-                    else
-                        {
-                            //Skip anomaly
-                        }
+                    //Skip anomaly
                 }
 
 
@@ -199,105 +462,27 @@ public static class HtmlParser
 
 
 
-    public static bool SearchPageForTagName(
-        string content,
-        string tag)
+    private static List<string> ToAbsolute(string baseUrl, IEnumerable<string> urls)
         {
-            var doc = CreateHtmlDocument(content);
-
-            ArgumentNullException.ThrowIfNull(argument: doc);
-            ArgumentNullException.ThrowIfNull(tag);
-            try
-                {
-                    var hasTags = doc.DocumentNode.Descendants(tag);
-                    if (hasTags.Any())
-                        {
-                            return true;
-                        }
-                }
-            catch (Exception e)
-                {
-                    Log.AndContinue(e);
-                }
-
-
-            return false;
-        }
-
-
-
-
-
-    public static bool TryExtractUserTagFromDocument(
-        HtmlDocument doc,
-        string optionsHtmlTagToSearchFor,
-        out ConcurrentScrapedUrlCollection links)
-        {
-            links = new();
-            var tagnodes = doc.DocumentNode.Descendants(optionsHtmlTagToSearchFor);
-            var att = ParseNodeCollectionForSources(tagnodes);
-            foreach (var link in att)
-                {
-                    links.Add(link);
-                }
-
-            if (links.Any())
-                {
-                    return true;
-                }
-
-
-            return false;
-        }
-
-    #endregion
-
-    #region Private Methods
-
-    private static IEnumerable<string> ValidateUrls(IEnumerable<string> urls)
-        {
-            var nopatters = FilterPatternsFromUrls(urls);
-            var absonly = ToAbsolute(SpyderControlService.CrawlerOptions.StartingUrl, nopatters);
-
-
-            return absonly.Where(url =>
-                {
-                    try
-                        {
-                            return IsValidUrl(url);
-                        }
-                    catch (Exception)
-                        {
-                            return false;
-                        }
-                });
-        }
-
-
-
-
-
-    public static IEnumerable<string> ToAbsolute(string baseUrl, IEnumerable<string> urls)
-        {
-            Uri baseUri = new Uri(baseUrl);
-            List<string> outputUrls = new List<string>();
+            var baseUri = new Uri(uriString: baseUrl);
+            var outputUrls = new List<string>();
             foreach (var url in urls)
                 {
                     try
                         {
-                            if (Uri.IsWellFormedUriString(url, UriKind.Absolute))
+                            if (Uri.IsWellFormedUriString(uriString: url, uriKind: UriKind.Absolute))
                                 {
-                                    outputUrls.Add(url);
+                                    outputUrls.Add(item: url);
                                 }
                             else
                                 {
-                                    var newUrl = new Uri(baseUri, url).ToString();
-                                    outputUrls.Add(newUrl);
+                                    var newUrl = new Uri(baseUri: baseUri, relativeUri: url).ToString();
+                                    outputUrls.Add(item: newUrl);
                                 }
                         }
-                    catch (Exception)
+                    catch (SpyderException)
                         {
-                            Console.WriteLine($"Failed to convert the url: {url}");
+                            Debug.WriteLine($"Failed to convert the url: {url}");
                         }
                 }
 
@@ -308,145 +493,23 @@ public static class HtmlParser
 
 
 
-    /// <summary>
-    ///     validates a Url as an absolute and formatted correctly
-    /// </summary>
-    /// <param name="url"></param>
-    /// <returns></returns>
-    private static bool IsValidUrl(
-        string url)
+    private static IEnumerable<string> ValidateUrls(IEnumerable<string> urls)
         {
-            bool success = Uri.IsWellFormedUriString(uriString: url, uriKind: UriKind.Absolute)
-                           && Uri.TryCreate(uriString: url, uriKind: UriKind.Absolute, out var uriResult)
-                           && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+            var nopatters = FilterPatternsFromUrls(urls: urls);
+            var absonly = ToAbsolute(baseUrl: SpyderControlService.CrawlerOptions.StartingUrl, urls: nopatters);
 
 
-            return success;
-        }
-
-
-
-
-
-    private static IEnumerable<string> FilterUrlsByScheme(IEnumerable<string> urls)
-        {
-            return urls.Where(url =>
+            return absonly.Where(url =>
                 {
                     try
                         {
-                            if (!url.StartsWith("http"))
-                                {
-                                    return false;
-                                }
-
-                            var uri = new Uri(url);
-
-
-                            return uri.IsWellFormedOriginalString();
+                            return IsValidUrl(url: url);
                         }
-                    catch (UriFormatException)
+                    catch (SpyderException)
                         {
                             return false;
                         }
                 });
-        }
-
-
-
-
-
-    private static IEnumerable<string> FilterLocalUrls(IEnumerable<string> rawUrls)
-        {
-            return rawUrls.Where(url =>
-                {
-                    try
-                        {
-                            return !url.Contains("#");
-                        }
-                    catch (FormatException)
-                        {
-                            return false;
-                        }
-                });
-        }
-
-
-
-
-
-    private static IEnumerable<string> FilterPatternsFromUrls(IEnumerable<string> urls)
-        {
-            var patterns = SpyderControlService.CrawlerOptions.LinkPatternExclusions;
-            return urls.Where(url =>
-                {
-                    try
-                        {
-                            return !patterns.Any(pattern => url.Contains(pattern));
-                        }
-                    catch (Exception)
-                        {
-                            return false;
-                        }
-                });
-        }
-
-
-
-
-
-    private static IEnumerable<string> RemoveDuplicatedUrls(IEnumerable<string> urls)
-        {
-            ArgumentException.ThrowIfNullOrEmpty(nameof(urls));
-
-            //Make sure we don't have any duplicates in our new urls
-            if (!OutputControl.Instance.UrlsScrapedThisSession.IsEmpty)
-                {
-                    var distinctUrls = urls.Except(OutputControl.Instance.UrlsScrapedThisSession.Keys);
-                    return distinctUrls;
-                }
-
-            return urls;
-        }
-
-
-
-
-
-    /// <summary>
-    ///     Iteration Wrapper overload for single node method
-    /// </summary>
-    /// <param name="nodes">IEnumerable</param>
-    private static List<string> ParseNodesForVideoSourceAttributes(
-        IEnumerable<HtmlNode> nodes)
-        {
-            List<string> temp = new();
-            foreach (var node in nodes)
-                {
-                    var results = ParseNodeForSourceAttributes(node: node);
-                    temp.AddRange(collection: results);
-                }
-
-
-            return temp;
-        }
-
-
-
-
-
-    internal static HtmlDocument CreateHtmlDocument(
-        string content)
-        {
-            var doc = new HtmlDocument();
-            doc.OptionReadEncoding = true;
-            doc.OptionOutputOriginalCase = true;
-            doc.DisableServerSideCode = true;
-
-
-            doc.LoadHtml(content);
-
-
-            return doc;
         }
 
     #endregion

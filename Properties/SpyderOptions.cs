@@ -5,6 +5,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
+using JetBrains.Annotations;
+
 using Microsoft.Extensions.Logging;
 
 #endregion
@@ -18,7 +20,7 @@ public class SpyderOptions
 {
     #region Public Enums
 
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage(category: "ReSharper", checkId: "InconsistentNaming")]
     public enum HtmlTagList
     {
         video,
@@ -58,20 +60,18 @@ public class SpyderOptions
     [Required] public bool KeepBaseLinks { get; init; }
     [Required] public bool KeepExternalLinks { get; init; }
 
-public bool UseMetrics {get;init;}
-
     /// <summary>
     ///     The depth that links will be followed
     /// </summary>
     [Required]
     public int LinkDepthLimit { get; init; } = 2;
 
-    [Required] public string[] LinkPatternExclusions { get; init; } = { "?id=", "file://", "mailto://", "?cb=" };
-    [Required] public LogLevel LoggingLevel { get; init; } = LogLevel.Information;
-    [Required] public string LogPath { get; init; } = AppContext.BaseDirectory;
+    [CanBeNull] public string[] LinkPatternExclusions { get; init; }
+    [Required] public LogLevel LoggingLevel { get; init; }
+    [Required] public string LogPath { get; init; }
     [Required] [AllowNull] public string OutputFileName { get; init; } = "OutputFilename.txt";
-    [Required] [AllowNull] public string OutputFilePath { get; init; } = AppContext.BaseDirectory;
-    [Required] public int QueueCapacity { get; set; } = 100;
+    [Required] [AllowNull] public string OutputFilePath { get; init; }
+    [Required] public int QueueCapacity { get; set; } = 200;
 
     /// <summary>
     ///     The Base url or seed url, Depth Level 0
@@ -88,6 +88,8 @@ public bool UseMetrics {get;init;}
     /// </summary>
     [Required]
     public bool UseLocalCache { get; init; }
+
+    public bool UseMetrics { get; init; }
 
     #endregion
 }

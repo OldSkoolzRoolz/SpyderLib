@@ -28,6 +28,52 @@ public abstract class Model : INotifyPropertyChanged
     #region Private Methods
 
     /// <summary>
+    ///     Raises the <see cref="PropertyChanged" /> event.
+    /// </summary>
+    /// <param name="propertyName">Optional parameter. If not given or null, the name of the calling member will be used.</param>
+    protected virtual void OnPropertyChanged(
+        [CallerMemberName] string propertyName = null)
+        {
+            this.PropertyChanged?.Invoke(this, new(propertyName: propertyName));
+        }
+
+
+
+
+
+    /// <summary>
+    ///     Raises the <see cref="PropertyChanged" /> event.
+    /// </summary>
+    /// <param name="e">The <see cref="System.ComponentModel.PropertyChangedEventArgs" /> instance containing the event data.</param>
+    protected virtual void OnPropertyChanged(
+        PropertyChangedEventArgs e)
+        {
+            var handler = this.PropertyChanged;
+            handler?.Invoke(this, e: e);
+        }
+
+
+
+
+
+    /// <summary>
+    ///     Raises the <see cref="PropertyChanged" /> event.
+    /// </summary>
+    /// <param name="propertyName">
+    ///     The property name of the property that has changed.
+    ///     This optional parameter can be skipped because the compiler is able to create it automatically.
+    /// </param>
+    private void RaisePropertyChanged(
+        [CallerMemberName] string propertyName = null)
+        {
+            OnPropertyChanged(new PropertyChangedEventArgs(propertyName: propertyName));
+        }
+
+
+
+
+
+    /// <summary>
     ///     Checks if the given field does not already equal the new value, updates the field with the new value and then
     ///     returns true.
     ///     Raises the <see cref="PropertyChanged" /> event with the name of the changed property.
@@ -49,45 +95,16 @@ public abstract class Model : INotifyPropertyChanged
         T value,
         [CallerMemberName] string propertyName = null)
         {
-            if (EqualityComparer<T>.Default.Equals(field, value))
+            if (EqualityComparer<T>.Default.Equals(x: field, y: value))
                 {
                     return false;
                 }
 
             field = value;
-            OnPropertyChanged(propertyName);
+            OnPropertyChanged(propertyName: propertyName);
 
 
             return true;
-        }
-
-
-
-
-
-    /// <summary>
-    ///     Raises the <see cref="PropertyChanged" /> event.
-    /// </summary>
-    /// <param name="propertyName">Optional parameter. If not given or null, the name of the calling member will be used.</param>
-    protected virtual void OnPropertyChanged(
-        [CallerMemberName] string propertyName = null)
-        {
-            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-
-
-
-
-    /// <summary>
-    ///     Raises the <see cref="E:PropertyChanged" /> event.
-    /// </summary>
-    /// <param name="e">The <see cref="System.ComponentModel.PropertyChangedEventArgs" /> instance containing the event data.</param>
-    protected virtual void OnPropertyChanged(
-        PropertyChangedEventArgs e)
-        {
-            var handler = this.PropertyChanged;
-            handler?.Invoke(this, e);
         }
 
 
@@ -111,33 +128,16 @@ public abstract class Model : INotifyPropertyChanged
         T value,
         [CallerMemberName] string propertyName = null)
         {
-            if (Equals(field, value))
+            if (Equals(objA: field, objB: value))
                 {
                     return false;
                 }
 
             field = value;
-            RaisePropertyChanged(propertyName);
+            RaisePropertyChanged(propertyName: propertyName);
 
 
             return true;
-        }
-
-
-
-
-
-    /// <summary>
-    ///     Raises the <see cref="E:PropertyChanged" /> event.
-    /// </summary>
-    /// <param name="propertyName">
-    ///     The property name of the property that has changed.
-    ///     This optional parameter can be skipped because the compiler is able to create it automatically.
-    /// </param>
-    private void RaisePropertyChanged(
-        [CallerMemberName] string propertyName = null)
-        {
-            OnPropertyChanged(new PropertyChangedEventArgs(propertyName));
         }
 
     #endregion

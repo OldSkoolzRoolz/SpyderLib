@@ -4,8 +4,7 @@ public record struct PageContent
 {
     #region Public Methods
 
-    public PageContent(
-        string url) : this()
+    public PageContent(Uri url) : this()
         {
             this.Url = url;
             this.CacheFileName = string.Empty;
@@ -17,15 +16,20 @@ public record struct PageContent
 
 
 
-  /// <summary>
-  /// If page content is retrieved from cache this is the filename on disk
-  /// </summary>
+    /// <summary>
+    ///     If page content is retrieved from cache this is the filename on disk
+    /// </summary>
     public string CacheFileName { get; set; }
 
- /// <summary>
- /// Contents of page at the Url <see cref="Url"/>
- /// </summary>
+    /// <summary>
+    ///     Contents of page at the Url <see cref="Url" />
+    /// </summary>
     public string Content { get; set; }
+
+    /// <summary>
+    ///     If an error occurred during the scraping of this url it will be populated here.
+    /// </summary>
+    public Exception Exception { get; set; }
 
     public bool FromCache { get; set; }
 
@@ -35,13 +39,7 @@ public record struct PageContent
     /// <value>
     ///     The URL.
     /// </value>
-    public string Url { get; init; }
-
-    
-    /// <summary>
-    /// If an error occurred during the scraping of this url it will be populated here.
-    /// </summary>
-    public Exception Exception { get; set; }
+    public Uri Url { get; init; }
 
     #endregion
 }

@@ -11,31 +11,34 @@ namespace KC.Apps.SpyderLib.Logging;
 /// <summary>
 ///     A Provider of <see cref="TextFileLogger" /> instances.
 /// </summary>
-[ProviderAlias("TextFileLogging")]
+[ProviderAlias(alias: "TextFileLogging")]
 public sealed class TextFileLoggerProvider : ILoggerProvider
 {
     private readonly TextFileLoggerConfiguration _currentConfig;
     private readonly TextFileFormatter _formatter;
-    private readonly ConcurrentDictionary<string, TextFileLogger> _loggers = new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly ConcurrentDictionary<string, TextFileLogger> _loggers =
+        new(comparer: StringComparer.OrdinalIgnoreCase);
+
     private bool _disposed;
 
     #region Interface Members
 
-    public void Dispose()
+    public ILogger CreateLogger(
+        string categoryName)
         {
-            Dispose(true);
+            return _loggers.GetOrAdd(
+                key: categoryName, name =>
+                    new(name: name, formatter: _formatter, GetCurrentConfig()));
         }
 
 
 
 
 
-    public ILogger CreateLogger(
-        string categoryName)
+    public void Dispose()
         {
-            return _loggers.GetOrAdd(
-                categoryName, name =>
-                    new TextFileLogger(name, _formatter, GetCurrentConfig()));
+            Dispose(true);
         }
 
     #endregion
@@ -49,7 +52,7 @@ public sealed class TextFileLoggerProvider : ILoggerProvider
     public TextFileLoggerProvider(
         TextFileLoggerConfiguration config)
         {
-            _formatter = new TextFileFormatter(config);
+            _formatter = new(config: config);
             _currentConfig = config;
         }
 

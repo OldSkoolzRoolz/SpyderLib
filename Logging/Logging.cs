@@ -3,6 +3,10 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
+
+
+// ReSharper disable LocalizableElement
+
 #endregion
 
 namespace KC.Apps.SpyderLib.Logging;
@@ -28,8 +32,8 @@ public static class Log
             var front = Console.ForegroundColor;
             Console.BackgroundColor = ConsoleColor.Green;
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("<INFO> {0}::{1} : {3}. Line #{2}", exception.Message, memberName, line, path);
-            Debugger.Log(99, "Error", exception.Message);
+            Console.WriteLine(format: @"<INFO> {0}::{1} : {3}. Line #{2}", exception.Message, memberName, line, path);
+            Debugger.Log(99, category: "Error", message: exception.Message);
             Console.ForegroundColor = front;
             Console.BackgroundColor = back;
         }
@@ -46,7 +50,7 @@ public static class Log
         {
             var b42 = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.WriteLine("<CRITICAL> {0}::{1} : {3}. Line #{2}", message, memberName, line, path);
+            Console.WriteLine(format: "<CRITICAL> {0}::{1} : {3}. Line #{2}", message, memberName, line, path);
             Console.ForegroundColor = b42;
         }
 
@@ -62,73 +66,62 @@ public static class Log
         {
             var b42 = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.WriteLine("<DEBUG> {0}::{1} : {3}. Line #{2}", message, memberName, line, path);
-            Console.ForegroundColor = b42;
-        }
-
-
-
-
-
-    internal static void Error(
-        string message,
-        [CallerMemberName] string memberName = "",
-        [CallerLineNumber] int line = 0,
-        [CallerFilePath] string path = "")
-        {
-            var b42 = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.WriteLine("<ERROR> {0}::{1} : {3}. Line #{2}", message, memberName, line, path);
-            Console.ForegroundColor = b42;
-        }
-
-
-
-
-
-    internal static void Information(
-        string message,
-        [CallerMemberName] string memberName = "",
-        [CallerLineNumber] int line = 0,
-        [CallerFilePath] string path = "")
-        {
-            var b42 = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("<INFO> {0}::{1} : {3}. Line #{2}", message, memberName, line, path);
-            Console.ForegroundColor = b42;
-        }
-
-
-
-
-
-    internal static void Trace(
-        string message,
-        [CallerMemberName] string memberName = "",
-        [CallerLineNumber] int line = 0,
-        [CallerFilePath] string path = "")
-        {
-            var b42 = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine("{0}::{1} : {3}. Line #{2}", message, memberName, line, path);
-            Console.ForegroundColor = b42;
-        }
-
-
-
-
-
-    internal static void Warning(
-        string message,
-        [CallerMemberName] string memberName = "",
-        [CallerLineNumber] int line = 0,
-        [CallerFilePath] string path = "")
-        {
-            var b42 = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.WriteLine("{0}::{1} : {3}. Line #{2}", message, memberName, line, path);
+            Console.WriteLine(format: "<DEBUG> {0}::{1} : {3}. Line #{2}", message, memberName, line, path);
             Console.ForegroundColor = b42;
         }
 
     #endregion
+
+    //
+    //
+    // internal static void Error(
+    //     string message,
+    //     [CallerMemberName] string memberName = "",
+    //     [CallerLineNumber] int line = 0,
+    //     [CallerFilePath] string path = "")
+    //     {
+    //         var b42 = Console.ForegroundColor;
+    //         Console.ForegroundColor = ConsoleColor.DarkRed;
+    //         Console.WriteLine(format: "<ERROR> {0}::{1} : {3}. Line #{2}", message, memberName, line, path);
+    //         Console.ForegroundColor = b42;
+    //     }
+    //
+
+    //
+    // internal static void Information(
+    //     string message,
+    //     [CallerMemberName] string memberName = "",
+    //     [CallerLineNumber] int line = 0,
+    //     [CallerFilePath] string path = "")
+    //     {
+    //         var b42 = Console.ForegroundColor;
+    //         Console.ForegroundColor = ConsoleColor.Green;
+    //         Console.WriteLine(format: "<INFO> {0}::{1} : {3}. Line #{2}", message, memberName, line, path);
+    //         Console.ForegroundColor = b42;
+    //     }
+    //
+
+    // internal static void Trace(
+    //     string message,
+    //     [CallerMemberName] string memberName = "",
+    //     [CallerLineNumber] int line = 0,
+    //     [CallerFilePath] string path = "")
+    // {
+    //     var b42 = Console.ForegroundColor;
+    //     Console.ForegroundColor = ConsoleColor.Blue;
+    //     Console.WriteLine(format: "{0}::{1} : {3}. Line #{2}", message, memberName, line, path);
+    //     Console.ForegroundColor = b42;
+    // }
+
+    // internal static void Warning(
+    //     string message,
+    //     [CallerMemberName] string memberName = "",
+    //     [CallerLineNumber] int line = 0,
+    //     [CallerFilePath] string path = "")
+    // {
+    //     var b42 = Console.ForegroundColor;
+    //     Console.ForegroundColor = ConsoleColor.Magenta;
+    //     Console.WriteLine(format: "{0}::{1} : {3}. Line #{2}", message, memberName, line, path);
+    //     Console.ForegroundColor = b42;
+    // }
 }

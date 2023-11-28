@@ -31,7 +31,7 @@ public interface ICrawlerQue
 public class CrawlerQue : ICrawlerQue
 {
     // Create an instance of the class with the Lazy<T> type for thread safety
-    private static readonly Lazy<CrawlerQue> s_lazy = new(() => new CrawlerQue());
+    private static readonly Lazy<CrawlerQue> s_lazy = new(() => new());
     private readonly BufferBlock<QueItem> _queue = new();
 
 
@@ -39,12 +39,7 @@ public class CrawlerQue : ICrawlerQue
 
 
     // Make the constructor private so that this class cannot be instantiated
-    private CrawlerQue()
-        {
-        }
-
-
-
+    private CrawlerQue() { }
 
 
     #region Interface Members
@@ -52,7 +47,7 @@ public class CrawlerQue : ICrawlerQue
     public void AddItemToQueue(
         QueItem item)
         {
-            _queue.Post(item);
+            _ = _queue.Post(item: item);
         }
 
 

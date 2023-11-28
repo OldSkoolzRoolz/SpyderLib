@@ -2,6 +2,9 @@
 
 using System.Threading.Channels;
 
+using CommunityToolkit.Diagnostics;
+
+using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Models;
 
 using Microsoft.Extensions.Logging;
@@ -48,29 +51,27 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
 
 
 
-    public ValueTask QueueBackgroundWorkItemAsync(
-        DownloadItem workItem)
+    public async ValueTask<DownloadItem> DequeueAsync(CancellationToken cancellationToken)
         {
-            if (workItem is null)
+            try
                 {
-                    throw new ArgumentNullException(nameof(workItem));
+                    return await _queue.Reader.ReadAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
                 }
-
-            return _queue.Writer.WriteAsync(workItem);
+            catch (OperationCanceledException)
+                {
+                    return default;
+                }
         }
 
 
 
 
 
-    public async ValueTask<DownloadItem> DequeueAsync(
-        CancellationToken cancellationToken)
+    public ValueTask QueueBackgroundWorkItemAsync(DownloadItem workItem)
         {
-            var workItem =
-                await _queue.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+            Guard.IsNotNull(value: workItem);
 
-
-            return workItem;
+            return _queue.Writer.WriteAsync(item: workItem);
         }
 
     #endregion
@@ -80,13 +81,13 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
     public BackgroundDownloadQue(
         ILogger<BackgroundDownloadQue> logger)
         {
-            BoundedChannelOptions options = new(100)
+            BoundedChannelOptions options = new(500)
                 {
                     FullMode = BoundedChannelFullMode.Wait
                 };
 
-            _queue = Channel.CreateBounded<DownloadItem>(options);
-            logger.LogInformation("Background download Que is loaded");
+            _queue = Channel.CreateBounded<DownloadItem>(options: options);
+            logger.SpyderInfoMessage(message: "Background download Que is loaded");
         }
 
     #endregion

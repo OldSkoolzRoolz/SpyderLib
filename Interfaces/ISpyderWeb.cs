@@ -4,11 +4,7 @@ public interface ISpyderWeb
 {
     #region Public Methods
 
-    Task DownloadVideoTagsFromUrl(
-        string url);
-
-
-
+    void SearchLocalCacheForTags();
 
 
     Task StartScrapingInputFileAsync(CancellationToken token);

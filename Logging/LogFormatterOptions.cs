@@ -10,7 +10,7 @@ public sealed class LogFormatterOptions : ConsoleFormatterOptions
 {
     #region Public Methods
 
-    public string CustomPrefix => "~~<{";
+    public static string CustomPrefix => "~~<{";
 
     #endregion
 }

@@ -22,7 +22,7 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
                 {
                     if (!string.IsNullOrEmpty(item) && IsValidUrl(item))
                         {
-                            TryAdd(item, DefaultValue);
+                            _ = TryAdd(item, DefaultValue);
                         }
                 }
         }
@@ -37,7 +37,7 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
             // weeds out relative urls, only adding absolute urls
             if (IsValidUrl(url: url))
                 {
-                    TryAdd(key: url, 0);
+                    _ = TryAdd(key: url, 0);
                 }
         }
 
@@ -53,7 +53,7 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
                     // weeds out relative urls, only adding absolute urls
                     if (IsValidUrl(array[i]))
                         {
-                            TryAdd(array[i], 0);
+                            _ = TryAdd(array[i], 0);
                         }
                 }
         }
@@ -75,19 +75,6 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
 
 
 
-    private void TryAddIfKeyIsValidUrl(
-        KeyValuePair<string, byte> item)
-        {
-            if (IsValidUrl(url: item.Key))
-                {
-                    TryAdd(key: item.Key, DefaultValue);
-                }
-        }
-
-
-
-
-
     internal void AddRange(
         ConcurrentDictionary<string, byte> itemsToAdd)
         {
@@ -99,7 +86,7 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
             foreach (var item in valid)
                 {
                     // weeds out relative urls, only adding absolute urls
-                    TryAdd(key: item, 0);
+                    _ = TryAdd(key: item, 0);
                 }
         }
 
@@ -112,12 +99,25 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
     /// </summary>
     /// <param name="url"></param>
     /// <returns></returns>
-    private bool IsValidUrl(
+    private static bool IsValidUrl(
         string url)
         {
-            return Uri.IsWellFormedUriString(uriString: url, uriKind: UriKind.Absolute)
-                   && Uri.TryCreate(uriString: url, uriKind: UriKind.Absolute, out var uriResult)
-                   && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+            return Uri.IsWellFormedUriString(uriString: url, uriKind: UriKind.Absolute) &&
+                   Uri.TryCreate(uriString: url, uriKind: UriKind.Absolute, out var uriResult) &&
+                   (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+        }
+
+
+
+
+
+    private void TryAddIfKeyIsValidUrl(
+        KeyValuePair<string, byte> item)
+        {
+            if (IsValidUrl(url: item.Key))
+                {
+                    _ = TryAdd(key: item.Key, DefaultValue);
+                }
         }
 
     #endregion

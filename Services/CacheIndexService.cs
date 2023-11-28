@@ -4,8 +4,11 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
+using CommunityToolkit.Diagnostics;
+
 using JetBrains.Annotations;
 
+using KC.Apps.SpyderLib.Interfaces;
 using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Modules;
@@ -18,8 +21,9 @@ using Microsoft.Extensions.Options;
 
 namespace KC.Apps.SpyderLib.Services;
 
-public class CacheIndexService : ICacheIndexService
+public class CacheIndexService : ICacheIndexService, IDisposable
 {
+    private static readonly object Locker = new();
     private static int s_cacheHits;
     private static int s_cacheMisses;
     private static readonly Mutex s_mutex = new();
@@ -28,7 +32,7 @@ public class CacheIndexService : ICacheIndexService
     private readonly ILogger _logger;
     private readonly SpyderMetrics _metrics;
     private readonly SpyderOptions _options;
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private bool _disposed;
     private Stopwatch _timer;
 
     #region Properteez
@@ -39,6 +43,8 @@ public class CacheIndexService : ICacheIndexService
 
     #region Interface Members
 
+    public ConcurrentDictionary<string, string> CacheIndexItems => this.IndexCache;
+
     /// <summary>
     ///     Cache Items currently in index
     /// </summary>
@@ -48,39 +54,39 @@ public class CacheIndexService : ICacheIndexService
 
 
 
-    /// <summary>
-    ///     Method gets page data from web or local cache
-    /// </summary>
-    /// <param name="address"></param>
-    /// <returns></returns>
-    public async Task<PageContent> GetAndSetContentFromCacheAsync(
-        string address)
+    public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+
+
+
+
+    public async Task<string> GetAndSetContentFromCacheAsync(string address)
         {
             try
                 {
-                    if (_options.UseMetrics)
-                        {
-                            _timer = new();
-                            _timer.Start();
-                        }
+                    _timer = new();
+                    _timer.Start();
 
-                    var content = await GetAndSetContentFromCacheCoreAsync(address: address).ConfigureAwait(false);
+                    var content = await GetAndSetContentFromCacheCoreAsync(address: address)
+                        .ConfigureAwait(false);
+
+                    _timer.Stop();
                     if (_options.UseMetrics)
                         {
-                            _timer.Stop();
                             _metrics.CrawlElapsedTime(timing: _timer.ElapsedMilliseconds);
                         }
 
                     return content;
                 }
-            catch (Exception e)
+            catch (SpyderException)
                 {
                     _logger.SpyderWebException(message: "An error occured during a url retrieval.");
-                    PageContent pc = new(url: address)
-                        {
-                            Exception = e
-                        };
-                    return pc;
+
+                    return string.Empty;
                 }
         }
 
@@ -114,17 +120,19 @@ public class CacheIndexService : ICacheIndexService
 
     public CacheIndexService(SpyderMetrics metrics,
         ILogger<CacheIndexService> logger,
-        IOptions<SpyderOptions> options)
+        IOptions<SpyderOptions> options,
+        ISpyderClient client)
         {
+            Guard.IsNotNull(value: options);
             _metrics = metrics;
             _logger = logger;
             _options = options.Value;
-            _client = new SpyderClient(logger: _logger);
+            _client = client;
             _fileOperations = new(options: _options);
             SpyderControlService.LibraryHostShuttingDown += OnStopping;
             this.IndexCache = LoadCacheIndex();
-            Log.Information(message: "Cache Index Service Loaded...");
-            StartupComplete.TrySetResult(true);
+            _logger.SpyderInfoMessage(message: "Cache Index Service Loaded...");
+            _ = StartupComplete.TrySetResult(true);
         }
 
 
@@ -139,11 +147,41 @@ public class CacheIndexService : ICacheIndexService
 
     #region Private Methods
 
+    protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+                {
+                    if (disposing)
+                        {
+                            // unsubscribe from static event
+                            SpyderControlService.LibraryHostShuttingDown -= OnStopping;
+                        }
+
+                    // Here you can release unmanaged resources if any
+                    _fileOperations.Dispose();
+                    _disposed = true;
+                }
+        }
+
+
+
+
+
+    // Destructor
+    ~CacheIndexService()
+        {
+            Dispose(false);
+        }
+
+
+
+
+
     private static string GenerateUniqueCacheFilename(
         string cacheLocale)
         {
             var filename = Guid.NewGuid().ToString();
-            s_mutex.WaitOne();
+            _ = s_mutex.WaitOne();
             try
                 {
                     while (File.Exists(Path.Combine(path1: cacheLocale, path2: filename)))
@@ -152,7 +190,7 @@ public class CacheIndexService : ICacheIndexService
                         }
 
                     // create a file immediately to reserve the filename
-                    File.Create(Path.Combine(path1: cacheLocale, path2: filename));
+                    using var k = File.Create(Path.Combine(path1: cacheLocale, path2: filename));
                 }
             finally
                 {
@@ -166,44 +204,9 @@ public class CacheIndexService : ICacheIndexService
 
 
 
-    private async Task<PageContent> GetAndSetContentFromCacheCoreAsync([NotNull] string address)
+    private async Task<string> GetAndSetContentFromCacheCoreAsync([NotNull] string address)
         {
-            PageContent resultObj = new(url: address);
-            string filename = null;
-            await _semaphore.WaitAsync().ConfigureAwait(false);
-
-            try
-                {
-                    if (!this.IndexCache.TryGetValue(key: address, value: out filename))
-                        {
-                            Interlocked.Increment(location: ref s_cacheMisses);
-                            if (_options.UseMetrics)
-                                {
-                                    _metrics.UrlCrawled(1, false);
-                                }
-
-                            _logger.LogTrace(message: "WEB: Loading page {0}", address);
-                            var content = await _client.GetContentFromWebWithRetryAsync(address: address)
-                                .ConfigureAwait(false);
-                            if (content.StartsWith(value: "Error:", comparisonType: StringComparison.Ordinal))
-                                {
-                                    resultObj.Exception = new SpyderException(message: content);
-                                    resultObj.Content = content;
-                                    return resultObj;
-                                }
-
-                            return await SetContentCacheAsync(content: content, address: address).ConfigureAwait(false);
-                        }
-                }
-            finally
-                {
-                    _semaphore.Release();
-                }
-
-            await GetCacheFileContents(address: address, filename: filename, resultObj: resultObj)
-                .ConfigureAwait(false);
-
-            return resultObj;
+            return await TryGetCacheValue(key: address).ConfigureAwait(false);
         }
 
 
@@ -218,8 +221,8 @@ public class CacheIndexService : ICacheIndexService
                     _metrics.UrlCrawled(1, true);
                 }
 
-            _logger.LogDebug(message: "CACHE: Loading page {0}", address);
-            Interlocked.Increment(location: ref s_cacheHits);
+            _logger.SpyderDebug($"CACHE: Loading page {address}");
+            _ = Interlocked.Increment(location: ref s_cacheHits);
             var cacheEntryPath = Path.Combine(path1: _options.CacheLocation, path2: filename);
             resultObj.CacheFileName = filename;
             resultObj.FromCache = true;
@@ -231,19 +234,40 @@ public class CacheIndexService : ICacheIndexService
                                 .ReadAllTextAsync(Path.Combine(path1: _options.CacheLocation, path2: filename))
                                 .ConfigureAwait(false);
                         }
-                    catch (Exception e)
+                    catch (SpyderException)
                         {
-                            resultObj.Exception = e;
-                            _logger.LogCritical(message: "A critical error occured during cache entry retrieval.");
+                            _logger.InternalSpyderError(
+                                message: "A critical error occured during cache entry retrieval.");
                         }
                 }
             else
                 {
-                    _logger.LogCritical(
+                    _logger.InternalSpyderError(
                         message:
                         "A Cache entry was missing from disk. A cache index consistency check has been triggered. Checking cache consistency...");
                     VerifyCacheIndex();
                 }
+        }
+
+
+
+
+
+    private async Task<string> GetValueAsyncInternal(string address)
+        {
+            // Not found in cache load from web
+            _ = Interlocked.Increment(location: ref s_cacheMisses);
+            if (_options.UseMetrics)
+                {
+                    _metrics.UrlCrawled(1, false);
+                }
+
+            _logger.SpyderTrace($"WEB: Loading page {address}");
+            var content = await _client.GetContentFromWebWithRetryAsync(address: address)
+                .ConfigureAwait(false);
+
+            _ = await SetContentCacheAsync(content: content, address: address).ConfigureAwait(false);
+            return content;
         }
 
 
@@ -260,10 +284,14 @@ public class CacheIndexService : ICacheIndexService
                 }
             catch (Exception)
                 {
-                    _logger.LogError(message: "Failed to load cache index");
+                    _logger.InternalSpyderError(message: "Failed to load cache index");
 
 
                     throw;
+                }
+            finally
+                {
+                    fileOperations.Dispose();
                 }
         }
 
@@ -273,17 +301,43 @@ public class CacheIndexService : ICacheIndexService
 
     private void OnStopping(object sender, EventArgs eventArgs)
         {
-            Log.Trace(message: "Cache service is shutting down...");
-
             try
                 {
                     SaveCacheIndex();
-                    Log.Information(message: "Cache Index is saved");
+                    _logger.SpyderInfoMessage(message: "Cache Index is saved");
                 }
-            catch (Exception)
+            catch (SpyderException)
                 {
-                    Log.Error(message: "Error saving Cache Index");
+                    _logger.SpyderError(
+                        message: "Error saving Cache Index. Consider checking data against backup file.");
                 }
+        }
+
+
+
+
+
+    private string ReadCacheItemFromDisk(string keyVal)
+        {
+            return ReadFileContentsAsync(path: _options.CacheLocation, fileName: keyVal).Result;
+        }
+
+
+
+
+
+    private static Task<string> ReadFileContentsAsync(
+        string path,
+        string fileName)
+        {
+            return Task.Run(() =>
+                {
+                    var fullPath = Path.Combine(path1: path, path2: fileName);
+                    lock (Locker)
+                        {
+                            return File.ReadAllText(path: fullPath);
+                        }
+                });
         }
 
 
@@ -298,29 +352,45 @@ public class CacheIndexService : ICacheIndexService
     /// <returns></returns>
     private async Task<PageContent> SetContentCacheAsync(string content, string address)
         {
-            PageContent resultObj = new(url: address)
+            PageContent resultObj = new(new(uriString: address))
                 {
                     FromCache = false,
                     Content = content
                 };
+            if (content is null)
+                {
+                    return resultObj;
+                }
+
             try
                 {
                     //Generate a unique filename to save the entry to disk.
                     var filename = GenerateUniqueCacheFilename(cacheLocale: _options.CacheLocation);
                     resultObj.CacheFileName = filename;
-                    await _fileOperations.SafeFileWriteAsync(
+                    await FileOperations.SafeFileWriteAsync(
                             Path.Combine(path1: _options.CacheLocation, path2: filename), contents: resultObj.Content)
                         .ConfigureAwait(false);
-                  
-                            this.IndexCache.TryAdd(key: address, value: filename);
+
+                    _ = this.IndexCache.TryAdd(key: address, value: filename);
                 }
             catch (Exception e)
                 {
-                    _logger.LogError(message: e.Message, e);
+                    _logger.InternalSpyderError(message: e.Message);
                     throw;
                 }
 
             return resultObj;
+        }
+
+
+
+
+
+    private Task<string> TryGetCacheValue(string key)
+        {
+            return this.IndexCache.TryGetValue(key: key, out var keyVal)
+                ? Task.FromResult(ReadCacheItemFromDisk(keyVal: keyVal))
+                : GetValueAsyncInternal(address: key);
         }
 
 
@@ -343,7 +413,7 @@ public class CacheIndexService : ICacheIndexService
                     where !File.Exists(path: entryFilePath)
                     select item).Count(item => this.IndexCache.Remove(key: item.Key, value: out _));
 
-            
+
             SaveCacheIndex();
             // Iterate through a copy of the cache index and deletes entries if files don't exist.
 
@@ -362,39 +432,16 @@ public class CacheIndexService : ICacheIndexService
                             File.Delete(path: file);
                             deletedFilesCount++;
                         }
-                    catch (Exception e)
+                    catch (SpyderException)
                         {
-                            _logger.LogWarning(exception: e,
+                            _logger.InternalSpyderError(
                                 $"Failed to delete file: {file}. It can be either used by another process or doesn't exist anymore.");
                         }
                 }
 
             SaveCacheIndex();
-            _logger.LogInformation(
+            _logger.SpyderInfoMessage(
                 $"Cache verification complete. {deletedFilesCount} files and {deletedEntriesCount} entries deleted.");
-        }
-
-    #endregion
-}
-
-public class CacheFileHandlerService
-{
-    private static readonly object Locker = new();
-
-    #region Public Methods
-
-    public Task<string> ReadFileContentsAsync(
-        string path,
-        string fileName)
-        {
-            return Task.Run(() =>
-                {
-                    var fullPath = Path.Combine(path1: path, path2: fileName);
-                    lock (Locker)
-                        {
-                            return File.ReadAllText(path: fullPath);
-                        }
-                });
         }
 
     #endregion

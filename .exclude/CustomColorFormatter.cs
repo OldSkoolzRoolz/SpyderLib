@@ -36,10 +36,10 @@ public sealed class CustomColorFormatter : ConsoleFormatter, IDisposable
             IOptionsMonitor<CustomColorOptions> options)
 
         // Case insensitive
-        : base("customName")
+        : base(name: "customName")
         {
             (_optionsReloadToken, _formatterOptions) =
-                (options.OnChange(ReloadLoggerOptions), options.CurrentValue);
+                (options.OnChange(listener: ReloadLoggerOptions), options.CurrentValue);
         }
 
 
@@ -58,25 +58,15 @@ public sealed class CustomColorFormatter : ConsoleFormatter, IDisposable
 
             var message =
                 logEntry.Formatter.Invoke(
-                    logEntry.State, logEntry.Exception);
+                    arg1: logEntry.State, arg2: logEntry.Exception);
 
-            CustomLogicGoesHere(textWriter);
-            textWriter.WriteLine(message);
+            CustomLogicGoesHere(textWriter: textWriter);
+            textWriter.WriteLine(value: message);
         }
 
     #endregion
 
     #region Private Methods
-
-    private void ReloadLoggerOptions(
-        CustomColorOptions options)
-        {
-            _formatterOptions = options;
-        }
-
-
-
-
 
     private void CustomLogicGoesHere(
         TextWriter textWriter)
@@ -85,13 +75,23 @@ public sealed class CustomColorFormatter : ConsoleFormatter, IDisposable
                 {
                     textWriter.WriteWithColor(
                         _formatterOptions.CustomPrefix ?? string.Empty,
-                        ConsoleColor.Black,
-                        ConsoleColor.Green);
+                        background: ConsoleColor.Black,
+                        foreground: ConsoleColor.Green);
                 }
             else
                 {
-                    textWriter.Write(_formatterOptions.CustomPrefix);
+                    textWriter.Write(value: _formatterOptions.CustomPrefix);
                 }
+        }
+
+
+
+
+
+    private void ReloadLoggerOptions(
+        CustomColorOptions options)
+        {
+            _formatterOptions = options;
         }
 
     #endregion

@@ -1,82 +1,109 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="17.7">
 
-    <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+    <PropertyGroup Label="ProjDeets">
+        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>disable</Nullable>
         <RootNamespace>KC.Apps.SpyderLib</RootNamespace>
-<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <Deterministic>false</Deterministic>
-        <VersionSuffix>1.0.0.$([System.DateTime]::UtcNow.ToString(mmff))</VersionSuffix>
-        <AssemblyVersion Condition=" '$(VersionSuffix)' == '' ">0.0.0.1</AssemblyVersion>
-        <AssemblyVersion Condition=" '$(VersionSuffix)' != '' ">$(VersionSuffix)</AssemblyVersion>
-        <Version Condition=" '$(VersionSuffix)' == '' ">0.0.1.0</Version>
-        <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionSuffix)</Version>
-
+        <AnalysisLevel>preview</AnalysisLevel>
+        <AnalysisMode>All</AnalysisMode>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+        <ServerGarbageCollection>true</ServerGarbageCollection>
+        <NeutralResourcesLanguage>en</NeutralResourcesLanguage>
     </PropertyGroup>
-    
-    <PropertyGroup>
+
+
+    <ItemGroup Label="TEMPORARY">
+        <InternalsVisibleTo Include="SpyderUnitTests"/>
+
+    </ItemGroup>
+
+
+    <PropertyGroup Label="Versioning">
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <AssemblyVersion>1.0.0.0</AssemblyVersion>
+        <AssemblyTitle>SpyderLib Network Asset Recycler</AssemblyTitle>
+        <UseAppHost>true</UseAppHost>
+
+        <!--    <VersionSuffix>1.0.0.$([System.DateTime]::UtcNow.ToString(mmff))</VersionSuffix>
+            <AssemblyVersion Condition=" '$(VersionSuffix)' == '' ">0.0.0.1</AssemblyVersion>
+            <AssemblyVersion Condition=" '$(VersionSuffix)' != '' ">$(VersionSuffix)</AssemblyVersion>
+            <Version Condition=" '$(VersionSuffix)' == '' ">0.0.1.0</Version>
+            <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionSuffix)</Version> -->
+    </PropertyGroup>
+
+
+    <PropertyGroup Label="pkg info">
         <Title>SpyderWire Net Recycler</Title>
         <Authors>Kyle Crowder</Authors>
         <Description>Spyder Wire is a network crawler</Description>
         <PackageProjectUrl>http://github.com/OldSkoolzRoolz/SpyderLib</PackageProjectUrl>
         <RepositoryUrl>http://github.com/OldSkoolzRoolz/SpyderLib</RepositoryUrl>
-        <LangVersion>latest</LangVersion>
         <PackageLicenseUrl>http://github.com/OldSkoolzRoolz/SpyderLib/License.md</PackageLicenseUrl>
         <RepositoryType>Github</RepositoryType>
         <PackageTags>web spider crawler</PackageTags>
+        <PackageVersion>1.0.0-alpha1</PackageVersion>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' " Label="DebugProps">
         <DefineConstants>DEBUG</DefineConstants>
         <DebugType>full</DebugType>
-        <DocumentationFile></DocumentationFile>
+        <Optimize>false</Optimize>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' " Label="ReleaseProps">
         <DefineConstants/>
+        <Optimize>true</Optimize>
         <DebugType>none</DebugType>
-        <DocumentationFile>bin\Release\net7.0\SpyderLib.xml</DocumentationFile>
+
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <DocumentationFile>bin\Release\net8.0\SpyderLib.xml</DocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.2.2"/>
         <PackageReference Include="HtmlAgilityPack" Version="1.11.54"/>
         <PackageReference Include="Jetbrains.Annotations" Version="2023.3.0"/>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0-3.final"/>
-        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0-preview.23525.2">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Diagnostics" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Diagnostics" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0"/>
 
-        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.0"/>
+
+        <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
-        <PackageReference Include="Roslynator.Analyzers" Version="4.6.2">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" Version="4.6.2">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
+
 
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Remove="Services\CacheControlService.cs"/>
-        <Compile Remove="Services\CacheControlServiceBase.cs"/>
-        <Compile Remove="Modules\ObjectFactory.cs"/>
-        <Compile Remove="SpyderLib\Control\CrawlerController.cs"/>
-        <Compile Remove="SpyderLib\Modules\PageCrawler.cs"/>
-        <Compile Remove="SpyderLib\Modules\ModFactory.cs"/>
-        <Compile Remove="Control\CrawlerController.cs"/>
-        <Compile Remove="Modules\ModFactory.cs"/>
-        <Compile Remove="Modules\PageCrawler.cs"/>
+        <Compile Include=".exclude\CrawlerFinishedEventArgs.cs"/>
+        <Compile Include=".exclude\CustomColorOptions.cs"/>
+        <Compile Include=".exclude\CustomOptions.cs"/>
+        <Compile Include=".exclude\IWebCrawlerController.cs"/>
+        <Compile Include=".exclude\LogFormatterOptions.cs"/>
+        <Compile Include=".exclude\ModFactory.cs"/>
+        <Compile Include=".exclude\PageCrawler.cs"/>
+        <Compile Remove=".exclude\**"/>
+        <Compile Update="Properties\Resources1.Designer.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>Resources1.resx</DependentUpon>
+        </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Remove=".exclude\**"/>
+        <EmbeddedResource Update="Properties\Resources1.resx">
+            <Generator>ResXFileCodeGenerator</Generator>
+            <LastGenOutput>Resources1.Designer.cs</LastGenOutput>
+        </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove=".exclude\**"/>
     </ItemGroup>
 
 

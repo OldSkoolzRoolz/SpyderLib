@@ -25,19 +25,14 @@ public class ServiceBase
 
 
 
+    protected ServiceBase() { }
+
+
     #region Properteez
 
+    protected IHostApplicationLifetime AppLifetime { get; }
     protected ILoggerFactory LoggerFactory { get; }
     protected SpyderOptions Options { get; }
-    protected IHostApplicationLifetime AppLifetime { get; }
-
-    #endregion
-
-    #region Public Methods
-
-    protected ServiceBase()
-        {
-        }
 
     #endregion
 }
