@@ -40,7 +40,7 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
 
     public void CancelCrawlingTasks()
         {
-            Log.Warning(message: "A request to cancel all Spyder tasks has been initiated");
+            _logger.SpyderWarning(message: "A request to cancel all Spyder tasks has been initiated");
 
             // Cancel any active operations
             _cancellationTokenSource.Cancel();

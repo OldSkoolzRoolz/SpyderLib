@@ -1,5 +1,7 @@
 #region
 
+using CommunityToolkit.Diagnostics;
+
 using KC.Apps.SpyderLib.Properties;
 
 using Microsoft.Extensions.Hosting;
@@ -16,6 +18,7 @@ public class ServiceBase
         SpyderOptions options,
         IHostApplicationLifetime lifetime)
         {
+            Guard.IsNotNull(value: options);
             this.LoggerFactory = factory;
             this.Options = options;
             this.AppLifetime = lifetime;

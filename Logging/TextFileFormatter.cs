@@ -1,6 +1,7 @@
 #region
 
 using System.Diagnostics;
+using System.Globalization;
 
 using KC.Apps.SpyderLib.Modules;
 
@@ -52,8 +53,10 @@ internal class TextFileFormatter
             try
                 {
                     var stamp = _formatterOptions.UseUtcTime
-                        ? DateTimeOffset.UtcNow.ToString(format: _formatterOptions.TimestampFormat)
-                        : DateTimeOffset.Now.ToString(format: _formatterOptions.TimestampFormat);
+                        ? DateTimeOffset.UtcNow.ToString(format: _formatterOptions.TimestampFormat,
+                            formatProvider: CultureInfo.CurrentCulture)
+                        : DateTimeOffset.Now.ToString(format: _formatterOptions.TimestampFormat,
+                            formatProvider: CultureInfo.CurrentCulture);
 
                     var message =
                         logEntry.Formatter(

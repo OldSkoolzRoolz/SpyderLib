@@ -32,26 +32,10 @@ public static class Log
             var front = Console.ForegroundColor;
             Console.BackgroundColor = ConsoleColor.Green;
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(format: @"<INFO> {0}::{1} : {3}. Line #{2}", exception.Message, memberName, line, path);
+            Console.WriteLine($"<INFO> {exception.Message}::{memberName} : {path}. Line #{line}");
             Debugger.Log(99, category: "Error", message: exception.Message);
             Console.ForegroundColor = front;
             Console.BackgroundColor = back;
-        }
-
-
-
-
-
-    internal static void Critical(
-        string message,
-        [CallerMemberName] string memberName = "",
-        [CallerLineNumber] int line = 0,
-        [CallerFilePath] string path = "")
-        {
-            var b42 = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.WriteLine(format: "<CRITICAL> {0}::{1} : {3}. Line #{2}", message, memberName, line, path);
-            Console.ForegroundColor = b42;
         }
 
 
@@ -66,8 +50,24 @@ public static class Log
         {
             var b42 = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.WriteLine(format: "<DEBUG> {0}::{1} : {3}. Line #{2}", message, memberName, line, path);
+            Console.WriteLine($"<DEBUG> {message}::{memberName} : {path}. Line #{line}");
             Console.ForegroundColor = b42;
+        }
+
+
+
+
+
+    internal static void LogCriticalMessage(
+        string message,
+        [CallerMemberName] string memberName = "",
+        [CallerLineNumber] int lineNumber = 0,
+        [CallerFilePath] string filePath = "")
+        {
+            var previousColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.WriteLine($"<CRITICAL> {message}::{memberName} : {filePath}. Line #{lineNumber}");
+            Console.ForegroundColor = previousColor;
         }
 
     #endregion

@@ -2,6 +2,7 @@
 
 #region
 
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
@@ -66,7 +67,13 @@ public class SpyderOptions
     [Required]
     public int LinkDepthLimit { get; init; } = 2;
 
-    [CanBeNull] public string[] LinkPatternExclusions { get; init; }
+    [CanBeNull]
+    public ReadOnlyCollection<string> LinkPatternExclusions
+        {
+            get => null;
+            init { }
+        }
+
     [Required] public LogLevel LoggingLevel { get; init; }
     [Required] public string LogPath { get; init; }
     [Required] [AllowNull] public string OutputFileName { get; init; } = "OutputFilename.txt";
@@ -78,7 +85,7 @@ public class SpyderOptions
     /// </summary>
     [Url]
     [Required]
-    public string StartingUrl { get; set; } = string.Empty;
+    public string StartingUrl { get; set; }
 
     /// <summary>
     ///     Should we save a copy of the page returned local

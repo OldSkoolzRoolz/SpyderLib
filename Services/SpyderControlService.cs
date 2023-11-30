@@ -3,6 +3,8 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
+using CommunityToolkit.Diagnostics;
+
 using KC.Apps.SpyderLib.Interfaces;
 using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Modules;
@@ -79,6 +81,7 @@ public class SpyderControlService : ServiceBase, IHostedService
         IHostApplicationLifetime appLifetime,
         ISpyderWeb spyderWeb) : base(factory: factory, options: options.Value, lifetime: appLifetime)
         {
+            Guard.IsNotNull(value: options);
             ArgumentNullException.ThrowIfNull(argument: factory);
 
             ArgumentNullException.ThrowIfNull(argument: options);
@@ -221,6 +224,8 @@ public class SpyderControlService : ServiceBase, IHostedService
 
     #endregion
 
+    #endregion
+
 
 
 
@@ -344,6 +349,4 @@ public class SpyderControlService : ServiceBase, IHostedService
             Debug.WriteLine(value: Resources1.ConfigError);
             return false;
         }
-
-    #endregion
 }
