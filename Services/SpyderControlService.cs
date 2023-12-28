@@ -1,26 +1,14 @@
-#region
-
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
-using CommunityToolkit.Diagnostics;
-
-using KC.Apps.SpyderLib.Interfaces;
 using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Modules;
 using KC.Apps.SpyderLib.Properties;
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-
-using TaskExtensions = KC.Apps.SpyderLib.Extensions.TaskExtensions;
 
 
-
-// ReSharper disable LocalizableElement
-
-#endregion
 
 namespace KC.Apps.SpyderLib.Services;
 
@@ -35,24 +23,85 @@ namespace KC.Apps.SpyderLib.Services;
 /// </summary>
 public class SpyderControlService : ServiceBase, IHostedService
 {
-    private static ILogger s_logger;
-    private static SpyderOptions s_options;
-    private readonly TextFileLoggerConfiguration _loggerConfig;
-    private readonly ISpyderWeb _spyderWeb;
     private CancellationTokenSource _cancellationTokenSource;
+    private readonly IDownloadController _downControl;
+    private readonly IWebCrawlerController _webCrawlerController;
+    private static string s_crawlStatus;
 
-    #region Interface Members
+
+
+
+
+
+    public SpyderControlService(
+        IHostApplicationLifetime lifetime,
+        IWebCrawlerController webCrawlerController,
+        IDownloadController downloadController) : base(lifetime: lifetime)
+        {
+            //TODO Replace host lifetime with internal lifetime control
+            lifetime.ApplicationStarted.Register(callback: OnStarted);
+            lifetime.ApplicationStopping.Register(callback: OnStopping);
+            _downControl = downloadController;
+            _webCrawlerController = webCrawlerController;
+        }
+
+
+
+
+
+
+    #region Properteez
+
+    public static SpyderOptions CrawlerOptions => Options;
+    public static bool CrawlersActive { get; set; }
+
+
+
+    public string LastCrawlerStatus
+        {
+            get => s_crawlStatus;
+            set
+                {
+                    if (value != s_crawlStatus)
+                        {
+                            SetProperty(field: ref s_crawlStatus, value: value);
+                            RaisePropertyChanged(propertyName: this.LastCrawlerStatus);
+                        }
+                }
+        }
+
+
+
+    public static ILogger<SpyderControlService> Logger { get; set; }
+
+    #endregion
+
+
+
+
+
+
+    #region Public Methods
+
+    public static event EventHandler LibraryHostShuttingDown;
+
+
+
+
+
 
     [MemberNotNull(nameof(_cancellationTokenSource))]
     public Task StartAsync(
         CancellationToken cancellationToken)
         {
+            Logger = Factory.CreateLogger<SpyderControlService>();
             _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token: cancellationToken);
-            s_logger.SpyderInfoMessage(message: "Spyder Control loaded");
+            Logger.SpyderInfoMessage(message: "Spyder Control loaded");
 
 
             return Task.CompletedTask;
         }
+
 
 
 
@@ -72,46 +121,10 @@ public class SpyderControlService : ServiceBase, IHostedService
 
     #endregion
 
-    #region Public Methods
-
-    public SpyderControlService(
-        ILoggerFactory factory,
-        IOptions<SpyderOptions> options,
-        IOptions<TextFileLoggerConfiguration> logconfig,
-        IHostApplicationLifetime appLifetime,
-        ISpyderWeb spyderWeb) : base(factory: factory, options: options.Value, lifetime: appLifetime)
-        {
-            Guard.IsNotNull(value: options);
-            ArgumentNullException.ThrowIfNull(argument: factory);
-
-            ArgumentNullException.ThrowIfNull(argument: options);
-
-            ArgumentNullException.ThrowIfNull(argument: logconfig);
-
-
-            if (appLifetime != null)
-                {
-                    _ = appLifetime.ApplicationStarted.Register(callback: OnStarted);
-                    _ = appLifetime.ApplicationStopping.Register(callback: OnStopping);
-                }
-
-
-            s_options = options.Value;
-            s_logger = factory.CreateLogger<SpyderControlService>();
-            _spyderWeb = spyderWeb ?? throw new ArgumentNullException(nameof(spyderWeb));
-            _loggerConfig = logconfig.Value;
-        }
 
 
 
 
-
-    public static SpyderOptions CrawlerOptions { get; set; }
-    public static bool CrawlersActive { get; set; }
-    public static event EventHandler LibraryHostShuttingDown;
-    public static ILogger Logger { get; } = s_logger;
-
-    #endregion
 
     #region Private Methods
 
@@ -129,18 +142,18 @@ public class SpyderControlService : ServiceBase, IHostedService
                     var info = Directory.CreateDirectory(path: path);
                     if (!info.Exists)
                         {
-                            Debug.WriteLine(value: errorMessage);
+                            Debug.WriteLine(message: errorMessage);
                             return false;
                         }
                 }
             catch (UnauthorizedAccessException ua)
                 {
-                    s_logger.InternalSpyderError(message: ua.Message);
+                    Logger.InternalSpyderError(message: ua.Message);
                     return false;
                 }
             catch (SpyderException)
                 {
-                    Debug.WriteLine(value: errorMessage);
+                    Debug.WriteLine(message: errorMessage);
                     return false;
                 }
 
@@ -151,26 +164,39 @@ public class SpyderControlService : ServiceBase, IHostedService
 
 
 
+
     private void OnStarted()
         {
-            if (!ValidateSpyderPathOptions(options: s_options, config: _loggerConfig))
+            if (!ValidateSpyderPathOptions(options: Options))
                 {
                     Environment.Exit(555);
                 }
 
-            CrawlerOptions = s_options;
-            s_logger.SpyderInfoMessage(message: "Waiting for all modules to load...");
-            //Ensure all modules are loaded
-            _ = TaskExtensions.WithTimeout(Task.WhenAll(SpyderWeb.StartupComplete.Task,
-                //DownloadController.StartupComplete.Task,
-                CacheIndexService.StartupComplete.Task), TimeSpan.FromMinutes(2)).ConfigureAwait(false);
 
-            s_logger.SpyderInfoMessage(message: "Dependencies loaded!");
+            Logger.SpyderInfoMessage(message: "Waiting for all modules to load...");
+            try
+                {
+                    //Ensure all modules are loaded
+                    Task.WhenAll(
+                        WebCrawlerController.StartupComplete.Task,
+                        DownloadController.StartupComplete.Task,
+                        AbstractCacheIndex.StartupComplete.Task,
+                        BackgroundDownloadQue.DownloadQueLoadComplete.Task,
+                        QueueProcessingService.QueueProcessorLoadComplete.Task).ConfigureAwait(false);
+                }
+            catch (TimeoutException)
+                {
+                    Logger.InternalSpyderError(
+                        message: "Error 120::A module failed to load within the timeout period. Exiting application");
+                    Environment.Exit(120);
+                }
 
-            // RotateLogFiles();
+            Logger.SpyderInfoMessage(message: "Dependencies loaded!");
+
             PrintConfig();
 
             _ = Task.Run(() => PrintMenu(cancellationToken: _cancellationTokenSource!.Token));
+
             // Task.Run(() => Task.FromResult(StartCrawlingAsync(_cancellationTokenSource.Token))).ConfigureAwait(false);
         }
 
@@ -178,11 +204,13 @@ public class SpyderControlService : ServiceBase, IHostedService
 
 
 
+
     private void OnStopping()
         {
-            Debug.WriteLine(value: "output triggered");
+            Debug.WriteLine(message: "output triggered");
             LibraryHostShuttingDown?.Invoke(this, e: EventArgs.Empty);
         }
+
 
 
 
@@ -194,29 +222,29 @@ public class SpyderControlService : ServiceBase, IHostedService
             Console.WriteLine(value: "******************************************************");
             Console.WriteLine(value: "**             Spyder Configuration                 **");
             Console.WriteLine(format: "**  {0,15}:   {1,-28} {2,-8}", arg0: "Output Path",
-                arg1: this.Options.OutputFilePath, arg2: "**");
-            Console.WriteLine(format: "**  {0,15}:   {1,-28} {2,-10}", arg0: "Log Path", arg1: this.Options.LogPath,
+                arg1: Options.OutputFilePath, arg2: "**");
+            Console.WriteLine(format: "**  {0,15}:   {1,-28} {2,-10}", arg0: "Log Path", arg1: Options.LogPath,
                 arg2: "**");
             Console.WriteLine(
-                format: "**  {0,15}:   {1,-28} {2,-9}", arg0: "Cache Location", arg1: this.Options.CacheLocation,
+                format: "**  {0,15}:   {1,-28} {2,-9}", arg0: "Cache Location", arg1: Options.CacheLocation,
                 arg2: "**");
 
             Console.WriteLine(
                 format: "**  {0,15}:   {1,-28} {2,-10}", arg0: "Captured Ext",
-                arg1: this.Options.CapturedExternalLinksFilename,
+                arg1: Options.CapturedExternalLinksFilename,
                 arg2: "**");
 
             Console.WriteLine(
                 format: "**  {0,15}:   {1,-28} {2,-10}", arg0: "Captured Seed",
-                arg1: this.Options.CapturedSeedUrlsFilename,
+                arg1: Options.CapturedSeedUrlsFilename,
                 arg2: "**");
 
             Console.WriteLine(
-                format: "**  {0,15}:   {1,-28} {2,-10}", arg0: "Output FName", arg1: this.Options.OutputFileName,
+                format: "**  {0,15}:   {1,-28} {2,-10}", arg0: "Output FName", arg1: Options.OutputFileName,
                 arg2: "**");
 
             Console.WriteLine(format: "**  {0,15}:   {1,-28} {2,-10}", arg0: "Starting Url",
-                arg1: this.Options.StartingUrl, arg2: "**");
+                arg1: Options.StartingUrl, arg2: "**");
 
             Console.WriteLine(value: "**                                                  **");
             Console.WriteLine(value: "******************************************************");
@@ -224,7 +252,6 @@ public class SpyderControlService : ServiceBase, IHostedService
 
     #endregion
 
-    #endregion
 
 
 
@@ -236,13 +263,13 @@ public class SpyderControlService : ServiceBase, IHostedService
             string userInput;
             do
                 {
-                    Debug.WriteLine(value: "--------------- Menu ---------------");
-                    Debug.WriteLine(value: "1. Crawl Single Site");
-                    Debug.WriteLine(value: "2. Scan cache for html tags");
-                    Debug.WriteLine(value: "3. Process input file");
-                    Debug.WriteLine(value: "4. Download video tags from site..");
-                    Debug.WriteLine(value: "9. Exit");
-                    Debug.WriteLine(value: "Enter your choice:");
+                    Console.WriteLine(value: "--------------- Menu ---------------");
+                    Console.WriteLine(value: "1. Start Crawler");
+                    Console.WriteLine(value: "2. Scan cache for html tags");
+                    Console.WriteLine(value: "3. Process input file");
+                    Console.WriteLine(value: "4. Download video tags from site..");
+                    Console.WriteLine(value: "9. Exit");
+                    Console.WriteLine(value: "Enter your choice:");
                     userInput = Console.ReadLine();
                     switch (userInput)
                         {
@@ -253,31 +280,30 @@ public class SpyderControlService : ServiceBase, IHostedService
                                 break;
 
                             case "2":
-                                _spyderWeb.SearchLocalCacheForTags();
-
+                                _downControl.Start();
 
                                 break;
 
                             case "3":
-                                Debug.WriteLine(value: "3");
+                                Debug.WriteLine(message: "3");
 
 
                                 break;
 
                             case "4":
-                                Debug.Write(value: "Enter Url to download from:: ");
+                                Debug.Write(message: "Enter Url to download from:: ");
 
                                 break;
 
                             case "9":
                                 // Exit scenario
-                                this.AppLifetime.StopApplication();
+                                Environment.Exit(0);
 
 
                                 break;
 
                             default:
-                                Debug.WriteLine(value: "Invalid choice. Press a key to try again...");
+                                Debug.WriteLine(message: "Invalid choice. Press a key to try again...");
                                 _ = Console.ReadKey();
 
 
@@ -290,37 +316,21 @@ public class SpyderControlService : ServiceBase, IHostedService
 
 
 
+
     /// <summary>
     ///     Start Crawling
     /// </summary>
-    private Task StartCrawlingAsync(
-        CancellationToken token)
+    public async Task StartCrawlingAsync(CancellationToken token)
         {
-            if (this.Options is not null &&
-                this.Options.LinkDepthLimit > 1 &&
-                this.Options.StartingUrl is not null &&
-                this.Options.LogPath is not null)
-                {
-                    return _spyderWeb.StartSpyderAsync(startingLink: this.Options.StartingUrl, token: token);
-                }
-
-            s_logger.CriticalOptions(
-                message: "Spyder Options Exception, Crawler aborting... Check settings and try again.");
-
-
-            return Task.CompletedTask;
-            // Options required
-            // Log Path
-            // StartingUrl
-            //
-            //
+            await _webCrawlerController.StartCrawlingAsync(token: token).ConfigureAwait(false);
         }
 
 
 
 
 
-    private static bool ValidateSpyderPathOptions(SpyderOptions options, TextFileLoggerConfiguration config)
+
+    private static bool ValidateSpyderPathOptions(SpyderOptions options)
         {
             if (options.UseLocalCache &&
                 !CreateIfNotExists(path: options.CacheLocation,
@@ -329,7 +339,7 @@ public class SpyderControlService : ServiceBase, IHostedService
                     return false;
                 }
 
-            if (!CreateIfNotExists(path: config.LogLocation,
+            if (!CreateIfNotExists(path: options.LogPath,
                     errorMessage: "Configuration Error, log path is not valid aborting."))
                 {
                     return false;
@@ -346,7 +356,7 @@ public class SpyderControlService : ServiceBase, IHostedService
                     return true;
                 }
 
-            Debug.WriteLine(value: Resources1.ConfigError);
+            Debug.WriteLine(message: Resources1.ConfigError);
             return false;
         }
 }

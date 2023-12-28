@@ -50,5 +50,29 @@ namespace KC.Apps.SpyderLib.Properties {
                 return ResourceManager.GetString("ConfigError", resourceCulture);
             }
         }
+        
+        internal static string IO_Write_Error {
+            get {
+                return ResourceManager.GetString("IO_Write_Error", resourceCulture);
+            }
+        }
+        
+        internal static string Permission_Error_Writing_File {
+            get {
+                return ResourceManager.GetString("Permission_Error_Writing_File", resourceCulture);
+            }
+        }
+        
+        internal static string File_Path_Invalid {
+            get {
+                return ResourceManager.GetString("File_Path_Invalid", resourceCulture);
+            }
+        }
+        
+        internal static string Buffer_Block_Data_Error {
+            get {
+                return ResourceManager.GetString("Buffer_Block_Data_Error", resourceCulture);
+            }
+        }
     }
 }

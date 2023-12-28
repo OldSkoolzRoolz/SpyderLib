@@ -1,9 +1,7 @@
-#region
-
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Models;
 
@@ -16,7 +14,7 @@ namespace KC.Apps.SpyderLib.Models;
 /// </remarks>
 public abstract class Model : INotifyPropertyChanged
 {
-    #region Interface Members
+    #region Public Methods
 
     /// <summary>
     ///     Occurs when a property value changes.
@@ -24,6 +22,11 @@ public abstract class Model : INotifyPropertyChanged
     public event PropertyChangedEventHandler PropertyChanged;
 
     #endregion
+
+
+
+
+
 
     #region Private Methods
 
@@ -36,6 +39,7 @@ public abstract class Model : INotifyPropertyChanged
         {
             this.PropertyChanged?.Invoke(this, new(propertyName: propertyName));
         }
+
 
 
 
@@ -56,6 +60,7 @@ public abstract class Model : INotifyPropertyChanged
 
 
 
+
     /// <summary>
     ///     Raises the <see cref="PropertyChanged" /> event.
     /// </summary>
@@ -68,6 +73,7 @@ public abstract class Model : INotifyPropertyChanged
         {
             OnPropertyChanged(new PropertyChangedEventArgs(propertyName: propertyName));
         }
+
 
 
 
@@ -106,6 +112,7 @@ public abstract class Model : INotifyPropertyChanged
 
             return true;
         }
+
 
 
 

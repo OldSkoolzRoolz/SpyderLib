@@ -1,42 +1,116 @@
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
-#region
+
+
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Windows.Input;
 
-using KC.Apps.SpyderLib.Interfaces;
+using KC.Apps.SpyderLib.Control;
 using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Modules;
 using KC.Apps.SpyderLib.Properties;
-using KC.Apps.SpyderLib.Services;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 
 
-// ReSharper disable LocalizableElement
+namespace KC.Apps.SpyderLib.Services;
 
-#endregion
-
-namespace KC.Apps.SpyderLib.Control;
-
-[SuppressMessage(category: "Globalization", checkId: "CA1303:Do not pass literals as localized parameters")]
-public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
+public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 {
     private readonly ICacheIndexService _cache;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private ICommand _crawlCommand;
+    private readonly CancellationToken _crawlerStopToken;
+    private Stopwatch _crawlTimer;
     private readonly ILogger<WebCrawlerController> _logger;
     private readonly SpyderOptions _options;
+    private ICommand _pauseCommand;
+    private ICommand _stopCommand;
 
     // private readonly IOutputControl OutputControl.Instance;
     private readonly ConcurrentBag<(string, int)> _urlsToCrawl = new();
     private readonly ConcurrentDictionary<string, bool> _visitedUrls = new();
-    private Stopwatch _crawlTimer;
 
-    #region Interface Members
+
+
+
+
+
+    /// <summary>
+    ///     Constructor for WebCrawlerController.
+    /// </summary>
+    /// <param name="logger"></param>
+    /// <param name="options">SpyderOptions options object.</param>
+    /// <param name="cache">ICacheIndexService cache object.</param>
+    public WebCrawlerController(
+        ILogger<WebCrawlerController> logger,
+        IOptions<SpyderOptions> options,
+        ICacheIndexService cache
+    )
+        {
+            ArgumentNullException.ThrowIfNull(argument: options);
+            ArgumentNullException.ThrowIfNull(argument: cache);
+            _logger = logger;
+            _options = options.Value;
+            _cache = cache;
+
+
+            //Listen for host shutdown message to cleanup
+            SpyderControlService.LibraryHostShuttingDown += OnStopping;
+        }
+
+
+
+
+
+
+    #region Properteez
+
+    public ICommand CrawlCommand
+        {
+            get => _crawlCommand;
+            set => SetProperty(field: ref _crawlCommand, value: value);
+        }
+
+
+
+    internal static int CrawledUrlCount { get; }
+    public bool IsCrawling { get; set; }
+    public bool IsPaused { get; set; }
+
+
+
+    public ICommand PauseCommand
+        {
+            get => _pauseCommand;
+            set => SetProperty(field: ref _pauseCommand, value: value);
+        }
+
+
+
+    public static TaskCompletionSource<bool> StartupComplete { get; } = new();
+
+
+
+    public ICommand StopCommand
+        {
+            get => _stopCommand;
+            set => SetProperty(field: ref _stopCommand, value: value);
+        }
+
+    #endregion
+
+
+
+
+
+
+    #region Public Methods
 
     public void CancelCrawlingTasks()
         {
@@ -50,10 +124,22 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
 
 
 
+
+    /// <summary>
+    ///     A Public event that can be subscribe to, to be alerted to the completion of the spyder.
+    /// </summary>
+    public event EventHandler<CrawlerFinishedEventArgs> CrawlerTasksFinished;
+
+
+
+
+
+
     public void Dispose()
         {
             _cancellationTokenSource.Dispose();
         }
+
 
 
 
@@ -83,7 +169,8 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
                                                                                  Task.Run(()=> StartWorkerAsync(maxDepth, token)
                                                                                      .ConfigureAwait(false), token)));
                     */
-                    await CrawlAsync(cleanUrl: _options.StartingUrl, 1).ConfigureAwait(false);
+                    Console.WriteLine(value: "Starting crawler");
+                    await CrawlAsync(cleanUrl: Options.StartingUrl, 1).ConfigureAwait(false);
                     _crawlTimer.Stop();
                     Debug.WriteLine($"Elapsed Crawl time {_crawlTimer.ElapsedMilliseconds:000.00}");
                     // Fire off the completion event for anyone who is listening
@@ -102,43 +189,10 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
 
     #endregion
 
-    #region Public Methods
-
-    /// <summary>
-    ///     Constructor for WebCrawlerController.
-    /// </summary>
-    /// <param name="logger"></param>
-    /// <param name="options">SpyderOptions options object.</param>
-    /// <param name="cache">ICacheIndexService cache object.</param>
-    public WebCrawlerController(
-        ILogger<WebCrawlerController> logger,
-        IOptions<SpyderOptions> options,
-        ICacheIndexService cache
-    )
-        {
-            ArgumentNullException.ThrowIfNull(argument: options);
-            ArgumentNullException.ThrowIfNull(argument: cache);
-            _logger = logger;
-            _options = options.Value;
-            _cache = cache;
-
-
-            //Listen for host shutdown message to cleanup
-            SpyderControlService.LibraryHostShuttingDown += OnStopping;
-        }
 
 
 
 
-
-    /// <summary>
-    ///     A Public event that can be subscribe to, to be alerted to the completion of the spyder.
-    /// </summary>
-    public event EventHandler<CrawlerFinishedEventArgs> CrawlerTasksFinished;
-
-    public static TaskCompletionSource<bool> StartupComplete { get; } = new();
-
-    #endregion
 
     #region Private Methods
 
@@ -164,6 +218,7 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
 
 
 
+
     private async Task CrawlAsync(string cleanUrl, int currentDepth)
         {
             try
@@ -183,6 +238,7 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
 
 
 
+
     /// <summary>
     ///     Asynchronously handles the crawling of a specific URL.
     /// </summary>
@@ -197,7 +253,7 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
     /// </remarks>
     private async Task HandleCrawlUrlAsync([NotNull] string url, int currentDepth)
         {
-            if (currentDepth == _options.LinkDepthLimit)
+            if (currentDepth == Options.LinkDepthLimit)
                 {
                     return;
                 }
@@ -219,6 +275,7 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
             await HandleParsedHtmlLinksAsync(documentSourceContent: content, currentDepth: currentDepth)
                 .ConfigureAwait(false);
         }
+
 
 
 
@@ -255,7 +312,7 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
 
             var newLinks = links.BaseUrls;
 
-            if (_options.FollowExternalLinks)
+            if (Options.FollowExternalLinks)
                 {
                     newLinks.AddRange(collection: links.OtherUrls);
                 }
@@ -268,6 +325,7 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
                     await CrawlAsync(cleanUrl: link, currentDepth + 1).ConfigureAwait(false);
                 }
         }
+
 
 
 
@@ -297,6 +355,7 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
 
 
 
+
     private void PrintStats()
         {
             Console.WriteLine(value: Environment.NewLine);
@@ -305,7 +364,7 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
             Console.WriteLine(value: "**             Spyder Cache Operations              **");
             Console.WriteLine(value: "******************************************************");
             Console.WriteLine(format: "**  {0,15}:   {1,-28} {2,-10}", arg0: "Cache Entries",
-                arg1: _cache.CacheItemCount, arg2: "**");
+                arg1: _cache.CacheIndexItems.Count, arg2: "**");
             Console.WriteLine(format: "**  {0,15}:   {1,-28} {2,-10}", arg0: "urls Crawled", arg1: _visitedUrls.Count,
                 arg2: "**");
             Console.WriteLine(format: "**  {0,15}:   {1,-28} {2,-8}", arg0: "Session Captured",
@@ -318,11 +377,14 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
             Console.WriteLine(format: "**  {0,15}:   {1,-28} {2,-10}", arg0: "Ext Urls",
                 arg1: OutputControl.Instance.CapturedExternalLinks.Count, arg2: "**");
 
+            Console.WriteLine(format: "**  {0,15}:   {1,-28} {2,-10}", arg0: "Downloads",
+                arg1: QueueProcessingService.DownloadAttempts, arg2: "**");
+
             Console.WriteLine(value: "**                                                  **");
             Console.WriteLine(format: "**  {0,15}:   {1,-28} {2,-9}", arg0: "Cache Hits",
-                arg1: CacheIndexService.CacheHits, arg2: "**");
+                arg1: AbstractCacheIndex.CacheHits, arg2: "**");
             Console.WriteLine(format: "**  {0,15}:   {1,-28} {2,-10}", arg0: "Cache Misses",
-                arg1: CacheIndexService.CacheMisses, arg2: "**");
+                arg1: AbstractCacheIndex.CacheMisses, arg2: "**");
             Console.WriteLine(
                 format: "**  {0,15}:   {1,-28} {2,-10}", arg0: "Elapsed Time", _crawlTimer.Elapsed.ToString(),
                 arg2: "**");
@@ -331,6 +393,7 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
             Console.WriteLine(value: "**                                                  **");
             Console.WriteLine(value: "******************************************************");
         }
+
 
 
 
@@ -363,7 +426,7 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
         {
             token.ThrowIfCancellationRequested();
             var page = await _cache.GetAndSetContentFromCacheAsync(address: url).ConfigureAwait(false);
-            if (_options.EnableTagSearch || _options.HtmlTagToSearchFor is not null)
+            if (Options.EnableTagSearch || Options.HtmlTagToSearchFor is not null)
                 {
                     if (HtmlParser.SearchPageForTagName(content: page, tag: "video"))
                         {
@@ -371,7 +434,7 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
                         }
                 }
 
-            var urls = HtmlParser.GetHrefLinksFromDocumentSource(webPagesource: page);
+            // var urls = HtmlParser.GetHrefLinksFromDocumentSource(page);
 
             // Log.Debug($"Count togo: {this.UrlsInQueue}");
 
@@ -390,6 +453,7 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
 
             return default;
         }
+
 
 
 
@@ -443,12 +507,11 @@ public sealed class WebCrawlerController : IWebCrawlerController, IDisposable
 
 
 
+
     /// <summary>
     ///     Method serves as a web worker responsible for crawling url
     ///     that are in the _urlsToCrawl variable
     /// </summary>
-    /// <param name="maxDepth"></param>
-    /// <param name="token"></param>
     /* private Task StartWorkerAsync(int maxDepth, CancellationToken token)
      {
          Debug.WriteLine(value: "Worker starting....");

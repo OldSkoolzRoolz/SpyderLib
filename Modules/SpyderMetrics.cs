@@ -6,34 +6,15 @@ namespace KC.Apps.SpyderLib.Modules;
 
 public class SpyderMetrics : IDisposable
 {
+    private bool _disposedValue;
+    private readonly Meter _meter;
     private readonly Counter<int> _urlsCrawled;
     private readonly Histogram<float> _urlTimining;
-    private bool _disposedValue;
-    private Meter _meter;
-
-    #region Interface Members
-
-    // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-    // ~SpyderMetrics()
-    // {
-    //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-    //     Dispose(disposing: false);
-    // }
 
 
 
 
 
-    public void Dispose()
-        {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-    #endregion
-
-    #region Public Methods
 
     public SpyderMetrics(IMeterFactory meterFactory)
         {
@@ -48,10 +29,38 @@ public class SpyderMetrics : IDisposable
 
 
 
+
+    #region Public Methods
+
     public void CrawlElapsedTime(float timing)
         {
             _urlTimining.Record(value: timing);
         }
+
+
+
+
+
+
+    // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+    // ~SpyderMetrics()
+    // {
+    //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+    //     Dispose(disposing: false);
+    // }
+
+
+
+
+
+
+    public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
 
 
 
@@ -66,6 +75,11 @@ public class SpyderMetrics : IDisposable
         }
 
     #endregion
+
+
+
+
+
 
     #region Private Methods
 

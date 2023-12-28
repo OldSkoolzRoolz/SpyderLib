@@ -1,17 +1,8 @@
-#region
-
-using KC.Apps.SpyderLib.Models;
-
-#endregion
-
-namespace KC.Apps.SpyderLib.Interfaces;
+namespace KC.Apps.SpyderLib.Services;
 
 public interface IDownloadControl
 {
     #region Public Methods
-
-    Task AddDownloadItem(DownloadItem item);
-
 
     Task SearchLocalCacheForHtmlTag();
 

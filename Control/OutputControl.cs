@@ -1,83 +1,61 @@
-#region
-
 using System.Diagnostics;
 
 using KC.Apps.SpyderLib.Models;
+using KC.Apps.SpyderLib.Properties;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Control;
 
-/// <summary>
-///     Interface for controlling output of web scraping
-/// </summary>
-public interface IOutputControl
-{
-    #region Public Methods
-
-    /// <summary>
-    ///     Gets or sets the collection of captured external links
-    /// </summary>
-    ConcurrentScrapedUrlCollection CapturedExternalLinks { get; }
-
-    /// <summary>
-    ///     Gets or sets the collection of captured seed links
-    /// </summary>
-    ConcurrentScrapedUrlCollection CapturedSeedLinks { get; }
-
-    /// <summary>
-    ///     Gets or sets the collection of URLs which resulted producing search results
-    /// </summary>
-    ConcurrentScrapedUrlCollection CapturedUrlWithSearchResults { get; }
-
-    /// <summary>
-    ///     Gets or sets the collection of captured video links
-    /// </summary>
-    ConcurrentScrapedUrlCollection CapturedVideoLinks { get; }
-
-    /// <summary>
-    ///     Gets or sets the collection of URLs that the web crawler failed to process
-    /// </summary>
-    ConcurrentScrapedUrlCollection FailedCrawlerUrls { get; }
-
-
-
-
-
-    /// <summary>
-    ///     Method to be called when the library is shut down
-    /// </summary>
-    void OnLibraryShutdown();
-
-
-
-
-
-    /// <summary>
-    ///     Gets or sets the collection of URLs that have been scraped in the current session.
-    ///     This collection is used for exclusion purposes.
-    /// </summary>
-    ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; }
-
-    #endregion
-}
-
 public class OutputControl : IOutputControl
 {
-    private OutputControl() { }
+    #region Properteez
+
+    /// <summary>
+    ///     The urls collected that are NOT on the same host as the <see cref="SpyderOptions.StartingUrl" />
+    /// </summary>
+    public ConcurrentScrapedUrlCollection CapturedExternalLinks { get; } = new();
+
+    /// <summary>
+    ///     The urls collected that are on the same host as the <see cref="SpyderOptions.StartingUrl" />
+    /// </summary>
+    public ConcurrentScrapedUrlCollection CapturedSeedLinks { get; } = new();
+
+    /// <summary>
+    ///     The urls collected that were found to contain  the html tag searched for
+    /// </summary>
+    public ConcurrentScrapedUrlCollection CapturedUrlWithSearchResults { get; } = new();
+
+    public ConcurrentScrapedUrlCollection CapturedVideoLinks { get; } = new();
+
+    /// <summary>
+    ///     Represents the urls of the pages that were scraped for content
+    /// </summary>
+    public ConcurrentScrapedUrlCollection CrawledUrls { get; } = new();
+
+    /// <summary>
+    ///     The collection of urls that failed during the attempt to scrape.
+    /// </summary>
+    public ConcurrentScrapedUrlCollection FailedCrawlerUrls { get; } = new();
+
+    /// <summary>
+    ///     Represents a singleton instance of an OutputControl object.
+    /// </summary>
+    public static IOutputControl Instance { get; } = new OutputControl();
+
+    /// <summary>
+    ///     Represents the urls that have been scraped from the pages that were crawled
+    /// </summary>
+    public ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; } = new();
+
+    #endregion
 
 
-    #region Interface Members
-
-    public ConcurrentScrapedUrlCollection CapturedExternalLinks { get; set; } = new();
-    public ConcurrentScrapedUrlCollection CapturedSeedLinks { get; set; } = new();
-    public ConcurrentScrapedUrlCollection CapturedUrlWithSearchResults { get; set; } = new();
-    public ConcurrentScrapedUrlCollection CapturedVideoLinks { get; set; } = new();
-    public ConcurrentScrapedUrlCollection FailedCrawlerUrls { get; set; } = new();
 
 
 
 
+    #region Public Methods
 
     public void OnLibraryShutdown()
         {
@@ -96,22 +74,15 @@ public class OutputControl : IOutputControl
                     SaveCollectionToFile(col: entry.Key, fileName: entry.Value);
                 }
 
-            Debug.WriteLine(value: "Output written");
+            Debug.WriteLine(message: "Output written");
         }
 
-
-
-
-
-    public ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; set; } = new();
-
     #endregion
 
-    #region Public Methods
 
-    public static IOutputControl Instance { get; } = new OutputControl();
 
-    #endregion
+
+
 
     #region Private Methods
 
@@ -133,6 +104,65 @@ public class OutputControl : IOutputControl
 
             sw.Flush();
         }
+
+    #endregion
+}
+
+
+
+/// <summary>
+///     Interface for controlling output of web scraping
+/// </summary>
+public interface IOutputControl
+{
+    #region Properteez
+
+    /// <summary>
+    ///     Gets or sets the collection of captured external links
+    /// </summary>
+    ConcurrentScrapedUrlCollection CapturedExternalLinks { get; }
+
+    /// <summary>
+    ///     Gets or sets the collection of captured seed links
+    /// </summary>
+    ConcurrentScrapedUrlCollection CapturedSeedLinks { get; }
+
+    /// <summary>
+    ///     Gets or sets the collection of URLs which resulted producing search results
+    /// </summary>
+    ConcurrentScrapedUrlCollection CapturedUrlWithSearchResults { get; }
+
+    /// <summary>
+    ///     Gets or sets the collection of captured video links
+    /// </summary>
+    ConcurrentScrapedUrlCollection CapturedVideoLinks { get; }
+
+    ConcurrentScrapedUrlCollection CrawledUrls { get; }
+
+    /// <summary>
+    ///     Gets or sets the collection of URLs that the web crawler failed to process
+    /// </summary>
+    ConcurrentScrapedUrlCollection FailedCrawlerUrls { get; }
+
+    /// <summary>
+    ///     Gets or sets the collection of URLs that have been scraped in the current session.
+    ///     This collection is used for exclusion purposes.
+    /// </summary>
+    ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; }
+
+    #endregion
+
+
+
+
+
+
+    #region Public Methods
+
+    /// <summary>
+    ///     Method to be called when the library is shut down
+    /// </summary>
+    void OnLibraryShutdown();
 
     #endregion
 }

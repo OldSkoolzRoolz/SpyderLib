@@ -1,5 +1,3 @@
-#region
-
 using System.Diagnostics;
 
 using CommunityToolkit.Diagnostics;
@@ -11,14 +9,14 @@ using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Services;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Modules;
 
 /// <summary>
 ///     Helper methods to aid the parsing of HTML documents
 /// </summary>
-public static class HtmlParser
+internal static class HtmlParser
 {
     #region Public Methods
 
@@ -38,6 +36,7 @@ public static class HtmlParser
                 .Where(link => !string.IsNullOrEmpty(value: link) && !link.StartsWith('/'))
                 .ToArray();
         }
+
 
 
 
@@ -73,6 +72,7 @@ public static class HtmlParser
 
 
 
+
     /// <summary>
     ///     This method is used to extract all hyperlinks from the given html source. It parses the HTML,
     ///     extracts 'href' values, filters out invalid URLs, and then categorizes them into two groups -
@@ -95,30 +95,45 @@ public static class HtmlParser
 
             try
                 {
-                    var links = doc.DocumentNode.SelectNodes("//a[@href]")
-                        .Select(a => a.GetAttributeValue(name: "href", null))
-                        .Where(u => !string.IsNullOrEmpty(value: u));
+                    var links = doc.DocumentNode.SelectNodes(xpath: "//a[@href]");
 
-                    var rawLinks = links as string[] ?? links.ToArray();
+                    if (links is null)
+                        {
+                            return default;
+                        }
 
-                    Debug.WriteLine($"raw link count :: {rawLinks.Length}");
-                    var urlTuple = SeparateUrls(ValidateUrls(urls: rawLinks),
+
+
+                    var pglinks = links.Select(a => a.GetAttributeValue(name: "href", null))
+                        .Where(u => !string.IsNullOrEmpty(value: u)).ToList();
+
+
+
+                    //  var rawLinks = links as string[] ?? links.ToArray();
+
+                    Debug.WriteLine($"raw link count :: {pglinks.Count}");
+                    //var linklist = links.ToList();
+
+                    var urlTuple = SeparateUrls(ValidateUrls(urls: pglinks),
                         new(uriString: SpyderControlService.CrawlerOptions.StartingUrl));
 
 
-                    OutputControl.Instance.UrlsScrapedThisSession.AddRange(itemsToAdd: rawLinks);
+                    OutputControl.Instance.UrlsScrapedThisSession.AddRange(itemsToAdd: pglinks);
                     OutputControl.Instance.CapturedExternalLinks.AddRange(itemsToAdd: urlTuple.OtherUrls);
                     OutputControl.Instance.CapturedSeedLinks.AddRange(itemsToAdd: urlTuple.BaseUrls);
 
                     return urlTuple;
                 }
-            catch (Exception)
+            catch (Exception ex)
                 {
                     LoggingMessages.SpyderHelpersException(logger: SpyderControlService.Logger,
                         message: "Error parsing page source, Resuming...");
-                    throw new SpyderException(message: "Error parsing page source");
+                    Debug.WriteLine(message: ex.Message);
                 }
+
+            return default;
         }
+
 
 
 
@@ -134,6 +149,7 @@ public static class HtmlParser
 
             return set3;
         }
+
 
 
 
@@ -173,6 +189,7 @@ public static class HtmlParser
 
 
 
+
     public static bool TryExtractUserTagFromDocument(
         HtmlDocument doc,
         string tagToSearchFor,
@@ -198,6 +215,11 @@ public static class HtmlParser
 
     #endregion
 
+
+
+
+
+
     #region Private Methods
 
     internal static HtmlDocument CreateHtmlDocument(
@@ -218,6 +240,7 @@ public static class HtmlParser
 
             return doc;
         }
+
 
 
 
@@ -245,48 +268,63 @@ public static class HtmlParser
 
 
 
+
+    /// <summary>
+    ///     Filters out URLs that contain any of the specified patterns.
+    /// </summary>
+    /// <param name="urls">The URLs to filter.</param>
+    /// <returns>The filtered URLs.</returns>
     private static IEnumerable<string> FilterPatternsFromUrls(IEnumerable<string> urls)
         {
             var patterns = SpyderControlService.CrawlerOptions.LinkPatternExclusions;
-            return urls.Where(url =>
-                {
-                    try
-                        {
-                            return !patterns.Any(predicate: url.Contains);
-                        }
-                    catch (SpyderException)
-                        {
-                            return false;
-                        }
-                });
+            return patterns is null
+                ? urls
+                :
+                // Returns the urls that do not contain any of the patterns.
+                urls.Where(url =>
+                    !patterns.Any(pattern =>
+                        url.Contains(value: pattern, comparisonType: StringComparison.CurrentCultureIgnoreCase)));
         }
 
 
 
 
 
+
+    /// <summary>
+    ///     Filters URLs based on their scheme.
+    /// </summary>
+    /// <param name="urls">The list of URLs to be filtered.</param>
+    /// <returns>An enumerable collection of filtered URLs.</returns>
     private static IEnumerable<string> FilterUrlsByScheme(IEnumerable<string> urls)
         {
+            // It uses the LINQ Where method to filter the input list.
             return urls.Where(url =>
                 {
+                    // A try-catch block is used to handle potential UriFormatExceptions
                     try
                         {
+                            // If the Url doesn't start with the string "http", it is immediately excluded.
                             if (!url.StartsWith(value: "http", comparisonType: StringComparison.Ordinal))
                                 {
                                     return false;
                                 }
 
+                            // URL is passed to the Uri constructor. The Uri class represents a Uniform Resource Identifier (URI), a compact representation of a resource available to your application on the intranet or internet.
                             var uri = new Uri(uriString: url);
 
 
+                            // Returns true if the Uri is well-formed.
                             return uri.IsWellFormedOriginalString();
                         }
+                    // If a UriFormatException is caught (in case the Url string is not a valid Uri), the Url is excluded.
                     catch (UriFormatException)
                         {
                             return false;
                         }
                 });
         }
+
 
 
 
@@ -308,6 +346,7 @@ public static class HtmlParser
 
             return success;
         }
+
 
 
 
@@ -360,6 +399,7 @@ public static class HtmlParser
 
 
 
+
     /// <summary>
     ///     Method extracts the url from the source or src attrubuteselements and add link to que
     /// </summary>
@@ -391,6 +431,7 @@ public static class HtmlParser
 
 
 
+
     /// <summary>
     ///     Iteration Wrapper overload for single node method
     /// </summary>
@@ -406,12 +447,15 @@ public static class HtmlParser
                 {
                     var results = ParseNodeForSourceAttributes(node: node);
                     if (results.Count > 0)
-                        temp.AddRange(collection: results);
+                        {
+                            temp.AddRange(collection: results);
+                        }
                 }
 
 
             return temp;
         }
+
 
 
 
@@ -435,7 +479,9 @@ public static class HtmlParser
 
 
 
-    private static (List<string> BaseUrls, List<string> OtherUrls) SeparateUrls(IEnumerable<string> sanitizedUrls,
+
+    private static (List<string> BaseUrls, List<string> OtherUrls) SeparateUrls(
+        IEnumerable<string> sanitizedUrls,
         Uri baseUri)
         {
             var baseUrls = new List<string>();
@@ -447,9 +493,13 @@ public static class HtmlParser
                         {
                             var strippedUrl = uri.GetLeftPart(part: UriPartial.Path);
                             if (baseUri.IsBaseOf(new(uriString: strippedUrl)))
-                                baseUrls.Add(item: strippedUrl);
+                                {
+                                    baseUrls.Add(item: strippedUrl);
+                                }
                             else
-                                otherUrls.Add(item: strippedUrl);
+                                {
+                                    otherUrls.Add(item: strippedUrl);
+                                }
                         }
                     //Skip anomaly
                 }
@@ -462,12 +512,18 @@ public static class HtmlParser
 
 
 
+
     private static List<string> ToAbsolute(string baseUrl, IEnumerable<string> urls)
         {
             var baseUri = new Uri(uriString: baseUrl);
             var outputUrls = new List<string>();
             foreach (var url in urls)
                 {
+                    if (!IsValidUrl(url: url))
+                        {
+                            continue;
+                        }
+
                     try
                         {
                             if (Uri.IsWellFormedUriString(uriString: url, uriKind: UriKind.Absolute))
@@ -488,6 +544,7 @@ public static class HtmlParser
 
             return outputUrls;
         }
+
 
 
 

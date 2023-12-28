@@ -1,26 +1,46 @@
-#region
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 using CommunityToolkit.Diagnostics;
 
+using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Properties;
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Services;
 
-public class ServiceBase
+/// <summary>
+///     Base class for services that implement the INotifyPropertyChanged interface.
+/// </summary>
+public abstract class ServiceBase : INotifyPropertyChanged, IDisposable
 {
-    protected ServiceBase(
-        ILoggerFactory factory,
-        SpyderOptions options,
-        IHostApplicationLifetime lifetime)
+    private readonly TextFileLoggerConfiguration _loggerConfig;
+    private static ILogger s_logger;
+
+
+    protected ServiceBase() { }
+
+
+
+
+
+
+    /// <summary>
+    ///     Constructor used by the control service alone, to encourage a single point of failure in parameters.
+    /// </summary>
+    /// <param name="lifetime"></param>
+    protected ServiceBase(IHostApplicationLifetime lifetime)
         {
-            Guard.IsNotNull(value: options);
-            this.LoggerFactory = factory;
-            this.Options = options;
+            Guard.IsNotNull(value: lifetime);
+
+
+
+            _loggerConfig = new();
+            s_logger = Factory.CreateLogger<ServiceBase>();
             this.AppLifetime = lifetime;
         }
 
@@ -28,14 +48,113 @@ public class ServiceBase
 
 
 
-    protected ServiceBase() { }
-
 
     #region Properteez
 
-    protected IHostApplicationLifetime AppLifetime { get; }
-    protected ILoggerFactory LoggerFactory { get; }
-    protected SpyderOptions Options { get; }
+    public IHostApplicationLifetime AppLifetime { get; }
+    protected static ILoggerFactory Factory => AppContext.GetData(name: "factory") as ILoggerFactory;
+    public static SpyderOptions Options => (SpyderOptions)AppContext.GetData(name: "options");
+
+    #endregion
+
+
+
+
+
+
+    #region Public Methods
+
+    /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+    public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+
+
+
+
+
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    #endregion
+
+
+
+
+
+
+    #region Private Methods
+
+    protected virtual void Dispose(bool disposing)
+        {
+            if (disposing) { }
+        }
+
+
+
+
+
+
+    /// <summary>
+    ///     Raises the <see cref="PropertyChanged" /> event.
+    /// </summary>
+    /// <param name="e">The <see cref="System.ComponentModel.PropertyChangedEventArgs" /> instance containing the event data.</param>
+    private void OnPropertyChanged(PropertyChangedEventArgs e)
+        {
+            var handler = this.PropertyChanged;
+            if (handler != null)
+                {
+                    handler(this, e: e);
+                }
+        }
+
+
+
+
+
+
+    /// <summary>
+    ///     Raises the <see cref="PropertyChanged" /> event.
+    /// </summary>
+    /// <param name="propertyName">
+    ///     The property name of the property that has changed.
+    ///     This optional parameter can be skipped because the compiler is able to create it automatically.
+    /// </param>
+    protected void RaisePropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            OnPropertyChanged(new(propertyName: propertyName));
+        }
+
+
+
+
+
+
+    /// <summary>
+    ///     Set the property with the specified value. If the value is not equal with the field then the field is
+    ///     set, a PropertyChanged event is raised and it returns true.
+    /// </summary>
+    /// <typeparam name="T">Type of the property.</typeparam>
+    /// <param name="field">Reference to the backing field of the property.</param>
+    /// <param name="value">The new value for the property.</param>
+    /// <param name="propertyName">
+    ///     The property name. This optional parameter can be skipped
+    ///     because the compiler is able to create it automatically.
+    /// </param>
+    /// <returns>True if the value has changed, false if the old and new value were equal.</returns>
+    protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        {
+            if (Equals(objA: field, objB: value))
+                {
+                    return false;
+                }
+
+            field = value;
+            RaisePropertyChanged(propertyName: propertyName);
+            return true;
+        }
 
     #endregion
 }

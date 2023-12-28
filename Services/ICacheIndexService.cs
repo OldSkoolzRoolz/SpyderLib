@@ -1,23 +1,25 @@
-#region
-
 using System.Collections.Concurrent;
 
 using KC.Apps.SpyderLib.Models;
 
-#endregion
 
-namespace KC.Apps.SpyderLib.Interfaces;
+
+namespace KC.Apps.SpyderLib.Services;
 
 public interface ICacheIndexService
 {
-    #region Public Methods
+    #region Properteez
 
     ConcurrentDictionary<string, string> CacheIndexItems { get; }
-    int CacheItemCount { get; }
+
+    #endregion
 
 
 
 
+
+
+    #region Public Methods
 
     Task<string> GetAndSetContentFromCacheAsync(
         string address);
@@ -26,7 +28,9 @@ public interface ICacheIndexService
 
 
 
+
     void SaveCacheIndex();
+
 
 
 

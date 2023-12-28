@@ -1,8 +1,6 @@
-﻿#region
+﻿using Microsoft.Extensions.Logging;
 
-using Microsoft.Extensions.Logging;
 
-#endregion
 
 namespace KC.Apps.SpyderLib.Logging;
 

@@ -1,28 +1,51 @@
-#region
-
 using System.Collections.Concurrent;
+using System.Runtime.Versioning;
+
+using CommunityToolkit.Diagnostics;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Logging;
 
 /// <summary>
 ///     A Provider of <see cref="TextFileLogger" /> instances.
 /// </summary>
-[ProviderAlias(alias: "TextFileLogging")]
-public sealed class TextFileLoggerProvider : ILoggerProvider
+[UnsupportedOSPlatform(platformName: "browser")]
+[ProviderAlias(alias: "TextFileLogger")]
+public class TextFileLoggerProvider : ILoggerProvider
 {
     private readonly TextFileLoggerConfiguration _currentConfig;
+    private bool _disposed;
     private readonly TextFileFormatter _formatter;
 
     private readonly ConcurrentDictionary<string, TextFileLogger> _loggers =
         new(comparer: StringComparer.OrdinalIgnoreCase);
 
-    private bool _disposed;
 
-    #region Interface Members
+
+
+
+
+    /// <summary>
+    ///     Creates an instance of <see cref="TextFileLoggerProvider" />
+    /// </summary>
+    /// <param name="config"></param>
+    public TextFileLoggerProvider(IOptions<TextFileLoggerConfiguration> config)
+        {
+            Guard.IsNotNull(value: config);
+            _currentConfig = config.Value;
+            _formatter = new(config: _currentConfig);
+        }
+
+
+
+
+
+
+    #region Public Methods
 
     public ILogger CreateLogger(
         string categoryName)
@@ -36,31 +59,23 @@ public sealed class TextFileLoggerProvider : ILoggerProvider
 
 
 
+
     public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
     #endregion
 
-    #region Public Methods
 
-    /// <summary>
-    ///     Creates an instance of <see cref="TextFileLoggerProvider" />
-    /// </summary>
-    /// <param name="config"></param>
-    public TextFileLoggerProvider(
-        TextFileLoggerConfiguration config)
-        {
-            _formatter = new(config: config);
-            _currentConfig = config;
-        }
 
-    #endregion
+
+
 
     #region Private Methods
 
-    private void Dispose(
+    protected virtual void Dispose(
         bool disposing)
         {
             if (_disposed)
@@ -77,6 +92,7 @@ public sealed class TextFileLoggerProvider : ILoggerProvider
 
             _disposed = true;
         }
+
 
 
 

@@ -1,5 +1,3 @@
-#region
-
 using System.Collections.Concurrent;
 using System.Text;
 
@@ -11,27 +9,28 @@ using KC.Apps.SpyderLib.Properties;
 
 using Newtonsoft.Json;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Modules;
 
 public class FileOperations : IDisposable
 {
+    private bool _disposed;
+    private readonly object _fileLock = new();
+    private readonly SpyderOptions _options;
     private const int DELAY_ON_RETRY = 1000;
     private const string FILENAME = "Spyder_Cache_Index.json";
     private const int MAX_RETRIES = 3;
-    private readonly object _fileLock = new();
-    private readonly SpyderOptions _options;
-    private bool _disposed;
 
 
 
 
 
-    internal FileOperations(
-        SpyderOptions options)
+
+    public FileOperations()
         {
-            _options = options;
+            _options = AppContext.GetData(name: "options") as SpyderOptions;
+            Guard.IsNotNull(value: _options);
             _ = Directory.CreateDirectory(path: _options.LogPath);
         }
 
@@ -39,7 +38,8 @@ public class FileOperations : IDisposable
 
 
 
-    #region Interface Members
+
+    #region Public Methods
 
     public void Dispose()
         {
@@ -47,9 +47,10 @@ public class FileOperations : IDisposable
             GC.SuppressFinalize(this);
         }
 
-    #endregion
 
-    #region Public Methods
+
+
+
 
     public ConcurrentDictionary<string, string> LoadCacheIndex()
         {
@@ -67,6 +68,7 @@ public class FileOperations : IDisposable
 
             return dict ?? new ConcurrentDictionary<string, string>();
         }
+
 
 
 
@@ -106,12 +108,11 @@ public class FileOperations : IDisposable
 
 
 
+
     public void SaveCacheIndex(
-        SpyderOptions options,
         [NotNull] ConcurrentDictionary<string, string> concurrentDictionary)
         {
             Guard.IsNotNull(value: concurrentDictionary);
-            Guard.IsNotNull(value: options);
 
             if (concurrentDictionary.IsEmpty)
                 {
@@ -120,9 +121,9 @@ public class FileOperations : IDisposable
 
             try
                 {
-                    var path = Path.Combine(path1: options.LogPath, FILENAME + ".new");
+                    var path = Path.Combine(path1: _options.LogPath, FILENAME + ".new");
                     //var backPath = Path.Combine(options.LogPath, FILENAME + ".bak");
-                    var oldPath = Path.Combine(path1: options.LogPath, path2: FILENAME);
+                    var oldPath = Path.Combine(path1: _options.LogPath, path2: FILENAME);
 
 
                     SafeSerializeAndWrite(newFile: path, originalFile: oldPath, indexCache: concurrentDictionary);
@@ -135,6 +136,11 @@ public class FileOperations : IDisposable
 
     #endregion
 
+
+
+
+
+
     #region Private Methods
 
     protected virtual void Dispose(bool disposing)
@@ -143,11 +149,10 @@ public class FileOperations : IDisposable
                 {
                     if (disposing)
                         {
-                            // unsubscribe from static event
+                            // clean managed resources here
                         }
 
-                    // Here you can release unmanaged resources if any
-
+                    // clean unmanaged resources here
                     _disposed = true;
                 }
         }
@@ -156,11 +161,13 @@ public class FileOperations : IDisposable
 
 
 
-    // Destructor
+
+    /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
     ~FileOperations()
         {
             Dispose(false);
         }
+
 
 
 
@@ -183,6 +190,7 @@ public class FileOperations : IDisposable
 
 
 
+
     private static void ValidateParameters(
         string newFile,
         string originalFile,
@@ -193,6 +201,7 @@ public class FileOperations : IDisposable
                     throw new ArgumentException(message: "Invalid arguments.");
                 }
         }
+
 
 
 

@@ -1,8 +1,8 @@
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
-#region
 
-using System.Collections.ObjectModel;
+
+
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
@@ -10,7 +10,7 @@ using JetBrains.Annotations;
 
 using Microsoft.Extensions.Logging;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Properties;
 
@@ -19,8 +19,6 @@ namespace KC.Apps.SpyderLib.Properties;
 /// </summary>
 public class SpyderOptions
 {
-    #region Public Enums
-
     [SuppressMessage(category: "ReSharper", checkId: "InconsistentNaming")]
     public enum HtmlTagList
     {
@@ -28,9 +26,12 @@ public class SpyderOptions
         img
     }
 
-    #endregion
 
-    #region Public Methods
+
+
+
+
+    #region Properteez
 
     [Required] [AllowNull] public string CacheLocation { get; init; }
     [Required] [AllowNull] public string CapturedExternalLinksFilename { get; init; } = "CapturedExternalLinks.txt";
@@ -68,16 +69,16 @@ public class SpyderOptions
     public int LinkDepthLimit { get; init; } = 2;
 
     [CanBeNull]
-    public ReadOnlyCollection<string> LinkPatternExclusions
-        {
-            get => null;
-            init { }
-        }
+    [SuppressMessage(category: "Performance", checkId: "CA1819:Properties should not return arrays")]
+    public string[] LinkPatternExclusions { get; set; }
 
     [Required] public LogLevel LoggingLevel { get; init; }
     [Required] public string LogPath { get; init; }
+    public int MaxConnectionsPerServer { get; set; }
     [Required] [AllowNull] public string OutputFileName { get; init; } = "OutputFilename.txt";
     [Required] [AllowNull] public string OutputFilePath { get; init; }
+    public TimeSpan PooledConnectionIdleTimeout { get; set; }
+    public TimeSpan PooledConnectionLifetime { get; set; }
     [Required] public int QueueCapacity { get; set; } = 200;
 
     /// <summary>

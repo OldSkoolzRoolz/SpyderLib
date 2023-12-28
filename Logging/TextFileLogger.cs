@@ -1,18 +1,17 @@
-#region
-
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Logging;
 
 /// <summary>
 ///     A logger that writes messages to a text file.
 /// </summary>
-internal class TextFileLogger : ILogger
+internal sealed class TextFileLogger : ILogger
 {
     private readonly string _name;
+
 
 
 
@@ -32,6 +31,7 @@ internal class TextFileLogger : ILogger
 
 
 
+
     #region Properteez
 
     private TextFileLoggerConfiguration Config { get; }
@@ -39,7 +39,12 @@ internal class TextFileLogger : ILogger
 
     #endregion
 
-    #region Interface Members
+
+
+
+
+
+    #region Public Methods
 
     /// <summary>Begins a logical operation scope.</summary>
     /// <param name="state">The identifier for the scope.</param>
@@ -55,11 +60,13 @@ internal class TextFileLogger : ILogger
 
 
 
+
     public bool IsEnabled(
         LogLevel logLevel)
         {
             return logLevel != LogLevel.None;
         }
+
 
 
 
@@ -96,6 +103,11 @@ internal class TextFileLogger : ILogger
         }
 
     #endregion
+
+
+
+
+
 
     #region Private Methods
 

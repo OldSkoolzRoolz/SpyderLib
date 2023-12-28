@@ -14,48 +14,81 @@ using Microsoft.Extensions.Logging;
 
 namespace KC.Apps.SpyderLib.Services;
 
-public class AbstractCacheIndex
+public abstract class AbstractCacheIndex
 {
-    private static readonly object Locker = new();
+    private readonly MyClient _client;
+    internal bool _disposed;
+    internal readonly ILogger _logger;
+    internal readonly SpyderMetrics _metrics;
+    internal readonly SpyderOptions _options;
     private static int s_cacheHits;
     private static int s_cacheMisses;
+    private static readonly object s_locker = new();
     private static readonly Mutex s_mutex = new();
-    protected ISpyderClient _client;
-    protected ILogger _logger;
-    protected SpyderMetrics _metrics;
-    protected SpyderOptions _options;
-
-    #region Properteez
-
-    protected ConcurrentDictionary<string, string> IndexCache { get; }
-
-    #endregion
-
-    #region Public Methods
-
-    public static int CacheHits => s_cacheHits;
-    public static int CacheMisses => s_cacheMisses;
 
 
 
 
 
-    /// <summary>
-    ///     Save Index to disk
-    /// </summary>
-    public void SaveCacheIndex()
+
+    internal AbstractCacheIndex(
+        [NotNull] MyClient client,
+        [NotNull] ILogger logger,
+        [NotNull] SpyderMetrics metrics)
         {
-            using var fileOperations = new FileOperations(options: _options);
-            fileOperations.SaveCacheIndex(options: _options, concurrentDictionary: this.IndexCache);
+            _client = client ?? throw new ArgumentNullException(nameof(client));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
+
+            _options = AppContext.GetData(name: "options") as SpyderOptions;
+
+
+            SpyderControlService.LibraryHostShuttingDown += OnStopping;
+            IndexCache = LoadCacheIndex();
         }
 
 
 
 
 
+
+    #region Properteez
+
+    public static int CacheHits => s_cacheHits;
+
+    /// <summary>
+    ///     Cache Items currently in index
+    /// </summary>
+    public static int CacheItemCount => IndexCache.Count;
+
+    public static int CacheMisses => s_cacheMisses;
+    public static ConcurrentDictionary<string, string> IndexCache { get; private set; }
     public static TaskCompletionSource<bool> StartupComplete { get; } = new();
 
     #endregion
+
+
+
+
+
+
+    #region Public Methods
+
+    /// <summary>
+    ///     Save Index to disk
+    /// </summary>
+    public void SaveCacheIndex()
+        {
+            using var fileOperations = new FileOperations();
+            fileOperations.SaveCacheIndex(concurrentDictionary: IndexCache);
+        }
+
+    #endregion
+
+
+
+
+
 
     #region Private Methods
 
@@ -86,10 +119,12 @@ public class AbstractCacheIndex
 
 
 
+
     protected async Task<string> GetAndSetContentFromCacheCoreAsync([NotNull] string address)
         {
             return await TryGetCacheValue(key: address).ConfigureAwait(false);
         }
+
 
 
 
@@ -125,11 +160,11 @@ public class AbstractCacheIndex
             else
                 {
                     _logger.InternalSpyderError(
-                        message:
                         "A Cache entry was missing from disk. A cache index consistency check has been triggered. Checking cache consistency...");
                     VerifyCacheIndex();
                 }
         }
+
 
 
 
@@ -145,7 +180,7 @@ public class AbstractCacheIndex
                 }
 
             _logger.SpyderTrace($"WEB: Loading page {address}");
-            var content = await _client.GetContentFromWebWithRetryAsync(address: address)
+            var content = await _client.GetPageContentFromWebAsync(address: address)
                 .ConfigureAwait(false);
 
             _ = await SetContentCacheAsync(content: content, address: address).ConfigureAwait(false);
@@ -156,9 +191,10 @@ public class AbstractCacheIndex
 
 
 
+
     protected ConcurrentDictionary<string, string> LoadCacheIndex()
         {
-            var fileOperations = new FileOperations(options: _options);
+            var fileOperations = new FileOperations();
             try
                 {
                     // load the cache asynchronously to avoid blocking the constructor
@@ -176,6 +212,7 @@ public class AbstractCacheIndex
                     fileOperations.Dispose();
                 }
         }
+
 
 
 
@@ -199,10 +236,12 @@ public class AbstractCacheIndex
 
 
 
+
     private string ReadCacheItemFromDisk(string keyVal)
         {
             return ReadFileContentsAsync(path: _options.CacheLocation, fileName: keyVal).Result;
         }
+
 
 
 
@@ -215,12 +254,13 @@ public class AbstractCacheIndex
             return Task.Run(() =>
                 {
                     var fullPath = Path.Combine(path1: path, path2: fileName);
-                    lock (Locker)
+                    lock (s_locker)
                         {
                             return File.ReadAllText(path: fullPath);
                         }
                 });
         }
+
 
 
 
@@ -253,7 +293,7 @@ public class AbstractCacheIndex
                             Path.Combine(path1: _options.CacheLocation, path2: filename), contents: resultObj.Content)
                         .ConfigureAwait(false);
 
-                    _ = this.IndexCache.TryAdd(key: address, value: filename);
+                    _ = IndexCache.TryAdd(key: address, value: filename);
                 }
             catch (Exception e)
                 {
@@ -268,12 +308,14 @@ public class AbstractCacheIndex
 
 
 
+
     private Task<string> TryGetCacheValue(string key)
         {
-            return this.IndexCache.TryGetValue(key: key, out var keyVal)
+            return IndexCache.TryGetValue(key: key, out var keyVal)
                 ? Task.FromResult(ReadCacheItemFromDisk(keyVal: keyVal))
                 : GetValueAsyncInternal(address: key);
         }
+
 
 
 
@@ -285,7 +327,7 @@ public class AbstractCacheIndex
     private void VerifyCacheIndex()
         {
             // Create copies so we don't iterate live data.
-            var cacheEntriesSnapshot = new Dictionary<string, string>(dictionary: this.IndexCache);
+            var cacheEntriesSnapshot = new Dictionary<string, string>(dictionary: IndexCache);
             var directoryFilesSnapshot = Directory.GetFiles(path: _options.CacheLocation);
 
             var deletedFilesCount = 0;
@@ -293,7 +335,7 @@ public class AbstractCacheIndex
                 (from item in cacheEntriesSnapshot
                     let entryFilePath = Path.Combine(path1: _options.CacheLocation, path2: item.Value)
                     where !File.Exists(path: entryFilePath)
-                    select item).Count(item => this.IndexCache.Remove(key: item.Key, value: out _));
+                    select item).Count(item => IndexCache.Remove(key: item.Key, value: out _));
 
 
             SaveCacheIndex();
@@ -301,7 +343,7 @@ public class AbstractCacheIndex
 
             // Compare existing files in directory with cache entries.
             var currentCacheFileNames =
-                new HashSet<string>(this.IndexCache.Values.Select(filename =>
+                new HashSet<string>(IndexCache.Values.Select(filename =>
                     Path.Combine(path1: _options.CacheLocation,
                         path2: filename)));
             var redundantFiles = directoryFilesSnapshot.Except(second: currentCacheFileNames);

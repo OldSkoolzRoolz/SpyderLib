@@ -1,31 +1,23 @@
-﻿#region
-
-using CommunityToolkit.Diagnostics;
+﻿using CommunityToolkit.Diagnostics;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Logging;
 
 public sealed class CustomFormatter : ConsoleFormatter, IDisposable
 {
-    private readonly IDisposable _optionsReloadToken;
     private CustomOptions _formatterOptions;
+    private readonly IDisposable _optionsReloadToken;
 
-    #region Interface Members
 
-    public void Dispose()
-        {
-            _optionsReloadToken?.Dispose();
-        }
 
-    #endregion
 
-    #region Public Methods
+
 
     public CustomFormatter(
             IOptionsMonitor<CustomOptions> options)
@@ -37,6 +29,19 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
             (_optionsReloadToken, _formatterOptions) =
                 (options.OnChange(listener: ReloadLoggerOptions), options.CurrentValue);
         }
+
+
+
+
+
+
+    #region Public Methods
+
+    public void Dispose()
+        {
+            _optionsReloadToken?.Dispose();
+        }
+
 
 
 
@@ -58,6 +63,11 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
 
     #endregion
 
+
+
+
+
+
     #region Private Methods
 
     private void CustomLogicGoesHere(
@@ -65,6 +75,7 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
         {
             textWriter.Write(value: _formatterOptions.CustomPrefix);
         }
+
 
 
 

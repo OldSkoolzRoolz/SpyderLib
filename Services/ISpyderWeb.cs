@@ -1,17 +1,8 @@
-namespace KC.Apps.SpyderLib.Interfaces;
+namespace KC.Apps.SpyderLib.Services;
 
 public interface ISpyderWeb
 {
     #region Public Methods
-
-    void SearchLocalCacheForTags();
-
-
-    Task StartScrapingInputFileAsync(CancellationToken token);
-
-
-
-
 
     Task StartSpyderAsync(
         string startingLink,

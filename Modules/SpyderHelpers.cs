@@ -1,6 +1,8 @@
-#region
-
 // ReSharper disable All
+
+
+
+
 using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 
@@ -12,13 +14,109 @@ using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Modules;
 using KC.Apps.SpyderLib.Services;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib;
 
 public static class SpyderHelpers
 {
-    #region Public Methods
+    #region Private Methods
+
+    /*
+        /// <summary>
+        /// </summary>
+        /// <param name="collection"></param>
+        /// <returns></returns>
+        /// <param name="options"></param>
+        private static ConcurrentScrapedUrlCollection ClassifyScrapedUrlsCore(
+            ConcurrentScrapedUrlCollection collection,
+            SpyderOptions                  options)
+            {
+                if (collection == null) throw new ArgumentNullException(nameof(collection));
+                if (options == null) throw new ArgumentNullException(nameof(options));
+
+                Uri baseUri = new(options.StartingUrl);
+                var sortedlinks = GetBaseUriLinks(collection, baseUri);
+                ConcurrentScrapedUrlCollection externalLinks = sortedlinks.External;
+                ConcurrentScrapedUrlCollection internals = sortedlinks.Internal;
+
+
+                OutputControl.CapturedSeedLinks.AddRange(internals);
+                OutputControl.CapturedExternalLinks.AddRange(externalLinks);
+                OutputControl.UrlsScrapedThisSession.AddRange(collection);
+                var results = new ConcurrentScrapedUrlCollection();
+                results.AddRange(internals);
+
+                if (options.FollowExternalLinks)
+                    {
+                        results.AddRange(externalLinks);
+                    }
+
+
+                return results;
+            }
+
+    */
+
+
+
+
+
+
+    private static bool IsExternalDomainLinkCore(
+        string link,
+        Uri baseUri)
+        {
+            _ = Uri.TryCreate(link, UriKind.Absolute, out var uri);
+            if (uri == null)
+                {
+                    throw new ArgumentException("Invalid Uri");
+                }
+
+
+            return !string.Equals(uri.Host, baseUri.Host, StringComparison.Ordinal);
+        }
+
+
+
+
+
+
+    /// <summary>
+    ///     Load links from given filename previously saved to disk
+    ///     <remarks>Will look for file in the OutputFilePath option set in options</remarks>
+    /// </summary>
+    /// <param name="filename">Filename to load links from</param>
+    /// <returns></returns>
+    internal static ConcurrentScrapedUrlCollection LoadLinksFromFile(
+        string filename)
+        {
+            string path = "";
+            ConcurrentScrapedUrlCollection temp = new();
+            try
+                {
+                    if (!File.Exists(path))
+                        {
+                            return temp;
+                        }
+
+                    var file = File.ReadAllLines(path);
+                    temp.AddArray(file);
+                }
+            catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    throw;
+                }
+
+
+            return temp;
+        }
+
+
+
+
+
 
     /// <summary>
     ///     Search <see cref="HtmlDocument" /> for tag identified in Spyder Options
@@ -26,7 +124,7 @@ public static class SpyderHelpers
     /// <param name="doc"></param>
     /// <param name="url"></param>
     /// <param name="que"></param>
-    public static async Task SearchDocForHtmlTagAsync(
+    internal static async Task SearchDocForHtmlTagAsync(
         HtmlDocument doc,
         string url,
         IBackgroundDownloadQue que)
@@ -71,103 +169,12 @@ public static class SpyderHelpers
 
 
 
-    public static Task SearchDocForHtmlTagAsync(HtmlDocument doc, Uri url, IBackgroundDownloadQue que)
+
+    internal static Task SearchDocForHtmlTagAsync(HtmlDocument doc, Uri url, IBackgroundDownloadQue que)
         {
             throw new NotImplementedException();
         }
 
-    #endregion
-
-    #region Private Methods
-
-    /*
-        /// <summary>
-        /// </summary>
-        /// <param name="collection"></param>
-        /// <returns></returns>
-        /// <param name="options"></param>
-        private static ConcurrentScrapedUrlCollection ClassifyScrapedUrlsCore(
-            ConcurrentScrapedUrlCollection collection,
-            SpyderOptions                  options)
-            {
-                if (collection == null) throw new ArgumentNullException(nameof(collection));
-                if (options == null) throw new ArgumentNullException(nameof(options));
-
-                Uri baseUri = new(options.StartingUrl);
-                var sortedlinks = GetBaseUriLinks(collection, baseUri);
-                ConcurrentScrapedUrlCollection externalLinks = sortedlinks.External;
-                ConcurrentScrapedUrlCollection internals = sortedlinks.Internal;
-
-
-                OutputControl.CapturedSeedLinks.AddRange(internals);
-                OutputControl.CapturedExternalLinks.AddRange(externalLinks);
-                OutputControl.UrlsScrapedThisSession.AddRange(collection);
-                var results = new ConcurrentScrapedUrlCollection();
-                results.AddRange(internals);
-
-                if (options.FollowExternalLinks)
-                    {
-                        results.AddRange(externalLinks);
-                    }
-
-
-                return results;
-            }
-
-    */
-
-
-
-
-
-    private static bool IsExternalDomainLinkCore(
-        string link,
-        Uri baseUri)
-        {
-            _ = Uri.TryCreate(uriString: link, uriKind: UriKind.Absolute, out var uri);
-            if (uri == null)
-                {
-                    throw new ArgumentException(message: "Invalid Uri");
-                }
-
-
-            return !string.Equals(a: uri.Host, b: baseUri.Host, StringComparison.Ordinal);
-        }
-
-
-
-
-
-    /// <summary>
-    ///     Load links from given filename previously saved to disk
-    ///     <remarks>Will look for file in the OutputFilePath option set in options</remarks>
-    /// </summary>
-    /// <param name="filename">Filename to load links from</param>
-    /// <returns></returns>
-    internal static ConcurrentScrapedUrlCollection LoadLinksFromFile(
-        string filename)
-        {
-            string path = "";
-            ConcurrentScrapedUrlCollection temp = new();
-            try
-                {
-                    if (!File.Exists(path: path))
-                        {
-                            return temp;
-                        }
-
-                    var file = File.ReadAllLines(path: path);
-                    temp.AddArray(array: file);
-                }
-            catch (Exception e)
-                {
-                    Debug.WriteLine(value: e);
-                    throw;
-                }
-
-
-            return temp;
-        }
 
 
 
@@ -187,13 +194,13 @@ public static class SpyderHelpers
     internal static string StripQueryFragment(
         string url)
         {
-            if (string.IsNullOrEmpty(value: url))
+            if (string.IsNullOrEmpty(url))
                 {
                     return url;
                 }
 
-            var uri = new Uri(uriString: url);
-            var x = uri.GetLeftPart(part: UriPartial.Path);
+            var uri = new Uri(url);
+            var x = uri.GetLeftPart(UriPartial.Path);
 
 
             return x;

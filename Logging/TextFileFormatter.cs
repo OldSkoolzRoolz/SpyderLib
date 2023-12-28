@@ -1,5 +1,3 @@
-#region
-
 using System.Diagnostics;
 using System.Globalization;
 
@@ -8,7 +6,7 @@ using KC.Apps.SpyderLib.Modules;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Logging;
 
@@ -16,13 +14,17 @@ internal class TextFileFormatter
 {
     private readonly TextFileLoggerConfiguration _formatterOptions;
 
-    #region Public Methods
+
+
+
+
 
     public TextFileFormatter(
         IOptions<TextFileLoggerConfiguration> options)
         {
             _formatterOptions = options.Value;
         }
+
 
 
 
@@ -37,6 +39,9 @@ internal class TextFileFormatter
 
 
 
+
+
+    #region Public Methods
 
     /// <summary>Writes a formatted log message to the Text file.</summary>
     /// <remarks>
@@ -87,7 +92,7 @@ internal class TextFileFormatter
 
                     if (Console.IsOutputRedirected == false)
                         {
-                            Debug.WriteLine(value: e.Message);
+                            Debug.WriteLine(message: e.Message);
                         }
                 }
         }

@@ -1,8 +1,6 @@
-#region
-
 using Microsoft.Extensions.Logging;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Logging;
 
@@ -20,10 +18,12 @@ public static partial class LoggingMessages
 
 
 
+
     [LoggerMessage(EventId = 9999, Level = LogLevel.Debug, Message = "Debug Message == {message}")]
     public static partial void DebugTestingMessage(
         this ILogger logger,
         string message);
+
 
 
 
@@ -41,6 +41,7 @@ public static partial class LoggingMessages
 
 
 
+
     [LoggerMessage(
         EventId = 100,
         Level = LogLevel.Error,
@@ -53,11 +54,13 @@ public static partial class LoggingMessages
 
 
 
+
     [LoggerMessage(925, level: LogLevel.Error, message: "Http Exception thrown getting page {address}.. == {message}")]
     public static partial void LogHttpException(
         this ILogger logger,
         string message,
         string address);
+
 
 
 
@@ -75,6 +78,7 @@ public static partial class LoggingMessages
 
 
 
+
     [LoggerMessage(
         EventId = 600,
         Level = LogLevel.Error,
@@ -87,10 +91,12 @@ public static partial class LoggingMessages
 
 
 
+
     [LoggerMessage(EventId = 30,
         Level = LogLevel.Debug,
         Message = "{message}")]
     public static partial void SpyderDebug(this ILogger logger, string message);
+
 
 
 
@@ -108,10 +114,12 @@ public static partial class LoggingMessages
 
 
 
+
     [LoggerMessage(EventId = 40,
         Level = LogLevel.Error,
         Message = "{message}")]
     public static partial void SpyderError(this ILogger logger, string message);
+
 
 
 
@@ -129,10 +137,14 @@ public static partial class LoggingMessages
 
 
 
-    [LoggerMessage(9977, level: LogLevel.Information, message: "{message}")]
+
+    [LoggerMessage(EventId = 9977,
+        Level = LogLevel.Information,
+        Message = "{message}")]
     public static partial void SpyderInfoMessage(
         this ILogger logger,
         string message);
+
 
 
 
@@ -147,10 +159,12 @@ public static partial class LoggingMessages
 
 
 
+
     [LoggerMessage(EventId = 50,
         Level = LogLevel.Warning,
         Message = "{message}")]
     public static partial void SpyderWarning(this ILogger logger, string message);
+
 
 
 
@@ -163,6 +177,7 @@ public static partial class LoggingMessages
     public static partial void SpyderWebException(
         this ILogger logger,
         string message);
+
 
 
 

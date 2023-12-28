@@ -27,4 +27,16 @@
     <data name="ConfigError" xml:space="preserve">
         <value>Configuration Error,Starting url is invalid. aborting.</value>
     </data>
+    <data name="IO_Write_Error" xml:space="preserve">
+        <value>An error occurred while writing to the file: </value>
+    </data>
+    <data name="Permission_Error_Writing_File" xml:space="preserve">
+        <value>You do not have permission to write to the file: </value>
+    </data>
+    <data name="File_Path_Invalid" xml:space="preserve">
+        <value>Cannot save file. The file path is invalid: </value>
+    </data>
+    <data name="Buffer_Block_Data_Error" xml:space="preserve">
+        <value>Error posting work item to datablock.</value>
+    </data>
 </root>

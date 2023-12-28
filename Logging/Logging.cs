@@ -1,14 +1,9 @@
-#region
-
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 
 
 // ReSharper disable LocalizableElement
-
-#endregion
-
 namespace KC.Apps.SpyderLib.Logging;
 
 public static class Log
@@ -42,6 +37,7 @@ public static class Log
 
 
 
+
     internal static void Debug(
         string message,
         [CallerMemberName] string memberName = "",
@@ -53,6 +49,7 @@ public static class Log
             Console.WriteLine($"<DEBUG> {message}::{memberName} : {path}. Line #{line}");
             Console.ForegroundColor = b42;
         }
+
 
 
 
@@ -71,6 +68,11 @@ public static class Log
         }
 
     #endregion
+
+
+
+
+
 
     //
     //

@@ -1,38 +1,19 @@
-#region
-
 using System.Threading.Tasks.Dataflow;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Modules;
-
-public interface ICrawlerQue
-{
-    #region Public Methods
-
-    void AddItemToQueue(
-        QueItem item);
-
-
-
-
-
-    Task<QueItem> GetItemFromQueueAsync();
-
-
-    bool IsQueueEmpty { get; }
-
-    #endregion
-}
 
 /// <summary>
 ///     Crawler Que for QueItems using a BufferBlock
 /// </summary>
-public class CrawlerQue : ICrawlerQue
+internal class CrawlerQue : ICrawlerQue
 {
+    private readonly BufferBlock<QueItem> _queue = new();
+
     // Create an instance of the class with the Lazy<T> type for thread safety
     private static readonly Lazy<CrawlerQue> s_lazy = new(() => new());
-    private readonly BufferBlock<QueItem> _queue = new();
+
 
 
 
@@ -42,7 +23,24 @@ public class CrawlerQue : ICrawlerQue
     private CrawlerQue() { }
 
 
-    #region Interface Members
+
+
+
+
+    #region Properteez
+
+    // Return the instance
+    public static CrawlerQue Instance => s_lazy.Value;
+    public bool IsQueueEmpty => _queue.Count == 0;
+
+    #endregion
+
+
+
+
+
+
+    #region Public Methods
 
     public void AddItemToQueue(
         QueItem item)
@@ -54,23 +52,41 @@ public class CrawlerQue : ICrawlerQue
 
 
 
+
     public Task<QueItem> GetItemFromQueueAsync()
         {
             return _queue.ReceiveAsync();
         }
 
+    #endregion
+}
 
 
 
+internal interface ICrawlerQue
+{
+    #region Properteez
 
-    public bool IsQueueEmpty => _queue.Count == 0;
+    bool IsQueueEmpty { get; }
 
     #endregion
 
+
+
+
+
+
     #region Public Methods
 
-    // Return the instance
-    public static CrawlerQue Instance => s_lazy.Value;
+    void AddItemToQueue(
+        QueItem item);
+
+
+
+
+
+
+    Task<QueItem> GetItemFromQueueAsync();
 
     #endregion
 }

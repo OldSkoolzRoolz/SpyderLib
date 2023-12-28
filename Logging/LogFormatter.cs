@@ -1,5 +1,7 @@
 using System.Globalization;
 
+using CommunityToolkit.Diagnostics;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
@@ -8,22 +10,29 @@ using Microsoft.Extensions.Logging.Console;
 
 namespace KC.Apps.SpyderLib.Logging;
 
-public class LogFormatter : ConsoleFormatter
+internal class LogFormatter : ConsoleFormatter
 {
-    private const string
-        DATE_FORMAT =
-            "yyyy-MM-dd " +
-            TIME_FORMAT; // Example: 2010-09-02 09:50:43.341 GMT - Variant of UniversalSorta­bleDateTimePat­tern
+    private readonly string _dateFormat;
+    private readonly string _timeFormat;
 
-    private const string TIME_FORMAT = "HH:mm:ss.fff 'GMT'"; // Example: 09:50:43.341 GMT
+
+
+
+
+
+    public LogFormatter(LogFormatterOptions options) : base(name: "SpyderFormatter")
+        {
+            Guard.IsNotNull(value: options);
+            _timeFormat = options.TimestampFormat;
+            _dateFormat = "mm/dd/yyyy";
+        }
+
+
+
+
+
 
     #region Public Methods
-
-    public LogFormatter(LogFormatterOptions options) : base(name: "SpyderFormatter") { }
-
-
-
-
 
     /// <summary>Writes the log message to the specified TextWriter.</summary>
     /// <remarks>
@@ -65,6 +74,11 @@ public class LogFormatter : ConsoleFormatter
 
     #endregion
 
+
+
+
+
+
     #region Private Methods
 
     /// <summary>
@@ -72,11 +86,12 @@ public class LogFormatter : ConsoleFormatter
     /// </summary>
     /// <param name="dateStr">The date string.</param>
     /// <returns>The parsed date.</returns>
-    internal static DateTime ParseDate(
+    internal DateTime ParseDate(
         string dateStr)
         {
-            return DateTime.ParseExact(s: dateStr, format: DATE_FORMAT, provider: CultureInfo.InvariantCulture);
+            return DateTime.ParseExact(s: dateStr, format: _dateFormat, provider: CultureInfo.InvariantCulture);
         }
+
 
 
 
@@ -87,11 +102,12 @@ public class LogFormatter : ConsoleFormatter
     /// </summary>
     /// <param name="date">The <c>DateTime</c> value to be printed.</param>
     /// <returns>Formatted string representation of the input data, in the printable format used by the Logger subsystem.</returns>
-    internal static string PrintDate(
+    internal string PrintDate(
         DateTime date)
         {
-            return date.ToString(format: DATE_FORMAT, provider: CultureInfo.InvariantCulture);
+            return date.ToString(format: _dateFormat, provider: CultureInfo.InvariantCulture);
         }
+
 
 
 
@@ -102,10 +118,10 @@ public class LogFormatter : ConsoleFormatter
     /// </summary>
     /// <param name="date">The <c>DateTime</c> value to be printed.</param>
     /// <returns>Formatted string representation of the input data, in the printable format used by the Logger subsystem.</returns>
-    private static string PrintTime(
+    private string PrintTime(
         DateTime date)
         {
-            return date.ToString(format: TIME_FORMAT, provider: CultureInfo.InvariantCulture);
+            return date.ToString(format: _timeFormat, provider: CultureInfo.InvariantCulture);
         }
 
     #endregion

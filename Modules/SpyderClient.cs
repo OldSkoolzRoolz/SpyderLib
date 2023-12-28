@@ -1,56 +1,48 @@
-#region
-
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Security.Cryptography;
 
 using KC.Apps.SpyderLib.Control;
 using KC.Apps.SpyderLib.Logging;
+using KC.Apps.SpyderLib.Services;
 
 using Microsoft.Extensions.Logging;
 
 using Polly;
 using Polly.Retry;
 
-#endregion
+
+
+
+
+
+
 
 namespace KC.Apps.SpyderLib.Modules;
-
-public interface ISpyderClient
-{
-    #region Public Methods
-
-    /// <summary>
-    ///     Get content from the specified address with retry logic
-    /// </summary>
-    /// <param name="address">The web address to get the content from</param>
-    /// <returns>The content obtained from the web address; an empty string if the operation fails</returns>
-    Task<string> GetContentFromWebWithRetryAsync(
-        string address);
-
-
-
-
-
-    Task<Stream> GetStreamAsync(Uri requestUri, CancellationToken cancellationToken);
-
-    #endregion
-}
 
 /// <summary>
 ///     Wrapper for Http  call handling. Includes Polly retry policy with back off and jitter
 /// </summary>
-[SuppressMessage(category: "Design", checkId: "CA1031:Do not catch general exception types")]
-public class SpyderClient(ILoggerFactory logger, IHttpClientFactory factory) : ISpyderClient
+public class SpyderClient : ISpyderClient
 {
-    #region Properteez
+    
 
-    private HttpClient Client { get; } = factory.CreateClient(name: "SpyderClient");
-    private ILogger<SpyderClient> Logger { get; } = logger.CreateLogger<SpyderClient>();
 
-    #endregion
+public SpyderClient()
+        {
+            Client = new HttpClient(GetHandler());
+            Logger = SpyderControlService.Logger;
+        }
+    private HttpClient Client { get; } 
+    private ILogger Logger { get; }
 
-    #region Interface Members
+    
+
+
+
+
+
+
+     
 
     /// <summary>
     ///     This is an asynchronous method that attempts to fetch content from the provided web address and handle possible
@@ -118,15 +110,21 @@ public class SpyderClient(ILoggerFactory logger, IHttpClientFactory factory) : I
 
 
 
+
     public async Task<Stream> GetStreamAsync(Uri requestUri, CancellationToken cancellationToken)
         {
             return await this.Client.GetStreamAsync(requestUri: requestUri, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
         }
 
-    #endregion
+    
 
-    #region Private Methods
+
+
+
+
+
+     
 
     /// <summary>
     ///     Performs an HTTP GET request to a specific URI with a retry policy.
@@ -173,6 +171,7 @@ public class SpyderClient(ILoggerFactory logger, IHttpClientFactory factory) : I
 
 
 
+
     /// <summary>
     ///     Constructs and returns a configured instance of 'HttpClientHandler'.
     /// </summary>
@@ -195,7 +194,7 @@ public class SpyderClient(ILoggerFactory logger, IHttpClientFactory factory) : I
                 {
                     AllowAutoRedirect = true,
                     AutomaticDecompression = DecompressionMethods.All,
-                    CheckCertificateRevocationList = false,
+                    CheckCertificateRevocationList = true,
                     Credentials = null,
                     DefaultProxyCredentials = null,
                     MaxAutomaticRedirections = 5,
@@ -207,6 +206,7 @@ public class SpyderClient(ILoggerFactory logger, IHttpClientFactory factory) : I
 
             return handler;
         }
+
 
 
 
@@ -243,5 +243,29 @@ public class SpyderClient(ILoggerFactory logger, IHttpClientFactory factory) : I
             return httpRetryPolicy;
         }
 
-    #endregion
+    
+}
+
+
+
+public interface ISpyderClient
+{
+     
+
+    /// <summary>
+    ///     Get content from the specified address with retry logic
+    /// </summary>
+    /// <param name="address">The web address to get the content from</param>
+    /// <returns>The content obtained from the web address; an empty string if the operation fails</returns>
+    Task<string> GetContentFromWebWithRetryAsync(
+        string address);
+
+
+
+
+
+
+    Task<Stream> GetStreamAsync(Uri requestUri, CancellationToken cancellationToken);
+
+    
 }

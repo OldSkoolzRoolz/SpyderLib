@@ -5,7 +5,7 @@ namespace KC.Apps.SpyderLib.Models;
 /// </summary>
 public class DownloadItem
 {
-    internal DownloadItem(
+    public DownloadItem(
         string link,
         string savePath,
         long actualBytes = 0,
@@ -18,6 +18,7 @@ public class DownloadItem
             this.ExpectedBytes = expectedBytes;
             this.Link = link;
         }
+
 
 
 

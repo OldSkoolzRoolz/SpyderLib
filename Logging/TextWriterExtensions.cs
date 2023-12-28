@@ -9,6 +9,11 @@ public static class TextWriterExtensions
     private const string DEFAULT_BACKGROUND_COLOR = "\x1B[49m";
     private const string DEFAULT_FOREGROUND_COLOR = "\x1B[39m\x1B[22m";
 
+
+
+
+
+
     #region Public Methods
 
     public static void WriteWithColor(
@@ -51,6 +56,11 @@ public static class TextWriterExtensions
 
     #endregion
 
+
+
+
+
+
     #region Private Methods
 
     private static string GetBackgroundColorEscapeCode(
@@ -69,6 +79,7 @@ public static class TextWriterExtensions
                     _ => DEFAULT_BACKGROUND_COLOR
                 };
         }
+
 
 
 

@@ -1,16 +1,11 @@
-#region
-
-#endregion
-
 namespace KC.Apps.SpyderLib.Modules;
 
 [Serializable]
 public class SpyderException : Exception
 {
-    #region Public Methods
-
     /// <summary>Initializes a new instance of the <see cref="System.Exception" /> class.</summary>
     public SpyderException() { }
+
 
 
 
@@ -20,6 +15,7 @@ public class SpyderException : Exception
     /// <param name="message">The message that describes the error.</param>
     public SpyderException(
         string message) : base(message: message) { }
+
 
 
 
@@ -37,6 +33,4 @@ public class SpyderException : Exception
     public SpyderException(
         string message,
         Exception innerException) : base(message: message, innerException: innerException) { }
-
-    #endregion
 }

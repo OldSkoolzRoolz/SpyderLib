@@ -2,14 +2,14 @@ namespace KC.Apps.SpyderLib.Logging;
 
 public class TextFileLoggerConfiguration
 {
-    #region Public Methods
+    #region Properteez
 
-    public string EntryPrefix { get; init; }
-    public string EntrySuffix { get; init; }
-    public string LogLocation { get; init; }
-    public string TimestampFormat { get; init; }
-    public bool UseSingleLogFile { get; init; }
-    public bool UseUtcTime { get; init; }
+    public string EntryPrefix { get; set; }
+    public string EntrySuffix { get; set; }
+    public string LogLocation { get; set; }
+    public string TimestampFormat { get; set; }
+    public bool UseSingleLogFile { get; set; }
+    public bool UseUtcTime { get; set; }
 
     #endregion
 }

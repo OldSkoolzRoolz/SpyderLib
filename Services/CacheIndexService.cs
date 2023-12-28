@@ -1,47 +1,59 @@
-#region
-
 using System.Collections.Concurrent;
 using System.Diagnostics;
 
-using CommunityToolkit.Diagnostics;
-
-using KC.Apps.SpyderLib.Interfaces;
 using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Modules;
-using KC.Apps.SpyderLib.Properties;
 
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Services;
 
 public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDisposable
 {
-    private readonly FileOperations _fileOperations;
-    private bool _disposed;
     private Stopwatch _timer;
 
-    #region Interface Members
-
-    public ConcurrentDictionary<string, string> CacheIndexItems => this.IndexCache;
-
-    /// <summary>
-    ///     Cache Items currently in index
-    /// </summary>
-    public int CacheItemCount => this.IndexCache.Count;
 
 
 
 
+
+    public CacheIndexService(
+        SpyderMetrics metrics,
+        ILogger<CacheIndexService> logger,
+        MyClient client) : base(client: client, logger: logger, metrics: metrics)
+        {
+            _logger.SpyderInfoMessage(message: "Cache Index Service Loaded...");
+            CacheIndexLoadComplete.TrySetResult(true);
+        }
+
+
+
+
+
+
+    #region Properteez
+
+    public ConcurrentDictionary<string, string> CacheIndexItems => IndexCache;
+    public static TaskCompletionSource<bool> CacheIndexLoadComplete { get; set; } = new();
+
+    #endregion
+
+
+
+
+
+
+    #region Public Methods
 
     public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
+
 
 
 
@@ -77,6 +89,7 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
 
 
 
+
     public Task<PageContent> SetContentCachePublicWrapperAsync(
         string content,
         string address)
@@ -86,26 +99,10 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
 
     #endregion
 
-    #region Public Methods
 
-    public CacheIndexService(SpyderMetrics metrics,
-        ILogger<CacheIndexService> logger,
-        IOptions<SpyderOptions> options,
-        ISpyderClient client)
-        {
-            Guard.IsNotNull(value: options);
-            _metrics = metrics;
-            _logger = logger;
-            _options = options.Value;
-            _client = client;
-            _fileOperations = new(options: _options);
-            SpyderControlService.LibraryHostShuttingDown += OnStopping;
-            this.IndexCache = LoadCacheIndex();
-            _logger.SpyderInfoMessage(message: "Cache Index Service Loaded...");
-            _ = StartupComplete.TrySetResult(true);
-        }
 
-    #endregion
+
+
 
     #region Private Methods
 
@@ -120,10 +117,11 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
                         }
 
                     // Here you can release unmanaged resources if any
-                    _fileOperations.Dispose();
+
                     _disposed = true;
                 }
         }
+
 
 
 

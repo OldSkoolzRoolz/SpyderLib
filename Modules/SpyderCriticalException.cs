@@ -2,9 +2,8 @@ namespace KC.Apps.SpyderLib.Modules;
 
 public class SpyderCriticalException : Exception
 {
-    #region Public Methods
-
     public SpyderCriticalException() { }
+
 
 
 
@@ -17,7 +16,6 @@ public class SpyderCriticalException : Exception
 
 
 
-    public SpyderCriticalException(string message) : base(message: message) { }
 
-    #endregion
+    public SpyderCriticalException(string message) : base(message: message) { }
 }

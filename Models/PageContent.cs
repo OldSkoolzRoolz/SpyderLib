@@ -2,8 +2,6 @@ namespace KC.Apps.SpyderLib.Models;
 
 public record struct PageContent
 {
-    #region Public Methods
-
     public PageContent(Uri url) : this()
         {
             this.Url = url;
@@ -15,6 +13,9 @@ public record struct PageContent
 
 
 
+
+
+    #region Properteez
 
     /// <summary>
     ///     If page content is retrieved from cache this is the filename on disk

@@ -5,7 +5,7 @@ namespace KC.Apps.SpyderLib.Control;
 /// </summary>
 public class CrawlerFinishedEventArgs : EventArgs
 {
-    #region Public Methods
+    #region Properteez
 
     public int UrlsCrawled { get; set; }
 

@@ -1,9 +1,11 @@
-#region
-
 // ReSharper disable All
+
+
+
+
 using System.Collections.Concurrent;
 
-#endregion
+
 
 namespace KC.Apps.SpyderLib.Models;
 
@@ -11,6 +13,11 @@ namespace KC.Apps.SpyderLib.Models;
 public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
 {
     const byte DefaultValue = 0;
+
+
+
+
+
 
     #region Public Methods
 
@@ -29,17 +36,23 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
 
     #endregion
 
+
+
+
+
+
     #region Private Methods
 
     internal void Add(
         string url)
         {
             // weeds out relative urls, only adding absolute urls
-            if (IsValidUrl(url: url))
+            if (IsValidUrl(url))
                 {
-                    _ = TryAdd(key: url, 0);
+                    _ = TryAdd(url, 0);
                 }
         }
+
 
 
 
@@ -62,6 +75,7 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
 
 
 
+
     internal void AddArray(
         IEnumerable<KeyValuePair<string, byte>> array)
         {
@@ -75,20 +89,22 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
 
 
 
+
     internal void AddRange(
         ConcurrentDictionary<string, byte> itemsToAdd)
         {
             if (itemsToAdd == null) return;
 
             var valid = itemsToAdd.Select(url => url.Key)
-                .Where(u => !string.IsNullOrEmpty(value: u) && IsValidUrl(url: u));
+                .Where(u => !string.IsNullOrEmpty(u) && IsValidUrl(u));
 
             foreach (var item in valid)
                 {
                     // weeds out relative urls, only adding absolute urls
-                    _ = TryAdd(key: item, 0);
+                    _ = TryAdd(item, 0);
                 }
         }
+
 
 
 
@@ -102,10 +118,11 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
     private static bool IsValidUrl(
         string url)
         {
-            return Uri.IsWellFormedUriString(uriString: url, uriKind: UriKind.Absolute) &&
-                   Uri.TryCreate(uriString: url, uriKind: UriKind.Absolute, out var uriResult) &&
+            return Uri.IsWellFormedUriString(url, UriKind.Absolute) &&
+                   Uri.TryCreate(url, UriKind.Absolute, out var uriResult) &&
                    (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
         }
+
 
 
 
@@ -114,9 +131,9 @@ public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
     private void TryAddIfKeyIsValidUrl(
         KeyValuePair<string, byte> item)
         {
-            if (IsValidUrl(url: item.Key))
+            if (IsValidUrl(item.Key))
                 {
-                    _ = TryAdd(key: item.Key, DefaultValue);
+                    _ = TryAdd(item.Key, DefaultValue);
                 }
         }
 

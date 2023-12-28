@@ -2,9 +2,8 @@ namespace KC.Apps.SpyderLib.Modules;
 
 public class SpyderOptionsException : Exception
 {
-    #region Public Methods
-
     public SpyderOptionsException() { }
+
 
 
 
@@ -18,10 +17,9 @@ public class SpyderOptionsException : Exception
 
 
 
+
     public SpyderOptionsException(
         string message,
         Exception inner)
         : base(message: message, innerException: inner) { }
-
-    #endregion
 }
