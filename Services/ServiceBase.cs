@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 
 using CommunityToolkit.Diagnostics;
 
-using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Properties;
 
 using Microsoft.Extensions.Hosting;
@@ -16,12 +15,8 @@ namespace KC.Apps.SpyderLib.Services;
 /// <summary>
 ///     Base class for services that implement the INotifyPropertyChanged interface.
 /// </summary>
-public abstract class ServiceBase : INotifyPropertyChanged, IDisposable
+public abstract class ServiceBase : INotifyPropertyChanged
 {
-    private readonly TextFileLoggerConfiguration _loggerConfig;
-    private static ILogger s_logger;
-
-
     protected ServiceBase() { }
 
 
@@ -39,8 +34,6 @@ public abstract class ServiceBase : INotifyPropertyChanged, IDisposable
 
 
 
-            _loggerConfig = new();
-            s_logger = Factory.CreateLogger<ServiceBase>();
             this.AppLifetime = lifetime;
         }
 
@@ -64,18 +57,6 @@ public abstract class ServiceBase : INotifyPropertyChanged, IDisposable
 
     #region Public Methods
 
-    /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
-    public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-
-
-
-
-
     public event PropertyChangedEventHandler PropertyChanged;
 
     #endregion
@@ -86,16 +67,6 @@ public abstract class ServiceBase : INotifyPropertyChanged, IDisposable
 
 
     #region Private Methods
-
-    protected virtual void Dispose(bool disposing)
-        {
-            if (disposing) { }
-        }
-
-
-
-
-
 
     /// <summary>
     ///     Raises the <see cref="PropertyChanged" /> event.

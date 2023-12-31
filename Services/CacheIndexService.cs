@@ -13,13 +13,6 @@ namespace KC.Apps.SpyderLib.Services;
 
 public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDisposable
 {
-    private Stopwatch _timer;
-
-
-
-
-
-
     public CacheIndexService(
         SpyderMetrics metrics,
         ILogger<CacheIndexService> logger,
@@ -63,16 +56,16 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
         {
             try
                 {
-                    _timer = new();
-                    _timer.Start();
+                    Stopwatch timer = new();
+                    timer.Start();
 
                     var content = await GetAndSetContentFromCacheCoreAsync(address: address)
                         .ConfigureAwait(false);
 
-                    _timer.Stop();
+                    timer.Stop();
                     if (_options.UseMetrics)
                         {
-                            _metrics.CrawlElapsedTime(timing: _timer.ElapsedMilliseconds);
+                            _metrics.CrawlElapsedTime(timing: timer.ElapsedMilliseconds);
                         }
 
                     return content;

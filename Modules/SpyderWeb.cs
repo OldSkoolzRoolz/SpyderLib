@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace KC.Apps.SpyderLib.Modules;
 
-[Obsolete(message: "This module will be removed or refactored. Unecessary code.")]
+[Obsolete("This module will be removed or refactored. Unecessary code.")]
 internal class SpyderWeb : ISpyderWeb
 {
     //private readonly CancellationToken _cancellationToken;
@@ -33,7 +33,7 @@ internal class SpyderWeb : ISpyderWeb
             //_options = spyderOptions.Value;
             _crawlerController = crawlerController;
             _logger = logger;
-            _logger.SpyderDebug(message: "SpyderWeb Initialized");
+            _logger.SpyderDebug("SpyderWeb Initialized");
             _ = StartupComplete.TrySetResult(true);
         }
 
@@ -85,18 +85,18 @@ internal class SpyderWeb : ISpyderWeb
     /// <param name="token"></param>
     public async Task StartSpyderAsync(string startingLink, CancellationToken token)
         {
-            _logger.SpyderTrace(message: "Crawler loading up starting url");
+            _logger.SpyderTrace("Crawler loading up starting url");
             try
                 {
                     _logger.SpyderDebug($"Engaging crawler for seed url: {startingLink}");
-                    await EngagePageCrawlerAsync(token: token).ConfigureAwait(false);
+                    await EngagePageCrawlerAsync(token).ConfigureAwait(false);
 
-                    _logger.SpyderTrace(message: "Finished crawling tasks.");
-                    _logger.SpyderInfoMessage(message: "Scraping Complete");
+                    _logger.SpyderTrace("Finished crawling tasks.");
+                    _logger.SpyderInfoMessage("Scraping Complete");
                 }
             catch (SpyderException)
                 {
-                    _logger.SpyderWebException(message: "Unhandled exception during scraping of a webpage");
+                    _logger.SpyderWebException("Unhandled exception during scraping of a webpage");
                 }
         }
 
@@ -150,16 +150,16 @@ internal class SpyderWeb : ISpyderWeb
         {
             token.ThrowIfCancellationRequested();
 
-            _logger.SpyderDebug(message: "Engaging page crawler, starting first level");
+            _logger.SpyderDebug("Engaging page crawler, starting first level");
 
             try
                 {
-                    await _crawlerController.StartCrawlingAsync(token: token).ConfigureAwait(false);
+                    await _crawlerController.StartCrawlingAsync(token).ConfigureAwait(false);
                 }
             catch (SpyderException)
                 {
                     // This should not execute. Error handling should be internal to the crawler
-                    _logger.InternalSpyderError(message: "An Exception slipped past the net. Crawling is aborted");
+                    _logger.InternalSpyderError("An Exception slipped past the net. Crawling is aborted");
                 }
         }
 

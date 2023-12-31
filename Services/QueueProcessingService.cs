@@ -57,37 +57,7 @@ public sealed class QueueProcessingService : BackgroundService
 
 
 
-    #region Public Methods
-
-    /// <inheritdoc />
-    public override void Dispose()
-        {
-            Dispose(true);
-            base.Dispose();
-            //GC.SuppressFinalize(this);
-        }
-
-    #endregion
-
-
-
-
-
-
     #region Private Methods
-
-    private void Dispose(bool disposing)
-        {
-            if (disposing)
-                {
-                    _semi?.Dispose();
-                }
-        }
-
-
-
-
-
 
     /// <summary>
     ///     File Download wrapper that provides error handling to prevent a single download failure from crashing entire app.
@@ -172,6 +142,7 @@ public sealed class QueueProcessingService : BackgroundService
                                         {
                                             await _semi.WaitAsync(cancellationToken: stoppingToken)
                                                 .ConfigureAwait(false);
+
                                             await DownloadWorkItemAsync(workItem: item, token: stoppingToken)
                                                 .ConfigureAwait(false);
                                         }

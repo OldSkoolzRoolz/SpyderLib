@@ -31,7 +31,7 @@ public abstract class AbstractCacheIndex
 
 
 
-    internal AbstractCacheIndex(
+    private protected AbstractCacheIndex(
         [NotNull] MyClient client,
         [NotNull] ILogger logger,
         [NotNull] SpyderMetrics metrics)

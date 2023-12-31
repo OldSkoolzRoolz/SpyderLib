@@ -109,10 +109,8 @@ internal static class HtmlParser
 
 
 
-                    //  var rawLinks = links as string[] ?? links.ToArray();
 
                     Debug.WriteLine($"raw link count :: {pglinks.Count}");
-                    //var linklist = links.ToList();
 
                     var urlTuple = SeparateUrls(ValidateUrls(urls: pglinks),
                         new(uriString: SpyderControlService.CrawlerOptions.StartingUrl));
@@ -425,35 +423,6 @@ internal static class HtmlParser
 
 
             return urls;
-        }
-
-
-
-
-
-
-    /// <summary>
-    ///     Iteration Wrapper overload for single node method
-    /// </summary>
-    /// <param name="nodes">IEnumerable</param>
-    private static List<string> ParseNodesForVideoSourceAttributes(
-        IEnumerable<HtmlNode> nodes)
-        {
-            var htmlNodes = nodes as HtmlNode[] ?? nodes.ToArray();
-            Guard.IsNotNull(value: htmlNodes);
-
-            List<string> temp = new();
-            foreach (var node in htmlNodes)
-                {
-                    var results = ParseNodeForSourceAttributes(node: node);
-                    if (results.Count > 0)
-                        {
-                            temp.AddRange(collection: results);
-                        }
-                }
-
-
-            return temp;
         }
 
 

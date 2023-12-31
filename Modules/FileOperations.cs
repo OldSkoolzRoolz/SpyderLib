@@ -122,7 +122,6 @@ public class FileOperations : IDisposable
             try
                 {
                     var path = Path.Combine(path1: _options.LogPath, FILENAME + ".new");
-                    //var backPath = Path.Combine(options.LogPath, FILENAME + ".bak");
                     var oldPath = Path.Combine(path1: _options.LogPath, path2: FILENAME);
 
 
@@ -228,13 +227,11 @@ public class FileOperations : IDisposable
                                     File.WriteAllText(path: newFile, contents: json);
 
                                     if (!newFile.Equals(value: originalFile,
-                                            comparisonType: StringComparison.OrdinalIgnoreCase))
+                                            comparisonType: StringComparison.OrdinalIgnoreCase) &&
+                                        originalFile != null)
                                         {
-                                            if (originalFile != null)
-                                                {
-                                                    File.Copy(sourceFileName: newFile, destFileName: originalFile,
-                                                        true);
-                                                }
+                                            File.Copy(sourceFileName: newFile, destFileName: originalFile,
+                                                true);
                                         }
                                 }
 

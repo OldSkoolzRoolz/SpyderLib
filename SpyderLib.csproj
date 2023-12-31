@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="17.7">
 
     <PropertyGroup Label="ProjDeets">
-        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>disable</Nullable>
         <RootNamespace>KC.Apps.SpyderLib</RootNamespace>
@@ -13,6 +12,7 @@
         <NeutralResourcesLanguage>en</NeutralResourcesLanguage>
         <NeutralLanguage>en</NeutralLanguage>
         <FileVersion>1.0</FileVersion>
+        <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
 
 
@@ -65,7 +65,7 @@
 
     <ItemGroup>
         <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.2.2"/>
-        <PackageReference Include="HtmlAgilityPack" Version="1.11.54"/>
+        <PackageReference Include="HtmlAgilityPack" Version="1.11.57"/>
         <PackageReference Include="Jetbrains.Annotations" Version="2023.3.0"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0"/>
         <PackageReference Include="Microsoft.Extensions.Diagnostics" Version="8.0.0"/>
@@ -79,7 +79,6 @@
 
         <PackageReference Include="Microsoft.Extensions.Resilience" Version="8.0.0"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
-        <PackageReference Include="Splat" Version="14.8.6"/>
         <PackageReference Include="System.Threading.Tasks.Dataflow" Version="8.0.0"/>
 
 
@@ -100,6 +99,7 @@
             <DependentUpon>Resources1.resx</DependentUpon>
         </Compile>
         <Compile Remove="Modules\SpyderClient.cs"/>
+        <Compile Remove="Modules\SpyderWeb.cs"/>
     </ItemGroup>
 
     <ItemGroup>

@@ -156,9 +156,6 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
             await this.Block.SendAsync(item: workItem).ConfigureAwait(false);
 
             Console.WriteLine(value: Resources1.Buffer_Block_Data_Error);
-
-
-            //            return _queue.Writer.WriteAsync(workItem);
         }
 
 

@@ -11,8 +11,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Configuration;
 
-using Splat;
-
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 
@@ -105,117 +103,6 @@ public static class SpyderLibExtensions
             builder.Services.Configure(configureOptions: configure);
 
             return builder;
-        }
-
-
-
-
-
-
-    public static TService GetRequiredService<TService>(this IReadonlyDependencyResolver resolver)
-        {
-            var service = resolver.GetService<TService>();
-            if (service is null) // Splat is not able to resolve type for us
-                {
-                    throw new InvalidOperationException(
-                        $"Failed to resolve object of type {typeof(TService)}"); // throw error with detailed description
-                }
-
-            return service; // return instance if not null
-        }
-
-
-
-
-
-
-    /// <summary>
-    ///     Extension Method for registering Spyder for use in an AvaloniaUI environment.
-    /// </summary>
-    /// <param name="services"></param>
-    /// <param name="resolver"></param>
-    /// <returns></returns>
-    public static IMutableDependencyResolver RegisterAvaloniaSpyder(
-        IMutableDependencyResolver mutableResolver,
-        IReadonlyDependencyResolver resolver)
-        {
-            /*
-
-
-var opt = new TextFileLoggerConfiguration
-    {
-        EntryPrefix = "~~~<",
-        EntrySuffix = ">~~~~",
-        LogLocation = @"/Storage/Spyder/Logs",
-        TimestampFormat = "hh:MM:ss",
-        UseSingleLogFile = false,
-        UseUtcTime = false
-    };
-var httpfact = Locator.Current.GetService<IHttpClientFactory>();
-
-var ow = Options.Create(opt);
-var so = Options.Create(GetDefaultOptions());
-
-var loggerFactory = LoggerFactory.Create(builder => builder.AddDebug());
-//builder.SetMinimumLevel(s_spyderOptions.LoggingLevel));
-
-
-//loggerFactory.AddProvider(new TextFileLoggerProvider(ow));
-var logger = loggerFactory.CreateLogger("SpyderLib");
-
-
-Locator.CurrentMutable.RegisterConstant(new BackgroundDownloadQue(loggerFactory.CreateLogger<BackgroundDownloadQue>()));
-
-var bg = Locator.Current.GetService<BackgroundDownloadQue>();
-
-//Locator.CurrentMutable.RegisterConstant(new SpyderClient(),httpfact));
-
-ISpyderClient httpclient = Locator.Current.GetService<ISpyderClient>();
-
-Locator.CurrentMutable.RegisterConstant(() =>
-    new QueueProcessingService(bg, loggerFactory.CreateLogger<QueueProcessingService>(), httpclient), typeof(QueueProcessingService));
-
-
-var applifeTime = Locator.Current.GetService<IHostApplicationLifetime>();
-
-
-Locator.CurrentMutable.RegisterConstant(() => new BackgroundDownloadQue(loggerFactory.CreateLogger<BackgroundDownloadQue>()), typeof(IBackgroundDownloadQue));
-
-Locator.CurrentMutable.RegisterConstant(() => new OutputControl(), typeof(OutputControl));
-Locator.CurrentMutable.RegisterConstant(() => new SpyderControlService(loggerFactory, so));
-Locator.CurrentMutable.RegisterConstant(() => new CacheIndexService(null, loggerFactory.CreateLogger<CacheIndexService>(), so, httpclient),
-    typeof(ICacheIndexService));
-
-var cache = Locator.Current.GetService<CacheIndexService>();
-
-Locator.CurrentMutable.RegisterConstant(() => new WebCrawlerController(cache),
-    typeof(IWebCrawlerController));
-
-Locator.CurrentMutable.RegisterLazySingleton(() => new DownloadController(so, loggerFactory.CreateLogger<DownloadController>(), bg, cache),
-    typeof(IDownloadControl));
-
-*/
-
-            return mutableResolver;
-        }
-
-
-
-
-
-
-    /// <summary>
-    ///     Extension Method for registering an instance of SpyderOptions for use in an AvaloniaUI environment.
-    /// </summary>
-    /// <param name="services"></param>
-    /// <param name="spyderOptions"></param>
-    /// <returns></returns>
-    public static IMutableDependencyResolver RegisterSpyderOptions(
-        this IMutableDependencyResolver services,
-        SpyderOptions spyderOptions)
-        {
-            services.RegisterConstant(value: spyderOptions);
-            return services;
         }
 
     #endregion

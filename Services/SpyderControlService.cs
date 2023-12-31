@@ -38,7 +38,6 @@ public class SpyderControlService : ServiceBase, IHostedService
         IWebCrawlerController webCrawlerController,
         IDownloadController downloadController) : base(lifetime: lifetime)
         {
-            //TODO Replace host lifetime with internal lifetime control
             lifetime.ApplicationStarted.Register(callback: OnStarted);
             lifetime.ApplicationStopping.Register(callback: OnStopping);
             _downControl = downloadController;
@@ -196,8 +195,6 @@ public class SpyderControlService : ServiceBase, IHostedService
             PrintConfig();
 
             _ = Task.Run(() => PrintMenu(cancellationToken: _cancellationTokenSource!.Token));
-
-            // Task.Run(() => Task.FromResult(StartCrawlingAsync(_cancellationTokenSource.Token))).ConfigureAwait(false);
         }
 
 
@@ -208,7 +205,7 @@ public class SpyderControlService : ServiceBase, IHostedService
     private void OnStopping()
         {
             Debug.WriteLine(message: "output triggered");
-            LibraryHostShuttingDown?.Invoke(this, e: EventArgs.Empty);
+            LibraryHostShuttingDown?.Invoke(null, e: EventArgs.Empty);
         }
 
 
@@ -249,6 +246,10 @@ public class SpyderControlService : ServiceBase, IHostedService
             Console.WriteLine(value: "**                                                  **");
             Console.WriteLine(value: "******************************************************");
         }
+
+    #endregion
+
+    #endregion
 
     #endregion
 
