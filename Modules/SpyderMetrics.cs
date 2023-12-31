@@ -42,18 +42,6 @@ public class SpyderMetrics : IDisposable
 
 
 
-    // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-    // ~SpyderMetrics()
-    // {
-    //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-    //     Dispose(disposing: false);
-    // }
-
-
-
-
-
-
     public void Dispose()
         {
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
@@ -89,12 +77,12 @@ public class SpyderMetrics : IDisposable
                 {
                     if (disposing)
                         {
-                            // TODO: dispose managed state (managed objects)
+                            // toODO: dispose managed state (managed objects)
                         }
 
                     _meter.Dispose();
-                    // TODO: free unmanaged resources (unmanaged objects) and override finalizer
-                    // TODO: set large fields to null
+                    // toODO: free unmanaged resources (unmanaged objects) and override finalizer
+                    // toODO: set large fields to null
                     _disposedValue = true;
                 }
         }

@@ -10,7 +10,8 @@ using Microsoft.Extensions.Logging.Console;
 
 namespace KC.Apps.SpyderLib.Logging;
 
-internal class LogFormatter : ConsoleFormatter
+// ReSharper disable once UnusedType.Global false positive
+internal sealed class LogFormatter : ConsoleFormatter
 {
     private readonly string _dateFormat;
     private readonly string _timeFormat;

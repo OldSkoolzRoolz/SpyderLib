@@ -1,10 +1,21 @@
+using System.Runtime.Serialization;
+
+
+
 namespace KC.Apps.SpyderLib.Modules;
 
 [Serializable]
 public class SpyderException : Exception
 {
     /// <summary>Initializes a new instance of the <see cref="System.Exception" /> class.</summary>
-    protected SpyderException() { }
+    protected SpyderException(SerializationInfo info, StreamingContext context) { }
+
+
+
+
+
+
+    public SpyderException() { }
 
 
 

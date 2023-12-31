@@ -4,8 +4,9 @@ using KC.Apps.SpyderLib.Models;
 
 namespace KC.Apps.SpyderLib.Modules;
 
+/// <inheritdoc />
 [Serializable]
-internal class QueItem(Uri url) : Model
+internal sealed class QueItem(Uri url) : Model
 {
     private string _progress;
 

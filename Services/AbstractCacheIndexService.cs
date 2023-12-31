@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-
-using JetBrains.Annotations;
 
 using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Models;
@@ -32,9 +31,9 @@ public abstract class AbstractCacheIndex
 
 
     private protected AbstractCacheIndex(
-        [NotNull] MyClient client,
-        [NotNull] ILogger logger,
-        [NotNull] SpyderMetrics metrics)
+        [JetBrains.Annotations.NotNull] MyClient client,
+        [JetBrains.Annotations.NotNull] ILogger logger,
+        [JetBrains.Annotations.NotNull] SpyderMetrics metrics)
         {
             _client = client ?? throw new ArgumentNullException(nameof(client));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -77,6 +76,7 @@ public abstract class AbstractCacheIndex
     /// <summary>
     ///     Save Index to disk
     /// </summary>
+    [SuppressMessage(category: "Performance", checkId: "CA1822:Mark members as static")]
     public void SaveCacheIndex()
         {
             using var fileOperations = new FileOperations();
@@ -120,7 +120,7 @@ public abstract class AbstractCacheIndex
 
 
 
-    protected async Task<string> GetAndSetContentFromCacheCoreAsync([NotNull] string address)
+    protected async Task<string> GetAndSetContentFromCacheCoreAsync([JetBrains.Annotations.NotNull] string address)
         {
             return await TryGetCacheValue(key: address).ConfigureAwait(false);
         }

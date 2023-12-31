@@ -7,7 +7,7 @@ namespace KC.Apps.SpyderLib.Modules;
 /// <summary>
 ///     Crawler Que for QueItems using a BufferBlock
 /// </summary>
-internal class CrawlerQue : ICrawlerQue
+internal sealed class CrawlerQue : ICrawlerQue
 {
     private readonly BufferBlock<QueItem> _queue = new();
 

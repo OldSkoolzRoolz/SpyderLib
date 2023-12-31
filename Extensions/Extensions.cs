@@ -15,7 +15,7 @@ using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 
 
-namespace KC.Apps.SpyderLib;
+namespace KC.Apps.SpyderLib.Extensions;
 
 public static class SpyderLibExtensions
 {
@@ -34,11 +34,9 @@ public static class SpyderLibExtensions
         {
             ArgumentNullException.ThrowIfNull(argument: builder);
             ArgumentNullException.ThrowIfNull(argument: config);
-            // ArgumentNullException.ThrowIfNull(argument: config);
 
             _ = builder.Services.AddOptions<TextFileLoggerConfiguration>().Configure(logConfig =>
                 logConfig.SetProperties(sourceOptions: config));
-            //_ = builder.AddProvider(new TextFileLoggerProvider(config));
 
             builder.AddDebug().AddCustomFormatter(
                 options =>
@@ -46,7 +44,7 @@ public static class SpyderLibExtensions
                         options.CustomPrefix = "~~<{ ";
                         options.CustomSuffix = " }>~~";
                     });
-            //  builder.SetMinimumLevel(level: s_spyderOptions.LoggingLevel);
+            builder.SetMinimumLevel(level: s_spyderOptions.LoggingLevel);
             _ = builder.AddFilter(category: "TextFileLogger", level: s_spyderOptions.LoggingLevel);
             _ = builder.AddFilter(category: "Microsoft", level: LogLevel.Information);
             _ = builder.AddFilter(category: "System.Net.Http", level: LogLevel.Warning);
@@ -166,7 +164,6 @@ public static class SpyderLibExtensions
             _ = services.AddSingleton<ICacheIndexService, CacheIndexService>();
             _ = services.AddSingleton<IWebCrawlerController, WebCrawlerController>();
             _ = services.AddHostedService<SpyderControlService>();
-            var prov = services.BuildServiceProvider();
         }
 
 

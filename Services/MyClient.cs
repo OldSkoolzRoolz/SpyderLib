@@ -1,5 +1,7 @@
 using CommunityToolkit.Diagnostics;
 
+using KC.Apps.SpyderLib.Modules;
+
 
 
 namespace KC.Apps.SpyderLib.Services;
@@ -70,7 +72,7 @@ public sealed class MyClient(HttpClient client) : IMyClient
                     var results = await client.GetStringAsync(requestUri: address).ConfigureAwait(false);
                     return results;
                 }
-            catch (Exception e)
+            catch (SpyderException e)
                 {
                     Console.WriteLine(value: e);
                 }

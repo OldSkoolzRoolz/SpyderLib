@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 using CommunityToolkit.Diagnostics;
@@ -93,6 +94,7 @@ public abstract class ServiceBase : INotifyPropertyChanged
     ///     The property name of the property that has changed.
     ///     This optional parameter can be skipped because the compiler is able to create it automatically.
     /// </param>
+    [SuppressMessage(category: "Design", checkId: "CA1030:Use events where appropriate")]
     protected void RaisePropertyChanged([CallerMemberName] string propertyName = null)
         {
             OnPropertyChanged(new(propertyName: propertyName));

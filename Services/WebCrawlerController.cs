@@ -11,28 +11,29 @@ using System.Windows.Input;
 using KC.Apps.SpyderLib.Control;
 using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Modules;
-using KC.Apps.SpyderLib.Properties;
 
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 
 
+// ReSharper disable LocalizableElement
 namespace KC.Apps.SpyderLib.Services;
 
+//false positive for disposable token source.
+
+
+
+[SuppressMessage(category: "Design", checkId: "CA1001:Types that own disposable fields should be disposable")]
+[SuppressMessage(category: "Globalization", checkId: "CA1303:Do not pass literals as localized parameters")]
 public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 {
     private readonly ICacheIndexService _cache;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private ICommand _crawlCommand;
-    private readonly CancellationToken _crawlerStopToken;
     private Stopwatch _crawlTimer;
     private readonly ILogger<WebCrawlerController> _logger;
-    private readonly SpyderOptions _options;
     private ICommand _pauseCommand;
     private ICommand _stopCommand;
-
-    // private readonly IOutputControl OutputControl.Instance;
     private readonly ConcurrentBag<(string, int)> _urlsToCrawl = new();
     private readonly ConcurrentDictionary<string, bool> _visitedUrls = new();
 
@@ -45,18 +46,14 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
     ///     Constructor for WebCrawlerController.
     /// </summary>
     /// <param name="logger"></param>
-    /// <param name="options">SpyderOptions options object.</param>
     /// <param name="cache">ICacheIndexService cache object.</param>
     public WebCrawlerController(
         ILogger<WebCrawlerController> logger,
-        IOptions<SpyderOptions> options,
         ICacheIndexService cache
     )
         {
-            ArgumentNullException.ThrowIfNull(argument: options);
             ArgumentNullException.ThrowIfNull(argument: cache);
             _logger = logger;
-            _options = options.Value;
             _cache = cache;
 
 
@@ -135,16 +132,6 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 
 
 
-    public void Dispose()
-        {
-            _cancellationTokenSource.Dispose();
-        }
-
-
-
-
-
-
     /// <summary>
     ///     Sets up some performance counters and begins scraping the first level.
     ///     Also prints out a diagnostic statistics when the Spyder is finished.
@@ -158,21 +145,11 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
             token.ThrowIfCancellationRequested();
             try
                 {
-                    // Add the starting url to the crawler collection
-                    // _urlsToCrawl.Add((_options.StartingUrl, 1));
-
-                    /*
-                                        // Spawn numerous tasks(threads) that will serve as crawlers responsible for
-                                        // getting page contents and processing the response
-                                        await Task.WhenAll(Enumerable.Range(0, _options.ConcurrentCrawlingTasks)
-                                                                     .Select(async _ =>
-                                                                                 Task.Run(()=> StartWorkerAsync(maxDepth, token)
-                                                                                     .ConfigureAwait(false), token)));
-                    */
                     Console.WriteLine(value: "Starting crawler");
                     await CrawlAsync(cleanUrl: Options.StartingUrl, 1).ConfigureAwait(false);
                     _crawlTimer.Stop();
                     Debug.WriteLine($"Elapsed Crawl time {_crawlTimer.ElapsedMilliseconds:000.00}");
+
                     // Fire off the completion event for anyone who is listening
                     this.CrawlerTasksFinished?.Invoke(this, new());
                 }
@@ -183,6 +160,7 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
                 }
             finally
                 {
+                    _cancellationTokenSource.Dispose();
                     PrintStats();
                 }
         }
@@ -345,7 +323,7 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
                 }
 
 
-
+            _cancellationTokenSource.Dispose();
 
             // Log complete message
             _logger.SpyderInfoMessage(message: "WebCrawlerController has been successfully unloaded.");
@@ -399,12 +377,6 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 
 
 
-    /*
-
-
-
-
-    */
     /// <summary>
     ///     Asynchronously processes the given URL.
     /// </summary>
@@ -426,30 +398,14 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         {
             token.ThrowIfCancellationRequested();
             var page = await _cache.GetAndSetContentFromCacheAsync(address: url).ConfigureAwait(false);
-            if (Options.EnableTagSearch || Options.HtmlTagToSearchFor is not null)
+            if ((Options.EnableTagSearch || Options.HtmlTagToSearchFor is not null) &&
+                HtmlParser.SearchPageForTagName(content: page, tag: "video"))
                 {
-                    if (HtmlParser.SearchPageForTagName(content: page, tag: "video"))
-                        {
-                            OutputControl.Instance!.CapturedUrlWithSearchResults?.Add(url: url);
-                        }
+                    OutputControl.Instance!.CapturedUrlWithSearchResults?.Add(url: url);
                 }
 
-            // var urls = HtmlParser.GetHrefLinksFromDocumentSource(page);
-
-            // Log.Debug($"Count togo: {this.UrlsInQueue}");
 
 
-            // Validate urls and separate urls
-            //  var cleanUrls = VerifyAndSeparateUrls(urls: urls, optionsStartingUrl: _options.StartingUrl);
-            /*
-                    OutputControl.Instance.CapturedExternalLinks.AddArray(cleanUrls.OtherUrls.ToArray());
-                    OutputControl.Instance.CapturedSeedLinks.AddArray(cleanUrls.BaseUrls.ToArray());
-
-                    if (_options.FollowExternalLinks)
-                    {
-                        cleanUrls.BaseUrls.AddRange(collection: cleanUrls.OtherUrls);
-                    }
-            */
 
             return default;
         }
@@ -512,52 +468,51 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
     ///     Method serves as a web worker responsible for crawling url
     ///     that are in the _urlsToCrawl variable
     /// </summary>
-    /* private Task StartWorkerAsync(int maxDepth, CancellationToken token)
-     {
-         Debug.WriteLine(value: "Worker starting....");
+    private Task StartWorkerAsync(int maxDepth, CancellationToken token)
+        {
+            Debug.WriteLine(value: "Worker starting....");
 
 
-         while (!_urlsToCrawl.IsEmpty && !token.IsCancellationRequested)
-         {
-             // ReSharper disable once InvertIf
-             if (_urlsToCrawl.TryTake(out var result))
-             {
-                 var url = result.Item1;
-                 var depth = result.Item2;
+            while (!_urlsToCrawl.IsEmpty && !token.IsCancellationRequested)
+                {
+                    // ReSharper disable once InvertIf
+                    if (_urlsToCrawl.TryTake(out var result))
+                        {
+                            var url = result.Item1;
+                            var depth = result.Item2;
 
-                 _logger.SpyderInfoMessage($"Depth == {depth}  In Que={_urlsToCrawl.Count}");
-                 _logger.SpyderTrace($"Now crawling url :: {url}");
+                            _logger.SpyderInfoMessage($"Depth == {depth}  In Que={_urlsToCrawl.Count}");
+                            _logger.SpyderTrace($"Now crawling url :: {url}");
 
-                 // this seems like extra work here. we should prevent adding anything to the que that exceeds the depth limit
-                 // if crawling this url will exceed the depth limit skip it
-                 if (depth > maxDepth)
-                 {
-                     continue;
-                 }
+                            // this seems like extra work here. we should prevent adding anything to the que that exceeds the depth limit
+                            // if crawling this url will exceed the depth limit skip it
+                            if (depth > maxDepth)
+                                {
+                                    continue;
+                                }
 
-                 try
-                 {
-                     _ = _visitedUrls.TryAdd(key: url, true);
+                            try
+                                {
+                                    _ = _visitedUrls.TryAdd(key: url, true);
+                                }
+                            catch (SpyderException e)
+                                {
+                                    _logger.SpyderError(message: e.Message);
+                                }
+                        }
+                }
 
-                     //   var nextUrls = await ProcessUrlAsync(url: url, token: token).ConfigureAwait(false);
+            // temporary troubleshooting code
+            Debug.WriteLine(value: "Worker Endings.... *******************************");
 
-                                         foreach (var uriz in nextUrls)
-                                         {
-                                             _urlsToCrawl.Add((uriz, depth + 1));
-                                         }
+            return Task.CompletedTask;
+        }
 
-                 }
-                 catch (SpyderException e)
-                 {
-                     _logger.SpyderError(message: e.Message);
-                 }
-             }
-         }
 
-         // temporary troubleshooting code
-         Debug.WriteLine(value: "Worker Endings.... *******************************");
-     }
-             */
+
+
+
+
     private (List<string> BaseUrls, List<string> OtherUrls) VerifyAndSeparateUrls(
         IEnumerable<string> urls,
         string optionsStartingUrl)

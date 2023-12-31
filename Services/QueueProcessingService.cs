@@ -18,7 +18,6 @@ public sealed class QueueProcessingService : BackgroundService
 {
     private readonly MyClient _client;
     private readonly ILogger<QueueProcessingService> _logger;
-    private readonly SemaphoreSlim _semi = new(6);
     private readonly IBackgroundDownloadQue _taskQueue;
     private static int s_downloadAttempts;
 
@@ -132,6 +131,7 @@ public sealed class QueueProcessingService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            SemaphoreSlim semi = new(6);
             while (!stoppingToken.IsCancellationRequested)
                 {
                     while (await _taskQueue.OutputAvailableAsync().ConfigureAwait(false))
@@ -140,7 +140,7 @@ public sealed class QueueProcessingService : BackgroundService
                                 {
                                     try
                                         {
-                                            await _semi.WaitAsync(cancellationToken: stoppingToken)
+                                            await semi.WaitAsync(cancellationToken: stoppingToken)
                                                 .ConfigureAwait(false);
 
                                             await DownloadWorkItemAsync(workItem: item, token: stoppingToken)
@@ -157,11 +157,13 @@ public sealed class QueueProcessingService : BackgroundService
                                         }
                                     finally
                                         {
-                                            _semi.Release();
+                                            semi.Release();
                                         }
                                 }
                         }
                 }
+
+            semi.Dispose();
         }
 
 

@@ -22,47 +22,6 @@ public static class SpyderHelpers
 {
     #region Private Methods
 
-    /*
-        /// <summary>
-        /// </summary>
-        /// <param name="collection"></param>
-        /// <returns></returns>
-        /// <param name="options"></param>
-        private static ConcurrentScrapedUrlCollection ClassifyScrapedUrlsCore(
-            ConcurrentScrapedUrlCollection collection,
-            SpyderOptions                  options)
-            {
-                if (collection == null) throw new ArgumentNullException(nameof(collection));
-                if (options == null) throw new ArgumentNullException(nameof(options));
-
-                Uri baseUri = new(options.StartingUrl);
-                var sortedlinks = GetBaseUriLinks(collection, baseUri);
-                ConcurrentScrapedUrlCollection externalLinks = sortedlinks.External;
-                ConcurrentScrapedUrlCollection internals = sortedlinks.Internal;
-
-
-                OutputControl.CapturedSeedLinks.AddRange(internals);
-                OutputControl.CapturedExternalLinks.AddRange(externalLinks);
-                OutputControl.UrlsScrapedThisSession.AddRange(collection);
-                var results = new ConcurrentScrapedUrlCollection();
-                results.AddRange(internals);
-
-                if (options.FollowExternalLinks)
-                    {
-                        results.AddRange(externalLinks);
-                    }
-
-
-                return results;
-            }
-
-    */
-
-
-
-
-
-
     private static bool IsExternalDomainLinkCore(
         string link,
         Uri baseUri)
@@ -143,15 +102,10 @@ public static class SpyderHelpers
                     if (HtmlParser.TryExtractUserTagFromDocument(doc, "video",
                             out var extractedLinks))
                         {
-                            //      _outputControl.CapturedVideoLinks.Add(url);
-
-
-
                             foreach (var link in extractedLinks)
                                 {
                                     var dl = new DownloadItem(link.Key, "/Data/Spyder/Files");
 
-                                    //  await BuildDownloadTaskAsync(CancellationToken.None, link.Key)
 
                                     await que.QueueBackgroundWorkItemAsync(dl).ConfigureAwait(false);
                                 }

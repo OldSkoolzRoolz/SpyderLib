@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using KC.Apps.SpyderLib.Control;
 using KC.Apps.SpyderLib.Interfaces;
 using KC.Apps.SpyderLib.Services;
@@ -9,6 +11,7 @@ namespace KC.Apps.SpyderLib.Modules;
 /// <summary>
 ///     Represents the public accessible output of a Spyder session.
 /// </summary>
+[SuppressMessage(category: "Performance", checkId: "CA1822:Mark members as static")]
 public class SpyderOutput : ISpyderOutput
 {
     #region Properteez

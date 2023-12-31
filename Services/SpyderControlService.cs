@@ -21,6 +21,8 @@ namespace KC.Apps.SpyderLib.Services;
 ///     or passed into the constructor. Required options for each mode are outlined
 ///     on each method.
 /// </summary>
+[SuppressMessage(category: "Globalization", checkId: "CA1303:Do not pass literals as localized parameters")]
+[SuppressMessage(category: "ReSharper", checkId: "LocalizableElement")]
 public class SpyderControlService : ServiceBase, IHostedService
 {
     private CancellationTokenSource _cancellationTokenSource;
@@ -213,6 +215,7 @@ public class SpyderControlService : ServiceBase, IHostedService
 
 
 
+    [SuppressMessage(category: "Performance", checkId: "CA1822:Mark members as static")]
     private void PrintConfig()
         {
 #pragma warning disable CA1303
@@ -249,7 +252,9 @@ public class SpyderControlService : ServiceBase, IHostedService
 
     #endregion
 
-  
+    #endregion
+
+    #endregion
 
 
 

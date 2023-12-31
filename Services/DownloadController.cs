@@ -47,7 +47,6 @@ public class DownloadController : IDownloadController
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="options"></param>
     /// <param name="downloadQue"></param>
     /// <param name="cacheIndexService"></param>
     /// <exception cref="ArgumentNullException"></exception>
@@ -62,7 +61,7 @@ public class DownloadController : IDownloadController
             Debug.WriteLine(message: "Download Controller Initialized!");
 
             _options = AppContext.GetData(name: "options") as SpyderOptions ??
-                       throw new ArgumentNullException(nameof(_options));
+                       throw new ArgumentException(message: "_options");
 
             _downloadQue = downloadQue ?? throw new ArgumentNullException(nameof(downloadQue));
             _cache = cacheIndexService ?? throw new ArgumentNullException(nameof(cacheIndexService));
@@ -142,16 +141,9 @@ public class DownloadController : IDownloadController
                 }
 
             // Closses the buffer block and should trigger the downloading of the que
-            await _downloadQue.Complete();
+            await _downloadQue.Complete().ConfigureAwait(true);
             _logger.SpyderDebug($"Finished Adding download tasks. Que Count {_downloadQue.Count}");
         }
-
-
-
-
-
-
-    public void SetInputComplete() { }
 
 
 
@@ -304,7 +296,8 @@ public class DownloadController : IDownloadController
             var path = Path.Combine(path1: DLOADED_PATH, path2: "DownloadedLinks.txt");
             if (!File.Exists(path: path))
                 {
-                    _ = File.CreateText(path: path);
+                    var x = File.CreateText(path: path);
+                    x.Dispose();
                     _downloadedLinks = new();
                 }
 
@@ -328,7 +321,8 @@ public class DownloadController : IDownloadController
 
             if (!File.Exists(path: path))
                 {
-                    _ = File.CreateText(path: path);
+                    var y = File.CreateText(path: path);
+                    y.Dispose();
 
                     _searchedPages = new();
                 }

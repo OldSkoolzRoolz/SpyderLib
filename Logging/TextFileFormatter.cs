@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 
 using KC.Apps.SpyderLib.Modules;
@@ -10,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace KC.Apps.SpyderLib.Logging;
 
-internal class TextFileFormatter
+internal sealed class TextFileFormatter
 {
     private readonly TextFileLoggerConfiguration _formatterOptions;
 
@@ -86,14 +85,9 @@ internal class TextFileFormatter
                     textWriter.WriteLine(value: formattedlog);
                     textWriter.Flush();
                 }
-            catch (SpyderException e)
+            catch (SpyderException)
                 {
                     //Make sure there is a Debug
-
-                    if (Console.IsOutputRedirected == false)
-                        {
-                            Debug.WriteLine(message: e.Message);
-                        }
                 }
         }
 

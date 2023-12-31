@@ -122,7 +122,7 @@ internal static class HtmlParser
 
                     return urlTuple;
                 }
-            catch (Exception ex)
+            catch (IOException ex)
                 {
                     LoggingMessages.SpyderHelpersException(logger: SpyderControlService.Logger,
                         message: "Error parsing page source, Resuming...");
