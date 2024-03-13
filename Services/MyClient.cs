@@ -23,14 +23,38 @@ public interface IMyClient
 /// <summary>
 ///     Encapsulated HttpClient. Encorporates reliable http operations including retry and error recovery using Polly API
 /// </summary>
-/// <param name="client"></param>
-public sealed class MyClient(HttpClient client) : IMyClient
+public sealed class MyClient : IMyClient
 {
+
+    private HttpClient _client;
+
+
+
+
+
+
+    /// <summary>
+    ///     Encapsulated HttpClient. Encorporates reliable http operations including retry and error recovery using Polly API
+    /// </summary>
+    /// <param name="client"></param>
+    public MyClient(IHttpClientFactory client)
+        {
+            if (client != null)
+                {
+                    _client = client.CreateClient("SpyderClient");
+                }
+        }
+
+
+
+
+
+
     #region Public Methods
 
     public async Task<Stream> GetFileStreamFromWebAsync(string address)
         {
-            return await GetFileStreamFromWebAsync(new(uriString: address), token: CancellationToken.None)
+            return await GetFileStreamFromWebAsync(new(address), CancellationToken.None)
                 .ConfigureAwait(false);
         }
 
@@ -41,7 +65,7 @@ public sealed class MyClient(HttpClient client) : IMyClient
 
     public async Task<string> GetPageContentFromWebAsync(string address)
         {
-            return await GetPageContentFromWebAsync(new Uri(uriString: address)).ConfigureAwait(false);
+            return await GetPageContentFromWebAsync(new Uri(address)).ConfigureAwait(false);
         }
 
     #endregion
@@ -55,7 +79,7 @@ public sealed class MyClient(HttpClient client) : IMyClient
 
     private async Task<Stream> GetFileStreamFromWebAsync(Uri address, CancellationToken token)
         {
-            return await client.GetStreamAsync(requestUri: address, cancellationToken: token).ConfigureAwait(false);
+            return await _client.GetStreamAsync(address, token).ConfigureAwait(false);
         }
 
 
@@ -65,16 +89,20 @@ public sealed class MyClient(HttpClient client) : IMyClient
 
     private async Task<string> GetPageContentFromWebAsync(Uri address)
         {
-            Guard.IsNotNull(value: client);
 
             try
                 {
-                    var results = await client.GetStringAsync(requestUri: address).ConfigureAwait(false);
+                    var results = await _client.GetStringAsync(address).ConfigureAwait(false);
                     return results;
                 }
+            catch (HttpRequestException)
+                {
+                    
+                }
+            catch(TaskCanceledException){}
             catch (SpyderException e)
                 {
-                    Console.WriteLine(value: e);
+                    Console.WriteLine(e);
                 }
 
             return string.Empty;

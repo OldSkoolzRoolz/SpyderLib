@@ -13,8 +13,8 @@ namespace KC.Apps.SpyderLib.Logging;
 /// <summary>
 ///     A Provider of <see cref="TextFileLogger" /> instances.
 /// </summary>
-[UnsupportedOSPlatform(platformName: "browser")]
-[ProviderAlias(alias: "TextFileLogger")]
+[UnsupportedOSPlatform("browser")]
+[ProviderAlias("TextFileLogger")]
 public class TextFileLoggerProvider : ILoggerProvider
 {
     private readonly TextFileLoggerConfiguration _currentConfig;
@@ -22,7 +22,7 @@ public class TextFileLoggerProvider : ILoggerProvider
     private readonly TextFileFormatter _formatter;
 
     private readonly ConcurrentDictionary<string, TextFileLogger> _loggers =
-        new(comparer: StringComparer.OrdinalIgnoreCase);
+        new(StringComparer.OrdinalIgnoreCase);
 
 
 
@@ -35,9 +35,9 @@ public class TextFileLoggerProvider : ILoggerProvider
     /// <param name="config"></param>
     public TextFileLoggerProvider(IOptions<TextFileLoggerConfiguration> config)
         {
-            Guard.IsNotNull(value: config);
+            Guard.IsNotNull(config);
             _currentConfig = config.Value;
-            _formatter = new(config: _currentConfig);
+            _formatter = new(_currentConfig);
         }
 
 
@@ -51,8 +51,8 @@ public class TextFileLoggerProvider : ILoggerProvider
         string categoryName)
         {
             return _loggers.GetOrAdd(
-                key: categoryName, name =>
-                    new(name: name, formatter: _formatter, GetCurrentConfig()));
+                categoryName, name =>
+                    new(name, _formatter, GetCurrentConfig()));
         }
 
 

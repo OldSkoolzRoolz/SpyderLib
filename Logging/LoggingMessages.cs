@@ -55,7 +55,7 @@ public static partial class LoggingMessages
 
 
 
-    [LoggerMessage(925, level: LogLevel.Error, message: "Http Exception thrown getting page {address}.. == {message}")]
+    [LoggerMessage(925, LogLevel.Error, "Http Exception thrown getting page {address}.. == {message}")]
     public static partial void LogHttpException(
         this ILogger logger,
         string message,

@@ -11,7 +11,7 @@ public class SpyderOptionsException : Exception
 
     public SpyderOptionsException(
         string message)
-        : base(message: message) { }
+        : base(message) { }
 
 
 
@@ -21,5 +21,5 @@ public class SpyderOptionsException : Exception
     public SpyderOptionsException(
         string message,
         Exception inner)
-        : base(message: message, innerException: inner) { }
+        : base(message, inner) { }
 }

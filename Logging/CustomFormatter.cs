@@ -23,11 +23,11 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
             IOptionsMonitor<CustomOptions> options)
 
         // Case insensitive
-        : base(name: "customName")
+        : base("customName")
         {
-            Guard.IsNotNull(value: options);
+            Guard.IsNotNull(options);
             (_optionsReloadToken, _formatterOptions) =
-                (options.OnChange(listener: ReloadLoggerOptions), options.CurrentValue);
+                (options.OnChange(ReloadLoggerOptions), options.CurrentValue);
         }
 
 
@@ -52,13 +52,13 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
         IExternalScopeProvider scopeProvider,
         TextWriter textWriter)
         {
-            ArgumentNullException.ThrowIfNull(argument: textWriter);
+            ArgumentNullException.ThrowIfNull(textWriter);
             var message =
                 logEntry.Formatter.Invoke(
-                    arg1: logEntry.State, arg2: logEntry.Exception);
+                    logEntry.State, logEntry.Exception);
 
-            CustomLogicGoesHere(textWriter: textWriter);
-            textWriter.WriteLine(value: message);
+            CustomLogicGoesHere(textWriter);
+            textWriter.WriteLine(message);
         }
 
     #endregion
@@ -73,7 +73,7 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
     private void CustomLogicGoesHere(
         TextWriter textWriter)
         {
-            textWriter.Write(value: _formatterOptions.CustomPrefix);
+            textWriter.Write(_formatterOptions.CustomPrefix);
         }
 
 

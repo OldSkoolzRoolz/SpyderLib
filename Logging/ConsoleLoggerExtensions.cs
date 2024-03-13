@@ -13,7 +13,7 @@ public static class DebugLoggerExtensions
         Action<CustomOptions> configure)
         {
             return builder.AddConsole(options => options.FormatterName = "customName")
-                .AddConsoleFormatter<CustomFormatter, CustomOptions>(configure: configure);
+                .AddConsoleFormatter<CustomFormatter, CustomOptions>(configure);
         }
 
     #endregion

@@ -11,7 +11,7 @@ public class DownloadItem
         long actualBytes = 0,
         long expectedBytes = 0)
         {
-            ArgumentNullException.ThrowIfNull(argument: link);
+            ArgumentNullException.ThrowIfNull(link);
 
             this.SavePath = savePath ?? throw new ArgumentNullException(nameof(savePath));
             this.ActualBytes = actualBytes;

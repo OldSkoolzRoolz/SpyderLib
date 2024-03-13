@@ -28,7 +28,7 @@ public static class Log
             Console.BackgroundColor = ConsoleColor.Green;
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"<INFO> {exception.Message}::{memberName} : {path}. Line #{line}");
-            Debugger.Log(99, category: "Error", message: exception.Message);
+            Debugger.Log(99, "Error", exception.Message);
             Console.ForegroundColor = front;
             Console.BackgroundColor = back;
         }

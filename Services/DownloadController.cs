@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 
 using CommunityToolkit.Diagnostics;
@@ -39,7 +40,7 @@ public class DownloadController : IDownloadController
     private readonly object _writeLock = new();
     private const string DLOADED_PATH = "/Storage/Spyder/Logs";
 
-
+public static event EventHandler<EventArgs> DownloadQueueLoadComplete;
 
 
 
@@ -54,17 +55,18 @@ public class DownloadController : IDownloadController
         IBackgroundDownloadQue downloadQue,
         ICacheIndexService cacheIndexService)
         {
-            var fact = (ILoggerFactory)AppContext.GetData(name: "factory");
-            Guard.IsNotNull(value: fact);
+            var fact = (ILoggerFactory)AppContext.GetData("factory");
+            Guard.IsNotNull(fact);
             _logger = fact.CreateLogger<DownloadController>();
 
-            Debug.WriteLine(message: "Download Controller Initialized!");
+            Console.WriteLine("Download Controller Initialized!");
 
-            _options = AppContext.GetData(name: "options") as SpyderOptions ??
-                       throw new ArgumentException(message: "_options");
+            _options = AppContext.GetData("options") as SpyderOptions ??
+                       throw new ArgumentException("_options");
 
             _downloadQue = downloadQue ?? throw new ArgumentNullException(nameof(downloadQue));
             _cache = cacheIndexService ?? throw new ArgumentNullException(nameof(cacheIndexService));
+
 
 
             _ = StartupComplete.TrySetResult(true);
@@ -111,42 +113,56 @@ public class DownloadController : IDownloadController
 
     /// <summary>
     ///     Searches soutce code of 200 pages in local cache for the htmlElement specified in SpyderOptions
-    ///     and creates a downloadItem to the background downloader.
+    ///     and creates a downloadItem task to the downloadQue 
+    ///     
     /// </summary>
     public async Task ProducerLoaderAsync()
         {
-            var avail = _cache.CacheIndexItems.Where(p => !_searchedPages.Contains(item: p.Value)).ToList();
+            var avail = ExcludeDictionaryByValues(_cache.CacheIndexItems, _searchedPages);
 
+         
+         
             foreach (var page in avail)
                 {
-                    _searchedPages.Add(item: page.Value);
+                    _searchedPages.Add(page.Value);
                     // Add page to file so we skip nexttime
-                    AppendLineToFile(fileName: "SearchedPages.txt", line: page.Value);
+                    AppendLineToFile("SearchedPages.txt", page.Value);
 
                     //Get source
-                    var pageSource = await GetCachedPageSourceFromDisk(page: page).ConfigureAwait(false);
+                    var pageSource = await GetCachedPageSourceFromDisk(page).ConfigureAwait(false);
 
                     //Checks source for HtmlTag and returns any found source links
                     var found = HtmlParser.TryExtractUserTagFromDocument(
-                        HtmlParser.CreateHtmlDocument(content: pageSource),
-                        tagToSearchFor: _options.HtmlTagToSearchFor,
+                        HtmlParser.CreateHtmlDocument(pageSource),
+                        _options.HtmlTagToSearchFor,
                         out var foundLinks);
 
                     //  If there are any links found they are checked against the completed list
                     // and added to the download Que if they are new.
                     if (found)
                         {
-                            await FilterAndAddToQueue(foundLinks: foundLinks, page: page).ConfigureAwait(false);
+                            await FilterAndAddToQueue(foundLinks, page).ConfigureAwait(false);
                         }
                 }
 
             // Closses the buffer block and should trigger the downloading of the que
             await _downloadQue.Complete().ConfigureAwait(true);
-            _logger.SpyderDebug($"Finished Adding download tasks. Que Count {_downloadQue.Count}");
+
+            DownloadQueueLoadComplete?.Invoke(null, _downloadQue.Count);
+
         }
 
 
 
+
+
+    private static Dictionary<TKey, TValue> ExcludeDictionaryByValues<TKey, TValue>(
+        ConcurrentDictionary<TKey, TValue> dictionary,
+        HashSet<TValue> valuesToExclude)
+        {
+            return dictionary.Where(entry => !valuesToExclude.Contains(entry.Value))
+                .ToDictionary(entry => entry.Key, entry => entry.Value);
+        }
 
 
 
@@ -166,12 +182,12 @@ public class DownloadController : IDownloadController
 
     internal async Task AddDownloadItem(DownloadItem item)
         {
-            await _downloadQue.QueueBackgroundWorkItemAsync(workItem: item).ConfigureAwait(false);
+            await _downloadQue.QueueBackgroundWorkItemAsync(item).ConfigureAwait(false);
 
 
 
             // Link not found in hash so we will add it to the file.
-            AppendLineToFile(fileName: "DownloadedLinks.txt", line: item.Link);
+            AppendLineToFile("DownloadedLinks.txt", item.Link);
 
             _logger.SpyderDebug($"download que tasks available == {_downloadQue.Count}");
         }
@@ -183,14 +199,14 @@ public class DownloadController : IDownloadController
 
     private void AppendLineToFile(string fileName, string line)
         {
-            var filePath = Path.Combine(path1: DLOADED_PATH, path2: fileName);
+            var filePath = Path.Combine(DLOADED_PATH, fileName);
             try
                 {
                     lock (_writeLock)
                         {
-                            using (var writer = File.AppendText(path: filePath))
+                            using (var writer = File.AppendText(filePath))
                                 {
-                                    writer.WriteLine(value: line);
+                                    writer.WriteLine(line);
                                     writer.Flush();
                                 }
                         }
@@ -231,7 +247,7 @@ public class DownloadController : IDownloadController
     /// </remarks>
     protected Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _longRunningTaskLifetime = new(state: stoppingToken);
+            _longRunningTaskLifetime = new(stoppingToken);
 
             return _longRunningTaskLifetime.Task;
         }
@@ -243,17 +259,17 @@ public class DownloadController : IDownloadController
 
     private async Task FilterAndAddToQueue(ConcurrentScrapedUrlCollection foundLinks, KeyValuePair<string, string> page)
         {
-            foreach (var s in foundLinks.Select(k => k.Key).Except(second: _downloadedLinks))
+            foreach (var s in foundLinks.Select(k => k.Key).Except(_downloadedLinks))
                 {
                     try
                         {
-                            await AddDownloadItem(new(link: s, savePath: _options.OutputFilePath))
+                            await AddDownloadItem(new(s, _options.OutputFilePath))
                                 .ConfigureAwait(false);
                         }
                     catch (SpyderException)
                         {
                             //Remove the last entry that caused exception
-                            _ = _cache.CacheIndexItems.Remove(key: page.Key, value: out _);
+                            _ = _cache.CacheIndexItems.Remove(page.Key, out _);
                         }
                 }
         }
@@ -265,8 +281,8 @@ public class DownloadController : IDownloadController
 
     private async Task<string> GetCachedPageSourceFromDisk(KeyValuePair<string, string> page)
         {
-            var pagePath = Path.Combine(path1: _options.CacheLocation, path2: page.Value);
-            var source = await File.ReadAllTextAsync(path: pagePath).ConfigureAwait(false);
+            var pagePath = Path.Combine(_options.CacheLocation, page.Value);
+            var source = await File.ReadAllTextAsync(pagePath).ConfigureAwait(false);
 
 
             return source;
@@ -277,64 +293,93 @@ public class DownloadController : IDownloadController
 
 
 
+    /// <summary>
+    /// Initializes the download controller. This method must be called before the controller can be used.
+    /// </summary>
     private void Init()
-        {
-            _logger.SpyderInfoMessage(message: "Download controller initializizing");
-            LoadDownloadedLinksListFromDisk();
-            LoadSearchedPagesFromDisk();
-            _logger.SpyderInfoMessage(message: "Download controller initialized, searching for downloadables in cache");
-            Task.Run(function: ProducerLoaderAsync).ConfigureAwait(false);
-        }
+    {
+
+
+
+        // Log the fact that the controller is initializing
+        _logger.SpyderInfoMessage("Download controller initializizing");
+
+        // Load the set of links that have already been downloaded from disk
+        LoadDownloadedLinksListFromDisk();
+
+        // Load the list of pages that have already been searched from disk
+        LoadSearchedPagesFromDisk();
+
+        // Log that the controller has finished initializing and is ready for use
+        _logger.SpyderInfoMessage("Download controller initialized, searching for downloadables in cache");
+
+        // Start a new task to search for downloadable items in the cache
+        Task.Run(ProducerLoaderAsync).ConfigureAwait(false);
+    }
+
+  
 
 
 
 
 
 
+    /// <summary>
+    ///     Loads the list of links that have already been downloaded from disk.
+    /// </summary>
     private void LoadDownloadedLinksListFromDisk()
+    {
+        var path = Path.Combine(DLOADED_PATH, "DownloadedLinks.txt");
+        // If file doesn't exist create it and initialize the set with an empty set.
+        if (!File.Exists(path))
         {
-            var path = Path.Combine(path1: DLOADED_PATH, path2: "DownloadedLinks.txt");
-            if (!File.Exists(path: path))
-                {
-                    var x = File.CreateText(path: path);
-                    x.Dispose();
-                    _downloadedLinks = new();
-                }
-
-
-            lock (_readLock)
-                {
-                    var set = new HashSet<string>(File.ReadAllLines(path: path));
-
-                    _downloadedLinks = set;
-                }
+            var x = File.CreateText(path);
+            x.Dispose();
+            _downloadedLinks = new HashSet<string>();
         }
 
+        lock (_readLock)
+        {
+            // Read all lines from the file and create a new set with them.
+            var set = new HashSet<string>(File.ReadAllLines(path));
+
+            // Assign the set to the downloaded links field.
+            _downloadedLinks = set;
+        }
+    }
 
 
 
 
 
+
+
+    /// <summary>
+    ///     Loads the set of pages that have already been searched from disk.
+    /// </summary>
     private void LoadSearchedPagesFromDisk()
+    {
+        var path = Path.Combine(DLOADED_PATH, "SearchedPages.txt");
+
+        // If file doesn't exist create it and initialize the set with an empty set.
+        if (!File.Exists(path))
         {
-            var path = Path.Combine(path1: DLOADED_PATH, path2: "SearchedPages.txt");
+            var y = File.CreateText(path);
+            y.Dispose();
 
-            if (!File.Exists(path: path))
-                {
-                    var y = File.CreateText(path: path);
-                    y.Dispose();
-
-                    _searchedPages = new();
-                }
-
-
-            lock (_readLock)
-                {
-                    var set = new HashSet<string>(File.ReadAllLines(path: path));
-
-                    _searchedPages = set;
-                }
+            _searchedPages = new HashSet<string>();
         }
+
+
+        lock (_readLock)
+        {
+            // Read all lines from the file and create a new set with them.
+            var set = new HashSet<string>(File.ReadAllLines(path));
+
+            // Assign the set to the searched pages field.
+            _searchedPages = set;
+        }
+    }
 
     #endregion
 }

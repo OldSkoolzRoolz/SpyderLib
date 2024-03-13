@@ -10,8 +10,8 @@ using Microsoft.Extensions.Logging.Console;
 
 namespace KC.Apps.SpyderLib.Logging;
 
-// ReSharper disable once UnusedType.Global false positive
-internal sealed class LogFormatter : ConsoleFormatter
+
+internal class LogFormatter : ConsoleFormatter
 {
     private readonly string _dateFormat;
     private readonly string _timeFormat;
@@ -21,9 +21,9 @@ internal sealed class LogFormatter : ConsoleFormatter
 
 
 
-    public LogFormatter(LogFormatterOptions options) : base(name: "SpyderFormatter")
+    public LogFormatter(LogFormatterOptions options) : base("SpyderFormatter")
         {
-            Guard.IsNotNull(value: options);
+            Guard.IsNotNull(options);
             _timeFormat = options.TimestampFormat;
             _dateFormat = "mm/dd/yyyy";
         }
@@ -48,13 +48,13 @@ internal sealed class LogFormatter : ConsoleFormatter
         IExternalScopeProvider scopeProvider,
         TextWriter textWriter)
         {
-            ArgumentNullException.ThrowIfNull(argument: scopeProvider);
-            ArgumentNullException.ThrowIfNull(argument: textWriter);
+            ArgumentNullException.ThrowIfNull(scopeProvider);
+            ArgumentNullException.ThrowIfNull(textWriter);
             var logLevel = logEntry.LogLevel;
-            var logMessage = logEntry.Formatter(arg1: logEntry.State, arg2: logEntry.Exception);
+            var logMessage = logEntry.Formatter(logEntry.State, logEntry.Exception);
 
             // Format the log message
-            var formattedMessage = $"{PrintTime(date: DateTime.Now)} {logLevel}: {logMessage}";
+            var formattedMessage = $"{PrintTime(DateTime.Now)} {logLevel}: {logMessage}";
 
 
             // If exception exists, include it in the message 
@@ -64,13 +64,13 @@ internal sealed class LogFormatter : ConsoleFormatter
                 }
 
             // Prepend custom prefix from formatter options, if it exists
-            if (!string.IsNullOrEmpty(value: LogFormatterOptions.CustomPrefix))
+            if (!string.IsNullOrEmpty(LogFormatterOptions.CustomPrefix))
                 {
                     formattedMessage = LogFormatterOptions.CustomPrefix + formattedMessage;
                 }
 
             // Write the log message to the provided TextWriter
-            textWriter.WriteLine(value: formattedMessage);
+            textWriter.WriteLine(formattedMessage);
         }
 
     #endregion
@@ -90,7 +90,7 @@ internal sealed class LogFormatter : ConsoleFormatter
     internal DateTime ParseDate(
         string dateStr)
         {
-            return DateTime.ParseExact(s: dateStr, format: _dateFormat, provider: CultureInfo.InvariantCulture);
+            return DateTime.ParseExact(dateStr, _dateFormat, CultureInfo.InvariantCulture);
         }
 
 
@@ -106,7 +106,7 @@ internal sealed class LogFormatter : ConsoleFormatter
     internal string PrintDate(
         DateTime date)
         {
-            return date.ToString(format: _dateFormat, provider: CultureInfo.InvariantCulture);
+            return date.ToString(_dateFormat, CultureInfo.InvariantCulture);
         }
 
 
@@ -122,7 +122,7 @@ internal sealed class LogFormatter : ConsoleFormatter
     private string PrintTime(
         DateTime date)
         {
-            return date.ToString(format: _timeFormat, provider: CultureInfo.InvariantCulture);
+            return date.ToString(_timeFormat, CultureInfo.InvariantCulture);
         }
 
     #endregion

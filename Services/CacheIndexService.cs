@@ -16,9 +16,9 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
     public CacheIndexService(
         SpyderMetrics metrics,
         ILogger<CacheIndexService> logger,
-        MyClient client) : base(client: client, logger: logger, metrics: metrics)
+        IMyClient client) : base(client, logger, metrics)
         {
-            _logger.SpyderInfoMessage(message: "Cache Index Service Loaded...");
+            _logger.SpyderInfoMessage("Cache Index Service Loaded...");
             CacheIndexLoadComplete.TrySetResult(true);
         }
 
@@ -31,6 +31,14 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
 
     public ConcurrentDictionary<string, string> CacheIndexItems => IndexCache;
     public static TaskCompletionSource<bool> CacheIndexLoadComplete { get; set; } = new();
+    public int CacheHits => s_cacheHits;
+
+    /// <summary>
+    ///     Cache Items currently in index
+    /// </summary>
+    public int CacheItemCount => IndexCache.Count;
+
+    public int CacheMisses => s_cacheMisses;
 
     #endregion
 
@@ -59,22 +67,22 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
                     Stopwatch timer = new();
                     timer.Start();
 
-                    var content = await GetAndSetContentFromCacheCoreAsync(address: address)
+                    var content = await GetAndSetContentFromCacheCoreAsync(address)
                         .ConfigureAwait(false);
 
                     timer.Stop();
                     if (_options.UseMetrics)
                         {
-                            _metrics.CrawlElapsedTime(timing: timer.ElapsedMilliseconds);
+                            _metrics.CrawlElapsedTime(timer.ElapsedMilliseconds);
                         }
 
                     return content;
                 }
             catch (SpyderException)
                 {
-                    _logger.SpyderWebException(message: "An error occured during a url retrieval.");
+                    _logger.SpyderWebException("An error occured during a url retrieval.");
 
-                    return string.Empty;
+                    return "error";
                 }
         }
 
@@ -87,8 +95,9 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
         string content,
         string address)
         {
-            return SetContentCacheAsync(content: content, address: address);
+            return SetContentCacheAsync(content, address);
         }
+
 
     #endregion
 

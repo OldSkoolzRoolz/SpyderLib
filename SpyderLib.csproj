@@ -72,12 +72,12 @@
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0"/>
 
         <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="8.1.0" />
 
-        <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.1" />
 
-        <PackageReference Include="Microsoft.Extensions.Resilience" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Resilience" Version="8.1.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageReference Include="System.Threading.Tasks.Dataflow" Version="8.0.0"/>
 
@@ -100,6 +100,7 @@
         </Compile>
         <Compile Remove="Modules\SpyderClient.cs"/>
         <Compile Remove="Modules\SpyderWeb.cs"/>
+        <Compile Remove="Services\WebCrawlerAI.cs" />
     </ItemGroup>
 
     <ItemGroup>

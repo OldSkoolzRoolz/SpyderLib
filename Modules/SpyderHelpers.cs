@@ -64,7 +64,7 @@ public static class SpyderHelpers
                 }
             catch (Exception e)
                 {
-                    Debug.WriteLine(e);
+                    Console.WriteLine(e);
                     throw;
                 }
 
@@ -113,7 +113,7 @@ public static class SpyderHelpers
                 }
             catch (SpyderException)
                 {
-                    Debug.WriteLine($"Error parsing page document {url}");
+                    Console.WriteLine($"Error parsing page document {url}");
 
                     // Log and continue Failed tasks won't hang up the flow. Possible retry?            
                 }

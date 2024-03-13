@@ -72,10 +72,10 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
                     FullMode = BoundedChannelFullMode.Wait
                 };
 
-            _queue = Channel.CreateBounded<DownloadItem>(options: options);
+            _queue = Channel.CreateBounded<DownloadItem>(options);
 
             this.Block = new();
-            logger.SpyderInfoMessage(message: "Background download Que is loaded");
+            logger.SpyderInfoMessage("Background download Que is loaded");
 
             DownloadQueLoadComplete.TrySetResult(true);
         }
@@ -116,7 +116,7 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
         {
             try
                 {
-                    return await _queue.Reader.ReadAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                    return await _queue.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
                 }
             catch (OperationCanceledException)
                 {
@@ -151,11 +151,17 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
 
     public async Task QueueBackgroundWorkItemAsync(DownloadItem workItem)
         {
-            Guard.IsNotNull(value: workItem);
+            Guard.IsNotNull(workItem);
+            try
+                {
 
-            await this.Block.SendAsync(item: workItem).ConfigureAwait(false);
+                    await this.Block.SendAsync(workItem).ConfigureAwait(false);
+                }
+            catch (Exception e)
+                {
+            Console.WriteLine(Resources1.Buffer_Block_Data_Error);
+                }
 
-            Console.WriteLine(value: Resources1.Buffer_Block_Data_Error);
         }
 
 

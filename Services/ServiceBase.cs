@@ -31,7 +31,7 @@ public abstract class ServiceBase : INotifyPropertyChanged
     /// <param name="lifetime"></param>
     protected ServiceBase(IHostApplicationLifetime lifetime)
         {
-            Guard.IsNotNull(value: lifetime);
+            Guard.IsNotNull(lifetime);
 
 
 
@@ -46,8 +46,8 @@ public abstract class ServiceBase : INotifyPropertyChanged
     #region Properteez
 
     public IHostApplicationLifetime AppLifetime { get; }
-    protected static ILoggerFactory Factory => AppContext.GetData(name: "factory") as ILoggerFactory;
-    public static SpyderOptions Options => (SpyderOptions)AppContext.GetData(name: "options");
+    protected static ILoggerFactory Factory => AppContext.GetData("factory") as ILoggerFactory;
+    public static SpyderOptions Options => (SpyderOptions)AppContext.GetData("options");
 
     #endregion
 
@@ -78,7 +78,7 @@ public abstract class ServiceBase : INotifyPropertyChanged
             var handler = this.PropertyChanged;
             if (handler != null)
                 {
-                    handler(this, e: e);
+                    handler(this, e);
                 }
         }
 
@@ -94,10 +94,10 @@ public abstract class ServiceBase : INotifyPropertyChanged
     ///     The property name of the property that has changed.
     ///     This optional parameter can be skipped because the compiler is able to create it automatically.
     /// </param>
-    [SuppressMessage(category: "Design", checkId: "CA1030:Use events where appropriate")]
+    [SuppressMessage("Design", "CA1030:Use events where appropriate")]
     protected void RaisePropertyChanged([CallerMemberName] string propertyName = null)
         {
-            OnPropertyChanged(new(propertyName: propertyName));
+            OnPropertyChanged(new(propertyName));
         }
 
 
@@ -119,13 +119,13 @@ public abstract class ServiceBase : INotifyPropertyChanged
     /// <returns>True if the value has changed, false if the old and new value were equal.</returns>
     protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
         {
-            if (Equals(objA: field, objB: value))
+            if (Equals(field, value))
                 {
                     return false;
                 }
 
             field = value;
-            RaisePropertyChanged(propertyName: propertyName);
+            RaisePropertyChanged(propertyName);
             return true;
         }
 

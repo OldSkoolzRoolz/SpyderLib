@@ -16,10 +16,11 @@ namespace KC.Apps.SpyderLib.Services;
 /// <inheritdoc />
 public sealed class QueueProcessingService : BackgroundService
 {
-    private readonly MyClient _client;
+    private readonly IMyClient _client;
     private readonly ILogger<QueueProcessingService> _logger;
     private readonly IBackgroundDownloadQue _taskQueue;
     private static int s_downloadAttempts;
+    private CancellationToken _stoppingToken;
 
 
 
@@ -30,14 +31,14 @@ public sealed class QueueProcessingService : BackgroundService
     public QueueProcessingService(
         IBackgroundDownloadQue taskQueue,
         ILogger<QueueProcessingService> logger,
-        MyClient client)
-        {
-            _taskQueue = taskQueue;
-            _logger = logger;
-            _client = client;
+        IMyClient client)
+    {
+        _taskQueue = taskQueue;
+        _logger = logger;
+        _client = client;
 
-            Init();
-        }
+        Init();
+    }
 
 
 
@@ -57,6 +58,63 @@ public sealed class QueueProcessingService : BackgroundService
 
 
     #region Private Methods
+    private async Task DoQueProcessingAsync()
+    {
+        List<Task> tasks = new();
+        SemaphoreSlim semi = new(6, 6);
+
+
+        while (!_stoppingToken.IsCancellationRequested)
+        {
+
+            while (await _taskQueue.OutputAvailableAsync().ConfigureAwait(false))
+            {
+
+
+                await semi.WaitAsync(_stoppingToken)
+                    .ConfigureAwait(false);
+            
+            
+                if (_taskQueue.Block.TryReceive(out var item))
+                {
+                    tasks.Add( Task.Run(async() =>
+                        {
+                            try
+                            {
+                               await DownloadWorkItemAsync(item, _stoppingToken);
+                            }
+                            catch (TaskCanceledException)
+                            {
+                                _logger.SpyderInfoMessage("Task cancelled exception during download");
+                            }
+                            catch (HttpRequestException e)
+                            {
+                                Console.WriteLine(e);
+                            }
+                            finally
+                            {
+                                semi.Release();
+                            }
+
+                        }));
+                }
+                
+            }
+await Task.WhenAll(tasks).ConfigureAwait(false);
+
+
+        }
+semi.Dispose();
+
+    }
+
+
+
+
+
+
+
+
 
     /// <summary>
     ///     File Download wrapper that provides error handling to prevent a single download failure from crashing entire app.
@@ -64,24 +122,24 @@ public sealed class QueueProcessingService : BackgroundService
     /// <param name="workItem"></param>
     /// <param name="token"></param>
     private async Task DownloadWorkItemAsync(DownloadItem workItem, CancellationToken token)
+    {
+        try
         {
-            try
-                {
-                    await DownloadWorkItemCoreAsync(workItem: workItem, stoppingToken: token).ConfigureAwait(false);
-                }
-            catch (ArgumentNullException arg)
-                {
-                    _logger.SpyderInfoMessage(message: arg.Message);
-                }
-            catch (HttpIOException ioe)
-                {
-                    _logger.SpyderInfoMessage(message: ioe.Message);
-                }
-            catch (IOException e)
-                {
-                    _logger.SpyderInfoMessage(message: e.Message);
-                }
+            await DownloadWorkItemCoreAsync(workItem, token).ConfigureAwait(false);
         }
+        catch (ArgumentNullException arg)
+        {
+            _logger.SpyderInfoMessage(arg.Message);
+        }
+        catch (HttpIOException ioe)
+        {
+            _logger.SpyderInfoMessage(ioe.Message);
+        }
+        catch (IOException e)
+        {
+            _logger.SpyderInfoMessage(e.Message);
+        }
+    }
 
 
 
@@ -101,28 +159,28 @@ public sealed class QueueProcessingService : BackgroundService
     ///     It will write the downloaded data to a file stream created at the provided workItem's save path.
     /// </remarks>
     private async Task DownloadWorkItemCoreAsync([NotNull] DownloadItem workItem, CancellationToken stoppingToken)
+    {
+        Guard.IsNotNull(workItem);
+        Guard.IsNotNull(_logger);
+
+        Interlocked.Increment(ref s_downloadAttempts);
+
+        var randomFileName = Path.GetRandomFileName();
+        var savePath = Path.Combine(workItem.SavePath, randomFileName + ".mp4");
+
+        using (var fileStream = new FileStream(savePath, FileMode.Create))
         {
-            Guard.IsNotNull(value: workItem);
-            Guard.IsNotNull(value: _logger);
-
-            Interlocked.Increment(location: ref s_downloadAttempts);
-
-            var randomFileName = Path.GetRandomFileName();
-            var savePath = Path.Combine(path1: workItem.SavePath, randomFileName + ".mp4");
-
-            using (var fileStream = new FileStream(path: savePath, mode: FileMode.Create))
-                {
-                    using (var responseStream = await _client.GetFileStreamFromWebAsync(address: workItem.Link)
-                               .ConfigureAwait(false))
-                        {
-                            await responseStream.CopyToAsync(destination: fileStream, cancellationToken: stoppingToken)
-                                .ConfigureAwait(false);
-                        }
-                }
-
-            _logger.SpyderDebug($"Downloaded {workItem.Link} to {savePath}");
-            _logger.SpyderDebug($"Tasks remaining::  {_taskQueue.Count}");
+            using (var responseStream = await _client.GetFileStreamFromWebAsync(workItem.Link)
+                       .ConfigureAwait(false))
+            {
+                await responseStream.CopyToAsync(fileStream, stoppingToken)
+                    .ConfigureAwait(false);
+            }
         }
+
+        _logger.SpyderDebug($"Downloaded {workItem.Link} to {savePath}");
+        _logger.SpyderDebug($"Tasks remaining::  {_taskQueue.Count}");
+    }
 
 
 
@@ -130,51 +188,30 @@ public sealed class QueueProcessingService : BackgroundService
 
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            SemaphoreSlim semi = new(6);
-            while (!stoppingToken.IsCancellationRequested)
-                {
-                    while (await _taskQueue.OutputAvailableAsync().ConfigureAwait(false))
-                        {
-                            while (_taskQueue.Block.TryReceive(out var item))
-                                {
-                                    try
-                                        {
-                                            await semi.WaitAsync(cancellationToken: stoppingToken)
-                                                .ConfigureAwait(false);
+    {
+        _logger.SpyderTrace("Queue Processing Service loaded");
+        _stoppingToken = stoppingToken;
+   
+DownloadController.DownloadQueueLoadComplete += OnDownloadQueueLoadComplete;
 
-                                            await DownloadWorkItemAsync(workItem: item, token: stoppingToken)
-                                                .ConfigureAwait(false);
-                                        }
-                                    catch (TaskCanceledException)
-                                        {
-                                            _logger.SpyderInfoMessage(
-                                                message: "Task cancelled exception during download");
-                                        }
-                                    catch (HttpRequestException e)
-                                        {
-                                            Console.WriteLine(value: e);
-                                        }
-                                    finally
-                                        {
-                                            semi.Release();
-                                        }
-                                }
-                        }
-                }
+   while(!stoppingToken.IsCancellationRequested){
 
-            semi.Dispose();
-        }
+       await Task.Delay(1000, stoppingToken).ConfigureAwait(false);
+   }
 
+
+    }
+
+    private void OnDownloadQueueLoadComplete(object sender, EventArgs e) => DoQueProcessingAsync();
 
 
 
 
 
     private static void Init()
-        {
-            QueueProcessorLoadComplete.TrySetResult(true);
-        }
+    {
+        QueueProcessorLoadComplete.TrySetResult(true);
+    }
 
     #endregion
 }

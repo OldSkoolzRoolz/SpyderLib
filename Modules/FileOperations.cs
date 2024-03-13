@@ -29,9 +29,9 @@ public class FileOperations : IDisposable
 
     public FileOperations()
         {
-            _options = AppContext.GetData(name: "options") as SpyderOptions;
-            Guard.IsNotNull(value: _options);
-            _ = Directory.CreateDirectory(path: _options.LogPath);
+            _options = AppContext.GetData("options") as SpyderOptions;
+            Guard.IsNotNull(_options);
+            _ = Directory.CreateDirectory(_options.LogPath);
         }
 
 
@@ -54,16 +54,16 @@ public class FileOperations : IDisposable
 
     public ConcurrentDictionary<string, string> LoadCacheIndex()
         {
-            var path = Path.Combine(path1: _options.LogPath, path2: FILENAME);
+            var path = Path.Combine(_options.LogPath, FILENAME);
 
 
-            if (!File.Exists(path: path))
+            if (!File.Exists(path))
                 {
                     return new();
                 }
 
-            var json = File.ReadAllText(path: path);
-            var dict = JsonConvert.DeserializeObject<ConcurrentDictionary<string, string>>(value: json);
+            var json = File.ReadAllText(path);
+            var dict = JsonConvert.DeserializeObject<ConcurrentDictionary<string, string>>(json);
 
 
             return dict ?? new ConcurrentDictionary<string, string>();
@@ -95,12 +95,12 @@ public class FileOperations : IDisposable
         {
             try
                 {
-                    return File.WriteAllTextAsync(path: path, contents: contents, encoding: Encoding.UTF8);
+                    return File.WriteAllTextAsync(path, contents, Encoding.UTF8);
                 }
             catch (IOException)
                 {
                     throw new SpyderException(
-                        message: "A file IO error occured saving file. Ensure permissions are valid.");
+                        "A file IO error occured saving file. Ensure permissions are valid.");
                 }
         }
 
@@ -112,7 +112,7 @@ public class FileOperations : IDisposable
     public void SaveCacheIndex(
         [NotNull] ConcurrentDictionary<string, string> concurrentDictionary)
         {
-            Guard.IsNotNull(value: concurrentDictionary);
+            Guard.IsNotNull(concurrentDictionary);
 
             if (concurrentDictionary.IsEmpty)
                 {
@@ -121,15 +121,15 @@ public class FileOperations : IDisposable
 
             try
                 {
-                    var path = Path.Combine(path1: _options.LogPath, FILENAME + ".new");
-                    var oldPath = Path.Combine(path1: _options.LogPath, path2: FILENAME);
+                    var path = Path.Combine(_options.LogPath, FILENAME + ".new");
+                    var oldPath = Path.Combine(_options.LogPath, FILENAME);
 
 
-                    SafeSerializeAndWrite(newFile: path, originalFile: oldPath, indexCache: concurrentDictionary);
+                    SafeSerializeAndWrite(path, oldPath, concurrentDictionary);
                 }
             catch
                 {
-                    throw new SpyderException(message: "Failure to save cache index file");
+                    throw new SpyderException("Failure to save cache index file");
                 }
         }
 
@@ -177,11 +177,11 @@ public class FileOperations : IDisposable
         string originalFile,
         ConcurrentDictionary<string, string> indexCache)
         {
-            ValidateParameters(newFile: newFile, originalFile: originalFile, indexCache: indexCache);
+            ValidateParameters(newFile, originalFile, indexCache);
 
             lock (_fileLock)
                 {
-                    WriteToFile(newFile: newFile, originalFile: originalFile, indexCache: indexCache);
+                    WriteToFile(newFile, originalFile, indexCache);
                 }
         }
 
@@ -195,9 +195,9 @@ public class FileOperations : IDisposable
         string originalFile,
         ConcurrentDictionary<string, string> indexCache)
         {
-            if (string.IsNullOrEmpty(value: newFile) || string.IsNullOrEmpty(value: originalFile) || indexCache == null)
+            if (string.IsNullOrEmpty(newFile) || string.IsNullOrEmpty(originalFile) || indexCache == null)
                 {
-                    throw new ArgumentException(message: "Invalid arguments.");
+                    throw new ArgumentException("Invalid arguments.");
                 }
         }
 
@@ -215,22 +215,22 @@ public class FileOperations : IDisposable
                 {
                     try
                         {
-                            var json = JsonConvert.SerializeObject(value: indexCache, formatting: Formatting.Indented);
+                            var json = JsonConvert.SerializeObject(indexCache, Formatting.Indented);
 
-                            if (File.Exists(path: newFile))
+                            if (File.Exists(newFile))
                                 {
-                                    File.Delete(path: newFile);
+                                    File.Delete(newFile);
                                 }
 
                             if (newFile != null)
                                 {
-                                    File.WriteAllText(path: newFile, contents: json);
+                                    File.WriteAllText(newFile, json);
 
-                                    if (!newFile.Equals(value: originalFile,
-                                            comparisonType: StringComparison.OrdinalIgnoreCase) &&
+                                    if (!newFile.Equals(originalFile,
+                                            StringComparison.OrdinalIgnoreCase) &&
                                         originalFile != null)
                                         {
-                                            File.Copy(sourceFileName: newFile, destFileName: originalFile,
+                                            File.Copy(newFile, originalFile,
                                                 true);
                                         }
                                 }
@@ -245,7 +245,7 @@ public class FileOperations : IDisposable
                             // You may check error code to filter some exceptions out 
                             if (i < MAX_RETRIES - 1) // i is zero-indexed, so we subtract one
                                 {
-                                    Thread.Sleep(millisecondsTimeout: DELAY_ON_RETRY); // Wait some time before retrying
+                                    Thread.Sleep(DELAY_ON_RETRY); // Wait some time before retrying
                                 }
                             else
                                 {

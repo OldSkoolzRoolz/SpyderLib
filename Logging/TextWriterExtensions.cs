@@ -22,35 +22,35 @@ public static class TextWriterExtensions
         ConsoleColor? background,
         ConsoleColor? foreground)
         {
-            ArgumentNullException.ThrowIfNull(argument: textWriter);
-            ArgumentNullException.ThrowIfNull(argument: message);
+            ArgumentNullException.ThrowIfNull(textWriter);
+            ArgumentNullException.ThrowIfNull(message);
             // Order:
             //   1. background color
             //   2. foreground color
             //   3. message
             //   4. reset foreground color
             //   5. reset background color
-            var backgroundColor = background.HasValue ? GetBackgroundColorEscapeCode(color: background.Value) : null;
-            var foregroundColor = foreground.HasValue ? GetForegroundColorEscapeCode(color: foreground.Value) : null;
+            var backgroundColor = background.HasValue ? GetBackgroundColorEscapeCode(background.Value) : null;
+            var foregroundColor = foreground.HasValue ? GetForegroundColorEscapeCode(foreground.Value) : null;
             if (backgroundColor != null)
                 {
-                    textWriter.Write(value: backgroundColor);
+                    textWriter.Write(backgroundColor);
                 }
 
             if (foregroundColor != null)
                 {
-                    textWriter.Write(value: foregroundColor);
+                    textWriter.Write(foregroundColor);
                 }
 
-            textWriter.Write(value: message);
+            textWriter.Write(message);
             if (foregroundColor != null)
                 {
-                    textWriter.Write(value: DEFAULT_FOREGROUND_COLOR);
+                    textWriter.Write(DEFAULT_FOREGROUND_COLOR);
                 }
 
             if (backgroundColor != null)
                 {
-                    textWriter.Write(value: DEFAULT_BACKGROUND_COLOR);
+                    textWriter.Write(DEFAULT_BACKGROUND_COLOR);
                 }
         }
 

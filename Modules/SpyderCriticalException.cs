@@ -9,13 +9,13 @@ public class SpyderCriticalException : Exception
 
 
 
-    public SpyderCriticalException(string message, Exception innerException) : base(message: message,
-        innerException: innerException) { }
+    public SpyderCriticalException(string message, Exception innerException) : base(message,
+        innerException) { }
 
 
 
 
 
 
-    public SpyderCriticalException(string message) : base(message: message) { }
+    public SpyderCriticalException(string message) : base(message) { }
 }

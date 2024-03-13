@@ -6,7 +6,7 @@ namespace KC.Apps.SpyderLib.Modules;
 
 /// <inheritdoc />
 [Serializable]
-internal sealed class QueItem(Uri url) : Model
+internal  class QueItem(Uri url) : Model
 {
     private string _progress;
 
@@ -20,7 +20,7 @@ internal sealed class QueItem(Uri url) : Model
     public string Progress
         {
             get => _progress;
-            set => SetProperty(field: ref _progress, value: value);
+            set => SetProperty(ref _progress, value);
         }
 
 

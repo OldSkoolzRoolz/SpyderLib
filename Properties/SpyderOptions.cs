@@ -19,7 +19,7 @@ namespace KC.Apps.SpyderLib.Properties;
 /// </summary>
 public class SpyderOptions
 {
-    [SuppressMessage(category: "ReSharper", checkId: "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public enum HtmlTagList
     {
         video,
@@ -48,14 +48,14 @@ public class SpyderOptions
     /// <returns>Boolean</returns>
     public bool CrawlInputFile { get; init; }
 
-    public bool DownloadTagSource { get; init; }
-    [Required] public bool EnableTagSearch { get; init; }
+    public bool DownloadTagSource { get; set; }
+    [Required] public bool EnableTagSearch { get; set; }
 
     /// <summary>
     ///     Crawler will add links from hosts other than seed url to active crawler
     /// </summary>
     [Required]
-    public bool FollowExternalLinks { get; init; }
+    public bool FollowExternalLinks { get; set; }
 
     [Required] [AllowNull] public string HtmlTagToSearchFor { get; init; }
     [Required] [AllowNull] public string InputFileName { get; init; }
@@ -69,7 +69,7 @@ public class SpyderOptions
     public int LinkDepthLimit { get; init; } = 2;
 
     [CanBeNull]
-    [SuppressMessage(category: "Performance", checkId: "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public string[] LinkPatternExclusions { get; set; }
 
     [Required] public LogLevel LoggingLevel { get; init; }
@@ -98,6 +98,7 @@ public class SpyderOptions
     public bool UseLocalCache { get; init; }
 
     public bool UseMetrics { get; init; }
+    public int ConcurrentCrawlingTasksLimit { get; init; } = 10; // default is 10 set; }
 
     #endregion
 }

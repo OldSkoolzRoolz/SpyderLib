@@ -25,7 +25,7 @@ public class SpyderException : Exception
     /// <summary>Initializes a new instance of the <see cref="System.Exception" /> class with a specified error message.</summary>
     /// <param name="message">The message that describes the error.</param>
     public SpyderException(
-        string message) : base(message: message) { }
+        string message) : base(message) { }
 
 
 
@@ -43,5 +43,5 @@ public class SpyderException : Exception
     /// </param>
     public SpyderException(
         string message,
-        Exception innerException) : base(message: message, innerException: innerException) { }
+        Exception innerException) : base(message, innerException) { }
 }

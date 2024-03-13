@@ -18,11 +18,11 @@ public class SpyderMetrics : IDisposable
 
     public SpyderMetrics(IMeterFactory meterFactory)
         {
-            _meter = meterFactory.Create(name: "Spyder.Cache");
-            _urlsCrawled = _meter.CreateCounter<int>(name: "spyder.cache.crawl-count", unit: "{url}",
-                description: "accumulative count of urls this session");
-            _urlTimining = _meter.CreateHistogram<float>(name: "spyder.cache.crawl-rate", unit: "milliseconds",
-                description: "Rate at which a single url is being handled.");
+            _meter = meterFactory.Create("Spyder.Cache");
+            _urlsCrawled = _meter.CreateCounter<int>("spyder.cache.crawl-count", "{url}",
+                "accumulative count of urls this session");
+            _urlTimining = _meter.CreateHistogram<float>("spyder.cache.crawl-rate", "milliseconds",
+                "Rate at which a single url is being handled.");
         }
 
 
@@ -34,7 +34,7 @@ public class SpyderMetrics : IDisposable
 
     public void CrawlElapsedTime(float timing)
         {
-            _urlTimining.Record(value: timing);
+            _urlTimining.Record(timing);
         }
 
 
@@ -56,10 +56,10 @@ public class SpyderMetrics : IDisposable
 
     public void UrlCrawled(int qty, bool fromCache)
         {
-            _urlsCrawled.Add(delta: qty,
+            _urlsCrawled.Add(qty,
                 fromCache
-                    ? new(key: "from.cache", null)
-                    : new KeyValuePair<string, object>(key: "from.web", null));
+                    ? new("from.cache", null)
+                    : new KeyValuePair<string, object>("from.web", null));
         }
 
     #endregion

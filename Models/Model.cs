@@ -37,7 +37,7 @@ public abstract class Model : INotifyPropertyChanged
     protected virtual void OnPropertyChanged(
         [CallerMemberName] string propertyName = null)
         {
-            this.PropertyChanged?.Invoke(this, new(propertyName: propertyName));
+            this.PropertyChanged?.Invoke(this, new(propertyName));
         }
 
 
@@ -53,7 +53,7 @@ public abstract class Model : INotifyPropertyChanged
         PropertyChangedEventArgs e)
         {
             var handler = this.PropertyChanged;
-            handler?.Invoke(this, e: e);
+            handler?.Invoke(this, e);
         }
 
 
@@ -71,7 +71,7 @@ public abstract class Model : INotifyPropertyChanged
     private void RaisePropertyChanged(
         [CallerMemberName] string propertyName = null)
         {
-            OnPropertyChanged(new PropertyChangedEventArgs(propertyName: propertyName));
+            OnPropertyChanged(new PropertyChangedEventArgs(propertyName));
         }
 
 
@@ -101,13 +101,13 @@ public abstract class Model : INotifyPropertyChanged
         T value,
         [CallerMemberName] string propertyName = null)
         {
-            if (EqualityComparer<T>.Default.Equals(x: field, y: value))
+            if (EqualityComparer<T>.Default.Equals(field, value))
                 {
                     return false;
                 }
 
             field = value;
-            OnPropertyChanged(propertyName: propertyName);
+            OnPropertyChanged(propertyName);
 
 
             return true;
@@ -135,13 +135,13 @@ public abstract class Model : INotifyPropertyChanged
         T value,
         [CallerMemberName] string propertyName = null)
         {
-            if (Equals(objA: field, objB: value))
+            if (Equals(field, value))
                 {
                     return false;
                 }
 
             field = value;
-            RaisePropertyChanged(propertyName: propertyName);
+            RaisePropertyChanged(propertyName);
 
 
             return true;

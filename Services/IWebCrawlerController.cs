@@ -31,4 +31,11 @@ public interface IWebCrawlerController : INotifyPropertyChanged
     Task StartCrawlingAsync(CancellationToken token);
 
     #endregion
+
+
+
+
+
+
+    Task StartTagSearch(CancellationToken token);
 }

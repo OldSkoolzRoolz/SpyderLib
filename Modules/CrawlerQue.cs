@@ -45,7 +45,7 @@ internal sealed class CrawlerQue : ICrawlerQue
     public void AddItemToQueue(
         QueItem item)
         {
-            _ = _queue.Post(item: item);
+            _ = _queue.Post(item);
         }
 
 

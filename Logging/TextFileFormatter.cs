@@ -57,16 +57,16 @@ internal sealed class TextFileFormatter
             try
                 {
                     var stamp = _formatterOptions.UseUtcTime
-                        ? DateTimeOffset.UtcNow.ToString(format: _formatterOptions.TimestampFormat,
-                            formatProvider: CultureInfo.CurrentCulture)
-                        : DateTimeOffset.Now.ToString(format: _formatterOptions.TimestampFormat,
-                            formatProvider: CultureInfo.CurrentCulture);
+                        ? DateTimeOffset.UtcNow.ToString(_formatterOptions.TimestampFormat,
+                            CultureInfo.CurrentCulture)
+                        : DateTimeOffset.Now.ToString(_formatterOptions.TimestampFormat,
+                            CultureInfo.CurrentCulture);
 
                     var message =
                         logEntry.Formatter(
-                            arg1: logEntry.State, arg2: logEntry.Exception);
+                            logEntry.State, logEntry.Exception);
 
-                    if (string.IsNullOrWhiteSpace(value: message))
+                    if (string.IsNullOrWhiteSpace(message))
                         {
                             return;
                         }
@@ -82,7 +82,7 @@ internal sealed class TextFileFormatter
 
                     // text log files typically are single line entries so multi-line is not an option in this logger
                     // only Writeline method is used.
-                    textWriter.WriteLine(value: formattedlog);
+                    textWriter.WriteLine(formattedlog);
                     textWriter.Flush();
                 }
             catch (SpyderException)

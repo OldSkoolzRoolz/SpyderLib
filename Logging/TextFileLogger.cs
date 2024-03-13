@@ -88,18 +88,18 @@ internal sealed class TextFileLogger : ILogger
         Exception exception,
         Func<TState, Exception, string> formatter)
         {
-            if (!IsEnabled(logLevel: logLevel))
+            if (!IsEnabled(logLevel))
                 {
                     return;
                 }
 
-            ArgumentNullException.ThrowIfNull(argument: formatter);
+            ArgumentNullException.ThrowIfNull(formatter);
             var logName = GetLogFileName();
-            using var tStreamWriter = new StreamWriter(path: logName, true);
+            using var tStreamWriter = new StreamWriter(logName, true);
 
-            var logEntry = new LogEntry<TState>(logLevel: logLevel, category: _name, eventId: eventId, state: state,
-                exception: exception, formatter: formatter);
-            this.Formatter.Write(logEntry: in logEntry, textWriter: tStreamWriter);
+            var logEntry = new LogEntry<TState>(logLevel, _name, eventId, state,
+                exception, formatter);
+            this.Formatter.Write(in logEntry, tStreamWriter);
         }
 
     #endregion
@@ -120,7 +120,7 @@ internal sealed class TextFileLogger : ILogger
                 $"FileLogger-{_name}.log";
 
             //return path and filename
-            name = Path.Combine(path1: this.Config.LogLocation, path2: name);
+            name = Path.Combine(this.Config.LogLocation, name);
 
 
             return name;

@@ -7,8 +7,35 @@ using KC.Apps.SpyderLib.Properties;
 
 namespace KC.Apps.SpyderLib.Control;
 
+
+
+
+
 public class OutputControl : IOutputControl
 {
+
+
+
+
+
+
+    public OutputControl()
+        {
+            AppDomain.CurrentDomain.DomainUnload += OnDomainShutdown;
+        }
+
+
+
+
+
+
+    private void OnDomainShutdown(object sender, EventArgs e) {OnLibraryShutdown(); }
+
+
+
+
+
+
     #region Properteez
 
     /// <summary>
@@ -71,10 +98,10 @@ public class OutputControl : IOutputControl
 
             foreach (var entry in collectionDictionary.Where(entry => !entry.Key.IsEmpty))
                 {
-                    SaveCollectionToFile(col: entry.Key, fileName: entry.Value);
+                    SaveCollectionToFile(entry.Key, entry.Value);
                 }
 
-            Debug.WriteLine(message: "Output written");
+            Console.WriteLine("Output written");
         }
 
     #endregion
@@ -93,13 +120,13 @@ public class OutputControl : IOutputControl
                     return;
                 }
 
-            var path = Path.Combine(path1: Environment.CurrentDirectory, path2: fileName);
+            var path = Path.Combine(Environment.CurrentDirectory, fileName);
 
-            using var fs = new FileStream(path: path, mode: FileMode.Append);
-            using var sw = new StreamWriter(stream: fs);
+            using var fs = new FileStream(path, FileMode.Append);
+            using var sw = new StreamWriter(fs);
             foreach (var item in col)
                 {
-                    sw.WriteLine(value: item.Key);
+                    sw.WriteLine(item.Key);
                 }
 
             sw.Flush();

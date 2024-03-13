@@ -14,8 +14,10 @@ public interface ICacheIndexService
 
     #endregion
 
+int CacheHits { get; }
 
-
+int CacheMisses { get; }
+int CacheItemCount { get; }
 
 
 
