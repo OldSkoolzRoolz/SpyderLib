@@ -1,12 +1,10 @@
 namespace KC.Apps.SpyderLib.Control;
 
-
-
 /// <summary>
 ///     CrawlerFinishedEventArgs
-///     Class is used to pass data to the CrawlerFinished <see langword="event"/>
+///     Class is used to pass data to the CrawlerFinished <see langword="event" />
 /// </summary>
-public class CrawlerFinishedEventArgs 
+public class CrawlerFinishedEventArgs
 {
     #region Properteez
 

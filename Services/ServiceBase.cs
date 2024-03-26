@@ -43,11 +43,9 @@ public abstract class ServiceBase : INotifyPropertyChanged
 
 
 
-    #region Properteez
+    #region Public Methods
 
-    public IHostApplicationLifetime AppLifetime { get; }
-    protected static ILoggerFactory Factory => AppContext.GetData("factory") as ILoggerFactory;
-    public static SpyderOptions Options => (SpyderOptions)AppContext.GetData("options");
+    public event PropertyChangedEventHandler PropertyChanged;
 
     #endregion
 
@@ -56,9 +54,11 @@ public abstract class ServiceBase : INotifyPropertyChanged
 
 
 
-    #region Public Methods
+    #region Properteez
 
-    public event PropertyChangedEventHandler PropertyChanged;
+    public IHostApplicationLifetime AppLifetime { get; }
+    protected static ILoggerFactory Factory => AppContext.GetData("factory") as ILoggerFactory;
+    public static SpyderOptions Options => (SpyderOptions)AppContext.GetData("options");
 
     #endregion
 

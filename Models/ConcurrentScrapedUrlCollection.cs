@@ -12,7 +12,11 @@ namespace KC.Apps.SpyderLib.Models;
 /// <inheritdoc />
 public class ConcurrentScrapedUrlCollection : ConcurrentDictionary<string, byte>
 {
+    #region feeeldzzz
+
     const byte DefaultValue = 0;
+
+    #endregion
 
 
 

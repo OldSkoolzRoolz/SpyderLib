@@ -39,4 +39,7 @@
     <data name="Buffer_Block_Data_Error" xml:space="preserve">
         <value>Error posting work item to datablock.</value>
     </data>
+    <data name="DownloadController_DownloadController_Download_Controller_Initialized_" xml:space="preserve">
+        <value>Download Controller Initialized!</value>
+    </data>
 </root>

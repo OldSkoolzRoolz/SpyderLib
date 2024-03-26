@@ -15,15 +15,19 @@ namespace KC.Apps.SpyderLib.Services;
 
 public abstract class AbstractCacheIndex
 {
-    private readonly IMyClient _client;
-    internal bool _disposed;
-    internal readonly ILogger _logger;
-    internal readonly SpyderMetrics _metrics;
-    internal readonly SpyderOptions _options;
+    #region feeeldzzz
+
     protected static int s_cacheHits;
     protected static int s_cacheMisses;
     private static readonly object s_locker = new();
     private static readonly Mutex s_mutex = new();
+    private readonly IMyClient _client;
+    internal readonly ILogger _logger;
+    internal readonly SpyderMetrics _metrics;
+    internal readonly SpyderOptions _options;
+    internal bool _disposed;
+
+    #endregion
 
 
 
@@ -51,18 +55,6 @@ public abstract class AbstractCacheIndex
 
 
 
-    #region Properteez
-
-    public static ConcurrentDictionary<string, string> IndexCache { get; private set; }
-    public static TaskCompletionSource<bool> StartupComplete { get; } = new();
-
-    #endregion
-
-
-
-
-
-
     #region Public Methods
 
     /// <summary>
@@ -74,6 +66,18 @@ public abstract class AbstractCacheIndex
             using var fileOperations = new FileOperations();
             fileOperations.SaveCacheIndex(IndexCache);
         }
+
+    #endregion
+
+
+
+
+
+
+    #region Properteez
+
+    public static ConcurrentDictionary<string, string> IndexCache { get; private set; }
+    public static TaskCompletionSource<bool> StartupComplete { get; } = new();
 
     #endregion
 
@@ -174,8 +178,11 @@ public abstract class AbstractCacheIndex
             _logger.SpyderTrace($"Cache miss: Loading page {address}");
             var content = await _client.GetPageContentFromWebAsync(address)
                 .ConfigureAwait(false);
-            if (string.IsNullOrEmpty(content)){return "error";}
-            
+            if (string.IsNullOrEmpty(content))
+                {
+                    return "error";
+                }
+
             _ = await SetContentCacheAsync(content, address).ConfigureAwait(false);
             return content;
         }
@@ -189,7 +196,7 @@ public abstract class AbstractCacheIndex
         {
             try
                 {
-            using var fileOperations = new FileOperations();
+                    using var fileOperations = new FileOperations();
                     // load the cache asynchronously to avoid blocking the constructor
                     return fileOperations.LoadCacheIndex();
                 }

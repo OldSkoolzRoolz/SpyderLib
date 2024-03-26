@@ -15,20 +15,10 @@ namespace KC.Apps.SpyderLib.Services;
 
 public interface IBackgroundDownloadQue
 {
-    #region Properteez
-
     BufferBlock<DownloadItem> Block { get; }
     Task Completion { get; }
     int Count { get; }
 
-    #endregion
-
-
-
-
-
-
-    #region Public Methods
 
     Task Complete();
 
@@ -46,37 +36,53 @@ public interface IBackgroundDownloadQue
 
 
     Task<DownloadItem> ReceiveAsync();
-
-    #endregion
 }
 
 
 
 /// <summary>
-///     Download que
+///     Background Download Que for QueItems using a BufferBlock
 /// </summary>
 public class BackgroundDownloadQue : IBackgroundDownloadQue
 {
+    #region feeeldzzz
+
     private readonly Channel<DownloadItem> _queue;
 
+    #endregion
 
 
 
 
 
+
+    /// <summary>
+    ///     Constructor for the Background Download Que.
+    /// </summary>
+    /// <param name="logger">
+    ///     The <see cref="ILogger{TCategoryName}" /> used for logging.
+    /// </param>
     public BackgroundDownloadQue(
         ILogger<BackgroundDownloadQue> logger)
         {
-            BoundedChannelOptions options = new(500)
+            // Setup the Options for the Queue
+            var options = new BoundedChannelOptions(500)
                 {
+                    // Set the FullMode to Wait so that when the Queue is full
+                    // the code will wait until there is space in the queue.
                     FullMode = BoundedChannelFullMode.Wait
                 };
 
+            // Create the Channel with the options
             _queue = Channel.CreateBounded<DownloadItem>(options);
 
+            // Create the BufferBlock for the Queue
             this.Block = new();
+
+            // Log that the Queue has loaded
             logger.SpyderInfoMessage("Background download Que is loaded");
 
+            // Set the Download Queue Load Complete Task to be Complete
             DownloadQueLoadComplete.TrySetResult(true);
         }
 
@@ -154,14 +160,12 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
             Guard.IsNotNull(workItem);
             try
                 {
-
                     await this.Block.SendAsync(workItem).ConfigureAwait(false);
                 }
             catch (Exception e)
                 {
-            Console.WriteLine(Resources1.Buffer_Block_Data_Error);
+                    Console.WriteLine(Resources1.Buffer_Block_Data_Error);
                 }
-
         }
 
 

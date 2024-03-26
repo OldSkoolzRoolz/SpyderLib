@@ -11,8 +11,12 @@ namespace KC.Apps.SpyderLib.Logging;
 
 public sealed class CustomFormatter : ConsoleFormatter, IDisposable
 {
-    private CustomOptions _formatterOptions;
+    #region feeeldzzz
+
     private readonly IDisposable _optionsReloadToken;
+    private CustomOptions _formatterOptions;
+
+    #endregion
 
 
 

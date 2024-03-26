@@ -6,10 +6,14 @@ namespace KC.Apps.SpyderLib.Modules;
 
 public class SpyderMetrics : IDisposable
 {
-    private bool _disposedValue;
+    #region feeeldzzz
+
     private readonly Meter _meter;
     private readonly Counter<int> _urlsCrawled;
     private readonly Histogram<float> _urlTimining;
+    private bool _disposedValue;
+
+    #endregion
 
 
 
@@ -24,6 +28,31 @@ public class SpyderMetrics : IDisposable
             _urlTimining = _meter.CreateHistogram<float>("spyder.cache.crawl-rate", "milliseconds",
                 "Rate at which a single url is being handled.");
         }
+
+
+
+
+
+
+    #region Private Methods
+
+    protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+                {
+                    if (disposing)
+                        {
+                            // toODO: dispose managed state (managed objects)
+                        }
+
+                    _meter.Dispose();
+                    // toODO: free unmanaged resources (unmanaged objects) and override finalizer
+                    // toODO: set large fields to null
+                    _disposedValue = true;
+                }
+        }
+
+    #endregion
 
 
 
@@ -60,31 +89,6 @@ public class SpyderMetrics : IDisposable
                 fromCache
                     ? new("from.cache", null)
                     : new KeyValuePair<string, object>("from.web", null));
-        }
-
-    #endregion
-
-
-
-
-
-
-    #region Private Methods
-
-    protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposedValue)
-                {
-                    if (disposing)
-                        {
-                            // toODO: dispose managed state (managed objects)
-                        }
-
-                    _meter.Dispose();
-                    // toODO: free unmanaged resources (unmanaged objects) and override finalizer
-                    // toODO: set large fields to null
-                    _disposedValue = true;
-                }
         }
 
     #endregion

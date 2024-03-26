@@ -26,10 +26,14 @@ namespace KC.Apps.SpyderLib.Services;
 [SuppressMessage("ReSharper", "LocalizableElement")]
 public class SpyderControlService : ServiceBase, IHostedService
 {
-    private CancellationTokenSource _cancellationTokenSource;
+    #region feeeldzzz
+
+    private static string s_crawlStatus;
     private readonly IDownloadController _downControl;
     private readonly IWebCrawlerController _webCrawlerController;
-    private static string s_crawlStatus;
+    private CancellationTokenSource _cancellationTokenSource;
+
+    #endregion
 
 
 
@@ -95,7 +99,6 @@ public class SpyderControlService : ServiceBase, IHostedService
     [MemberNotNull(nameof(_cancellationTokenSource))]
     public Task StartAsync(CancellationToken cancellationToken)
         {
-            
             Logger = Factory.CreateLogger<SpyderControlService>();
             _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             Logger.SpyderInfoMessage("Spyder Control loaded");
@@ -254,8 +257,6 @@ public class SpyderControlService : ServiceBase, IHostedService
 
     #endregion
 
-    
-
 
 
 
@@ -294,10 +295,10 @@ public class SpyderControlService : ServiceBase, IHostedService
                                 CrawlerOptions.FollowExternalLinks = true;
                                 CrawlerOptions.DownloadTagSource = false;
                                 CrawlerOptions.EnableTagSearch = true;
-                                    //Save our option changes back to the appcontext for other modules.
+                                //Save our option changes back to the appcontext for other modules.
                                 AppContext.SetData("options", CrawlerOptions);
 
-                                await StartTagSearch(_cancellationTokenSource.Token).ConfigureAwait(false);                                
+                                await StartTagSearch(_cancellationTokenSource.Token).ConfigureAwait(false);
 
                                 break;
 
@@ -309,7 +310,7 @@ public class SpyderControlService : ServiceBase, IHostedService
                             case "9":
                                 // Exit scenario
                                 _cancellationTokenSource.Cancel();
-                                AppLifetime.StopApplication();
+                                this.AppLifetime.StopApplication();
 
                                 break;
 
@@ -330,7 +331,6 @@ public class SpyderControlService : ServiceBase, IHostedService
     private async Task StartTagSearch(CancellationToken token)
         {
             await _webCrawlerController.StartTagSearch(token).ConfigureAwait(false);
-            
         }
 
 

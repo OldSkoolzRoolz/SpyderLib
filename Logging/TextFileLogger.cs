@@ -10,7 +10,11 @@ namespace KC.Apps.SpyderLib.Logging;
 /// </summary>
 internal sealed class TextFileLogger : ILogger
 {
+    #region feeeldzzz
+
     private readonly string _name;
+
+    #endregion
 
 
 
@@ -26,6 +30,30 @@ internal sealed class TextFileLogger : ILogger
             this.Formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
             this.Config = config;
         }
+
+
+
+
+
+
+    #region Private Methods
+
+    private string GetLogFileName()
+        {
+            var name = this.Config.UseSingleLogFile
+                ? "FileLogger-UnifiedLog.log"
+                :
+                //create separate Log file for each category 
+                $"FileLogger-{_name}.log";
+
+            //return path and filename
+            name = Path.Combine(this.Config.LogLocation, name);
+
+
+            return name;
+        }
+
+    #endregion
 
 
 
@@ -100,30 +128,6 @@ internal sealed class TextFileLogger : ILogger
             var logEntry = new LogEntry<TState>(logLevel, _name, eventId, state,
                 exception, formatter);
             this.Formatter.Write(in logEntry, tStreamWriter);
-        }
-
-    #endregion
-
-
-
-
-
-
-    #region Private Methods
-
-    private string GetLogFileName()
-        {
-            var name = this.Config.UseSingleLogFile
-                ? "FileLogger-UnifiedLog.log"
-                :
-                //create separate Log file for each category 
-                $"FileLogger-{_name}.log";
-
-            //return path and filename
-            name = Path.Combine(this.Config.LogLocation, name);
-
-
-            return name;
         }
 
     #endregion

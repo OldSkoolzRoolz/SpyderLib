@@ -11,7 +11,11 @@ namespace KC.Apps.SpyderLib.Logging;
 
 internal sealed class TextFileFormatter
 {
+    #region feeeldzzz
+
     private readonly TextFileLoggerConfiguration _formatterOptions;
+
+    #endregion
 
 
 

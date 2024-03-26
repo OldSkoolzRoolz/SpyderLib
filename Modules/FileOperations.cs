@@ -15,12 +15,16 @@ namespace KC.Apps.SpyderLib.Modules;
 
 public class FileOperations : IDisposable
 {
-    private bool _disposed;
-    private readonly object _fileLock = new();
-    private readonly SpyderOptions _options;
+    #region feeeldzzz
+
     private const int DELAY_ON_RETRY = 1000;
     private const string FILENAME = "Spyder_Cache_Index.json";
     private const int MAX_RETRIES = 3;
+    private readonly object _fileLock = new();
+    private readonly SpyderOptions _options;
+    private bool _disposed;
+
+    #endregion
 
 
 

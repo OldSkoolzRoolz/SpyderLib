@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
 using KC.Apps.SpyderLib.Control;
-using KC.Apps.SpyderLib.Interfaces;
 using KC.Apps.SpyderLib.Services;
 
 
@@ -22,6 +21,7 @@ public class SpyderOutput //: ISpyderOutput
     public int CapturedSeeds => OutputControl.Instance.CapturedSeedLinks.Count;
     public int CrawledUrls => WebCrawlerController.CrawledUrlCount;
     public int FailedUrls => OutputControl.Instance.FailedCrawlerUrls.Count;
+
     //public int TotalCacheItems => CacheIndexService.CacheItemCount;
     public int TotalCapturedUrls => OutputControl.Instance.UrlsScrapedThisSession.Count;
     public int TotalFilesDownloaded => QueueProcessingService.DownloadAttempts;

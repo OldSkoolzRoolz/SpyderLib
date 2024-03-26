@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Properties;
 
@@ -7,18 +5,8 @@ using KC.Apps.SpyderLib.Properties;
 
 namespace KC.Apps.SpyderLib.Control;
 
-
-
-
-
 public class OutputControl : IOutputControl
 {
-
-
-
-
-
-
     public OutputControl()
         {
             AppDomain.CurrentDomain.DomainUnload += OnDomainShutdown;
@@ -29,7 +17,67 @@ public class OutputControl : IOutputControl
 
 
 
-    private void OnDomainShutdown(object sender, EventArgs e) {OnLibraryShutdown(); }
+    #region Public Methods
+
+    public void OnLibraryShutdown()
+        {
+            var collectionDictionary = new Dictionary<ConcurrentScrapedUrlCollection, string>
+                {
+                    { this.CapturedVideoLinks, "TestingVideoLinks.txt" },
+                    { this.UrlsScrapedThisSession, "AllUrlsCaptured.txt" },
+                    { this.FailedCrawlerUrls, "FailedCrawlerUrls.txt" },
+                    { this.CapturedExternalLinks, "ExternalLinksTesting.txt" },
+                    { this.CapturedSeedLinks, "CapturedSeedUrlsFilename.txt" },
+                    { this.CapturedUrlWithSearchResults, "PositiveTagSearchResults.txt" }
+                };
+
+            foreach (var entry in collectionDictionary.Where(entry => !entry.Key.IsEmpty))
+                {
+                    SaveCollectionToFile(entry.Key, entry.Value);
+                }
+
+            Console.WriteLine("Output written");
+        }
+
+    #endregion
+
+
+
+
+
+
+    private void OnDomainShutdown(object sender, EventArgs e)
+        {
+            OnLibraryShutdown();
+        }
+
+
+
+
+
+
+    #region Private Methods
+
+    private static void SaveCollectionToFile(ConcurrentScrapedUrlCollection col, string fileName)
+        {
+            if (col is { IsEmpty: true })
+                {
+                    return;
+                }
+
+            var path = Path.Combine(Environment.CurrentDirectory, fileName);
+
+            using var fs = new FileStream(path, FileMode.Append);
+            using var sw = new StreamWriter(fs);
+            foreach (var item in col)
+                {
+                    sw.WriteLine(item.Key);
+                }
+
+            sw.Flush();
+        }
+
+    #endregion
 
 
 
@@ -76,63 +124,6 @@ public class OutputControl : IOutputControl
     public ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; } = new();
 
     #endregion
-
-
-
-
-
-
-    #region Public Methods
-
-    public void OnLibraryShutdown()
-        {
-            var collectionDictionary = new Dictionary<ConcurrentScrapedUrlCollection, string>
-                {
-                    { this.CapturedVideoLinks, "TestingVideoLinks.txt" },
-                    { this.UrlsScrapedThisSession, "AllUrlsCaptured.txt" },
-                    { this.FailedCrawlerUrls, "FailedCrawlerUrls.txt" },
-                    { this.CapturedExternalLinks, "ExternalLinksTesting.txt" },
-                    { this.CapturedSeedLinks, "CapturedSeedUrlsFilename.txt" },
-                    { this.CapturedUrlWithSearchResults, "PositiveTagSearchResults.txt" }
-                };
-
-            foreach (var entry in collectionDictionary.Where(entry => !entry.Key.IsEmpty))
-                {
-                    SaveCollectionToFile(entry.Key, entry.Value);
-                }
-
-            Console.WriteLine("Output written");
-        }
-
-    #endregion
-
-
-
-
-
-
-    #region Private Methods
-
-    private static void SaveCollectionToFile(ConcurrentScrapedUrlCollection col, string fileName)
-        {
-            if (col is { IsEmpty: true })
-                {
-                    return;
-                }
-
-            var path = Path.Combine(Environment.CurrentDirectory, fileName);
-
-            using var fs = new FileStream(path, FileMode.Append);
-            using var sw = new StreamWriter(fs);
-            foreach (var item in col)
-                {
-                    sw.WriteLine(item.Key);
-                }
-
-            sw.Flush();
-        }
-
-    #endregion
 }
 
 
@@ -142,6 +133,20 @@ public class OutputControl : IOutputControl
 /// </summary>
 public interface IOutputControl
 {
+    #region Public Methods
+
+    /// <summary>
+    ///     Method to be called when the library is shut down
+    /// </summary>
+    void OnLibraryShutdown();
+
+    #endregion
+
+
+
+
+
+
     #region Properteez
 
     /// <summary>
@@ -176,20 +181,6 @@ public interface IOutputControl
     ///     This collection is used for exclusion purposes.
     /// </summary>
     ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; }
-
-    #endregion
-
-
-
-
-
-
-    #region Public Methods
-
-    /// <summary>
-    ///     Method to be called when the library is shut down
-    /// </summary>
-    void OnLibraryShutdown();
 
     #endregion
 }

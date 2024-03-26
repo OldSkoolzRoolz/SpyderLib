@@ -98,7 +98,6 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
             return SetContentCacheAsync(content, address);
         }
 
-
     #endregion
 
 

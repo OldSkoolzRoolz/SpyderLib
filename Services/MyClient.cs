@@ -1,5 +1,3 @@
-using CommunityToolkit.Diagnostics;
-
 using KC.Apps.SpyderLib.Modules;
 
 
@@ -25,8 +23,11 @@ public interface IMyClient
 /// </summary>
 public sealed class MyClient : IMyClient
 {
+    #region feeeldzzz
 
-    private HttpClient _client;
+    private readonly HttpClient _client;
+
+    #endregion
 
 
 
@@ -89,17 +90,13 @@ public sealed class MyClient : IMyClient
 
     private async Task<string> GetPageContentFromWebAsync(Uri address)
         {
-
             try
                 {
                     var results = await _client.GetStringAsync(address).ConfigureAwait(false);
                     return results;
                 }
-            catch (HttpRequestException)
-                {
-                    
-                }
-            catch(TaskCanceledException){}
+            catch (HttpRequestException) { }
+            catch (TaskCanceledException) { }
             catch (SpyderException e)
                 {
                     Console.WriteLine(e);

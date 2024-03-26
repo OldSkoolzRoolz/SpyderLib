@@ -6,8 +6,12 @@ namespace KC.Apps.SpyderLib.Logging;
 
 public static class TextWriterExtensions
 {
+    #region feeeldzzz
+
     private const string DEFAULT_BACKGROUND_COLOR = "\x1B[49m";
     private const string DEFAULT_FOREGROUND_COLOR = "\x1B[39m\x1B[22m";
+
+    #endregion
 
 
 

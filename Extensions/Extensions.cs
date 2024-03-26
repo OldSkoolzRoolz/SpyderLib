@@ -19,7 +19,11 @@ namespace KC.Apps.SpyderLib.Extensions;
 
 public static class SpyderLibExtensions
 {
+    #region feeeldzzz
+
     private static SpyderOptions s_spyderOptions;
+
+    #endregion
 
 
 

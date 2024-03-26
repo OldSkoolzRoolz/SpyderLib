@@ -1,14 +1,12 @@
-// ReSharper disable UnusedAutoPropertyAccessor.Global
+
 
 
 
 
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Reflection.Metadata;
 using System.Windows.Input;
 
 using HtmlAgilityPack;
@@ -16,6 +14,7 @@ using HtmlAgilityPack;
 using KC.Apps.SpyderLib.Control;
 using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Modules;
+using KC.Apps.SpyderLib.Properties;
 
 using Microsoft.Extensions.Logging;
 
@@ -28,28 +27,37 @@ namespace KC.Apps.SpyderLib.Services;
 
 
 
-[SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable")]
-[SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters")]
+
 public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 {
+
+
+
+
+    #region feeeldzzz
+
     private readonly ICacheIndexService _cache;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private ICommand _crawlCommand;
-    private Stopwatch _crawlTimer;
+    private readonly List<Task> _crawlerTasks = new();
+
+    private readonly SemaphoreSlim _crawlTasksGate = new(SpyderControlService.CrawlerOptions.ConcurrentCrawlingTasks,
+        SpyderControlService.CrawlerOptions.ConcurrentCrawlingTasks);
+
     private readonly ILogger<WebCrawlerController> _logger;
-    private ICommand _pauseCommand;
-    private HtmlWeb hapWeb;
-    private ICommand _stopCommand;
-    private List<string> _urlsToCrawl = new();
     private readonly ConcurrentDictionary<string, byte> _visitedUrls = new();
-    private List<Task> _crawlerTasks = new();
+    private ICommand _crawlCommand;
+    private int _crawlMethod;
+    private Stopwatch _crawlTimer;
     private bool _isCrawling;
     private bool _isPaused;
     private bool _isStopped;
-    private bool _isCrawlerTaskFinished;
-    private SemaphoreSlim _crawlTasksGate = new(SpyderControlService.CrawlerOptions.ConcurrentCrawlingTasks, SpyderControlService.CrawlerOptions.ConcurrentCrawlingTasks);
+    private ICommand _pauseCommand;
     private string _startingHost;
-    private int _crawlMethod;
+    private ICommand _stopCommand;
+    private List<string> _urlsToCrawl = new();
+    private HtmlWeb _hapWeb;
+
+    #endregion
 
 
 
@@ -73,14 +81,15 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 
         //Listen for host shutdown message to cleanup
         SpyderControlService.LibraryHostShuttingDown += OnStopping;
-        CrawlerTasksFinished += OnCrawlerTasksFinished;
+        this.CrawlerTasksFinished += OnCrawlerTasksFinished;
 
-        hapWeb = new HtmlWeb()
+        _hapWeb = new()
         {
             AutoDetectEncoding = true,
-            UserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            UserAgent =
+                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             MaxAutoRedirects = 10,
-            UseCookies = true,
+            UseCookies = true
         };
     }
 
@@ -93,7 +102,7 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
     {
         _logger.SpyderInfoMessage($"Crawler Finished. Tags Found {e.FoundTagsCount}");
         _logger.SpyderInfoMessage($"Crawler Finished. Urls Crawled {e.UrlsCrawled}");
-        IsCrawling = false;
+        this.IsCrawling = false;
         _cancellationTokenSource.Dispose();
     }
 
@@ -176,10 +185,12 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
     /// <returns>A Task that represents the asynchronous operation.</returns>
     public async Task StartCrawlingAsync(CancellationToken token)
     {
+        _startingHost = new Uri(Options.StartingUrl).Host;
         _isCrawling = true;
         _crawlTimer = new();
         _crawlTimer.Start();
         token.ThrowIfCancellationRequested();
+
         try
         {
             Console.WriteLine("Starting crawler");
@@ -216,9 +227,12 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 
     public async Task StartTagSearch(CancellationToken token)
     {
-        IsCrawling = true;
+        this.IsCrawling = true;
         var visitedHosts = new HashSet<string>();
-        if (token.IsCancellationRequested) return;
+        if (token.IsCancellationRequested)
+        {
+            return;
+        }
 
         _visitedUrls.TryAdd(Options.StartingUrl, 0);
 
@@ -235,8 +249,8 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 
                 await ProcessUrlAsync(url, token).ConfigureAwait(false);
             }
-
         }
+
         _logger.SpyderTrace("_urlsToCrawl var is empty, Tag search is ending");
 
 
@@ -244,9 +258,10 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         OutputControl.Instance.OnLibraryShutdown();
         _logger.SpyderTrace("Saved Tag Search results to file");
 
-        var e = new CrawlerFinishedEventArgs { FoundTagsCount = OutputControl.Instance.CapturedUrlWithSearchResults.Count };
+        var e = new CrawlerFinishedEventArgs
+        { FoundTagsCount = OutputControl.Instance.CapturedUrlWithSearchResults.Count };
 
-        CrawlerTasksFinished?.Invoke(null, e);
+        this.CrawlerTasksFinished?.Invoke(null, e);
         _logger.SpyderTrace("Crawler Finisted event fired");
         PrintStats();
     }
@@ -283,14 +298,14 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 
 
 
-    private void ParseDocumentLinks(string docSource)
+    private static void ParseDocumentLinks(string docSource)
     {
         var doc = new HtmlDocument();
         doc.LoadHtml(docSource);
 
         var links = doc.DocumentNode.SelectNodes("//a[@href]")
             .Select(node => node.Attributes["href"].Value)
-            .Select(href => new Uri(new Uri("http://example.com"), href).AbsoluteUri);
+            .Select(href => new Uri(new("http://example.com"), href).AbsoluteUri);
     }
 
 
@@ -299,7 +314,6 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 
 
     /// <summary>
-    /// 
     /// </summary>
     /// <param name="cleanUrl"></param>
     /// <param name="currentDepth"></param>
@@ -311,11 +325,10 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         _logger.SpyderTrace($"Crawling URL: {cleanUrl}");
 
         //Throttling semaphores
-        // await _crawlTasksGate.WaitAsync().ConfigureAwait(false);
+        await _crawlTasksGate.WaitAsync().ConfigureAwait(false);
 
         try
         {
-
             await HandleCrawlUrlAsync(cleanUrl, currentDepth).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
@@ -332,15 +345,16 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         {
             _crawlTasksGate.Release();
         }
-        await Task.WhenAll(_crawlerTasks.ToArray()).ConfigureAwait(false);
 
+        await Task.WhenAll(_crawlerTasks.ToArray()).ConfigureAwait(false);
     }
 
 
 
 
 
-private  SemaphoreSlim _semaphore = new SemaphoreSlim(Options.ConcurrentCrawlingTasksLimit);
+
+
 
 
 
@@ -362,17 +376,18 @@ private  SemaphoreSlim _semaphore = new SemaphoreSlim(Options.ConcurrentCrawling
     private async Task HandleCrawlUrlAsync([NotNull] string url, int currentDepth)
     {
         // _logger.SpyderDebug($"Crawling URL: {url} at depth: {currentDepth}");
-    // Create a semaphore to limit the number of concurrent tasks
-  
+        // Create a semaphore to limit the number of concurrent tasks
+
 
         // Check if the URL has already been visited and that the depth limit has not been reached
         if (currentDepth >= Options.LinkDepthLimit || _visitedUrls.ContainsKey(url))
         {
             return;
         }
+
         // Add the URL to the list of visited URLs
-       _visitedUrls.TryAdd(url, 0);
-       
+        _visitedUrls.TryAdd(url, 0);
+
 
 
         //Using HAP attempt to get the source html on the url given
@@ -386,23 +401,23 @@ private  SemaphoreSlim _semaphore = new SemaphoreSlim(Options.ConcurrentCrawling
         // Create a task for each hyperlink found
         if (newPageLinks != null)
         {
-          
-      var tasks = newPageLinks.Select(async url =>
-{
-    await _semaphore.WaitAsync();
-    try
-    {
-         await CrawlAsync(url, currentDepth + 1);
-    }
-    finally
-    {
-        _semaphore.Release();
-    }
-});
-_crawlerTasks.AddRange(tasks);
-        }
+            var filteredLinks = VerifySeparateFilterUrls(newPageLinks, url);
 
-    
+            var tasks = filteredLinks.Select(async url =>
+                {
+                    try
+                    {
+                        await CrawlAsync(url, currentDepth + 1).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.AndContinue(ex);
+                    }
+                });
+
+
+            _crawlerTasks.AddRange(tasks);
+        }
     }
 
 
@@ -417,6 +432,10 @@ _crawlerTasks.AddRange(tasks);
     }
 
 
+
+
+
+
     private void OnDocLoad(HtmlDocument document)
     {
         var links = document.DocumentNode.Descendants("a");
@@ -426,7 +445,7 @@ _crawlerTasks.AddRange(tasks);
             var href = link.GetAttributeValue("href", "");
             if (!string.IsNullOrWhiteSpace(href))
             {
-                var absoluteUrl = new Uri(new Uri(link.GetAttributeValue("href", "")), href).AbsoluteUri;
+                var absoluteUrl = new Uri(new(link.GetAttributeValue("href", "")), href).AbsoluteUri;
                 var parsedUrl = new Uri(absoluteUrl);
                 if (parsedUrl.Host == _startingHost)
                 {
@@ -435,6 +454,9 @@ _crawlerTasks.AddRange(tasks);
             }
         }
     }
+
+
+
 
 
 
@@ -521,16 +543,18 @@ _crawlerTasks.AddRange(tasks);
     /// <remarks>
     ///     This method firstly gets links from the page content for the given URL using _cache. Then, it logs the count of
     ///     URLs to crawl.
-    ///    
     /// </remarks>
     private async Task ProcessUrlAsync([NotNull] string url, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
         var pageSource = await _cache.GetAndSetContentFromCacheAsync(url).ConfigureAwait(false);
 
-        if (pageSource.StartsWith("error", StringComparison.Ordinal)) return;
+        if (pageSource.StartsWith("error", StringComparison.Ordinal))
+        {
+            return;
+        }
 
-        if ((Options.EnableTagSearch && Options.HtmlTagToSearchFor is not null))
+        if (Options.EnableTagSearch && Options.HtmlTagToSearchFor is not null)
         {
             if (HtmlParser.SearchPageForTagName(pageSource, "video"))
             {
@@ -538,6 +562,7 @@ _crawlerTasks.AddRange(tasks);
                 OutputControl.Instance!.CapturedUrlWithSearchResults?.Add(url);
             }
         }
+
         HtmlDocument doc = new();
         doc.LoadHtml(pageSource);
         // Scrape the page for links add to var _urlsToCrawl
@@ -545,7 +570,7 @@ _crawlerTasks.AddRange(tasks);
 
 
         _urlsToCrawl = _urlsToCrawl.Concat(newurls.BaseUrls)
-              .Concat(newurls.OtherUrls).ToList();
+            .Concat(newurls.OtherUrls).ToList();
 
 
         foreach (var b in newurls.BaseUrls)
@@ -659,18 +684,27 @@ _crawlerTasks.AddRange(tasks);
 
 
 
-    private (List<string> BaseUrls, List<string> OtherUrls) VerifyAndSeparateUrls(
-        IEnumerable<string> urls,
-        string optionsStartingUrl)
+    private List<string> VerifySeparateFilterUrls(IEnumerable<string> urls, string optionsStartingUrl)
     {
         _ = Uri.TryCreate(optionsStartingUrl, UriKind.Absolute, out var baseUri);
+
         var sanitizedUrls = HtmlParser.SanitizeUrls(urls);
         var (baseUrls, otherUrls) = SeparateUrls(sanitizedUrls, baseUri);
 
+        var newurls = new List<string>();
+        if (SpyderControlService.CrawlerOptions.FollowExternalLinks)
+        {
+            newurls = baseUrls
+                .Concat(otherUrls)
+                .Distinct()
+                .ToList();
+        }
+        {
+            newurls = baseUrls;
+        }
         AddUrlsToOutputModel(baseUrls, otherUrls);
 
-
-        return (baseUrls, otherUrls);
+        return newurls;
     }
 
     #endregion

@@ -10,11 +10,14 @@ using Microsoft.Extensions.Logging.Console;
 
 namespace KC.Apps.SpyderLib.Logging;
 
-
 internal class LogFormatter : ConsoleFormatter
 {
+    #region feeeldzzz
+
     private readonly string _dateFormat;
     private readonly string _timeFormat;
+
+    #endregion
 
 
 

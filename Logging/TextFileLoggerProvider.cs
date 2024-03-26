@@ -17,12 +17,17 @@ namespace KC.Apps.SpyderLib.Logging;
 [ProviderAlias("TextFileLogger")]
 public class TextFileLoggerProvider : ILoggerProvider
 {
+    #region feeeldzzz
+
     private readonly TextFileLoggerConfiguration _currentConfig;
-    private bool _disposed;
     private readonly TextFileFormatter _formatter;
 
     private readonly ConcurrentDictionary<string, TextFileLogger> _loggers =
         new(StringComparer.OrdinalIgnoreCase);
+
+    private bool _disposed;
+
+    #endregion
 
 
 

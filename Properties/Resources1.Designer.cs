@@ -74,5 +74,11 @@ namespace KC.Apps.SpyderLib.Properties {
                 return ResourceManager.GetString("Buffer_Block_Data_Error", resourceCulture);
             }
         }
+        
+        internal static string DownloadController_DownloadController_Download_Controller_Initialized_ {
+            get {
+                return ResourceManager.GetString("DownloadController_DownloadController_Download_Controller_Initialized_", resourceCulture);
+            }
+        }
     }
 }

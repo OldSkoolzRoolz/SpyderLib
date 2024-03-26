@@ -9,10 +9,13 @@ namespace KC.Apps.SpyderLib.Modules;
 /// </summary>
 internal sealed class CrawlerQue : ICrawlerQue
 {
-    private readonly BufferBlock<QueItem> _queue = new();
+    #region feeeldzzz
 
     // Create an instance of the class with the Lazy<T> type for thread safety
     private static readonly Lazy<CrawlerQue> s_lazy = new(() => new());
+    private readonly BufferBlock<QueItem> _queue = new();
+
+    #endregion
 
 
 

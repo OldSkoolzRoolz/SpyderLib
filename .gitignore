@@ -406,3 +406,4 @@ SpyderLib.csproj.DotSettings
 MyTheme.jsonc
 MyTheme-color-theme.jsonc
 /.exclude/
+Services/.docstringexamples.cs

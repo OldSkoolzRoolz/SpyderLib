@@ -7,6 +7,13 @@ namespace KC.Apps.SpyderLib.Services;
 
 public interface IWebCrawlerController : INotifyPropertyChanged
 {
+    Task StartTagSearch(CancellationToken token);
+
+
+
+
+
+
     #region Properteez
 
     // Members for use in UI
@@ -31,11 +38,4 @@ public interface IWebCrawlerController : INotifyPropertyChanged
     Task StartCrawlingAsync(CancellationToken token);
 
     #endregion
-
-
-
-
-
-
-    Task StartTagSearch(CancellationToken token);
 }
