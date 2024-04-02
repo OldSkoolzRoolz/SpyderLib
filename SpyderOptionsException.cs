@@ -1,4 +1,4 @@
-namespace KC.Apps.SpyderLib.Modules;
+namespace KC.Apps.SpyderLib;
 
 public class SpyderOptionsException : Exception
 {

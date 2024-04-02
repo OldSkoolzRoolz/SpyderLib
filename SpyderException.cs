@@ -2,7 +2,7 @@ using System.Runtime.Serialization;
 
 
 
-namespace KC.Apps.SpyderLib.Modules;
+namespace KC.Apps.SpyderLib;
 
 [Serializable]
 public class SpyderException : Exception
