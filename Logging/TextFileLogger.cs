@@ -25,11 +25,11 @@ internal sealed class TextFileLogger : ILogger
         string name,
         TextFileFormatter formatter,
         TextFileLoggerConfiguration config)
-        {
-            _name = name;
-            this.Formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
-            this.Config = config;
-        }
+    {
+        _name = name;
+        this.Formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
+        this.Config = config;
+    }
 
 
 
@@ -39,19 +39,19 @@ internal sealed class TextFileLogger : ILogger
     #region Private Methods
 
     private string GetLogFileName()
-        {
-            var name = this.Config.UseSingleLogFile
-                ? "FileLogger-UnifiedLog.log"
-                :
-                //create separate Log file for each category 
-                $"FileLogger-{_name}.log";
+    {
+        var name = this.Config.UseSingleLogFile
+            ? "FileLogger-UnifiedLog.log"
+            :
+            //create separate Log file for each category 
+            $"FileLogger-{_name}.log";
 
-            //return path and filename
-            name = Path.Combine(this.Config.LogLocation, name);
+        //return path and filename
+        name = Path.Combine(this.Config.LogLocation, name);
 
 
-            return name;
-        }
+        return name;
+    }
 
     #endregion
 
@@ -80,9 +80,9 @@ internal sealed class TextFileLogger : ILogger
     /// <returns>An <see cref="System.IDisposable" /> that ends the logical operation scope on dispose.</returns>
     public IDisposable BeginScope<TState>(
         TState state) where TState : notnull
-        {
-            return default;
-        }
+    {
+        return default;
+    }
 
 
 
@@ -91,9 +91,9 @@ internal sealed class TextFileLogger : ILogger
 
     public bool IsEnabled(
         LogLevel logLevel)
-        {
-            return logLevel != LogLevel.None;
-        }
+    {
+        return logLevel != LogLevel.None;
+    }
 
 
 
@@ -115,20 +115,20 @@ internal sealed class TextFileLogger : ILogger
         TState state,
         Exception exception,
         Func<TState, Exception, string> formatter)
+    {
+        if (!IsEnabled(logLevel))
         {
-            if (!IsEnabled(logLevel))
-                {
-                    return;
-                }
-
-            ArgumentNullException.ThrowIfNull(formatter);
-            var logName = GetLogFileName();
-            using var tStreamWriter = new StreamWriter(logName, true);
-
-            var logEntry = new LogEntry<TState>(logLevel, _name, eventId, state,
-                exception, formatter);
-            this.Formatter.Write(in logEntry, tStreamWriter);
+            return;
         }
+
+        ArgumentNullException.ThrowIfNull(formatter);
+        var logName = GetLogFileName();
+        using var tStreamWriter = new StreamWriter(logName, true);
+
+        var logEntry = new LogEntry<TState>(logLevel, _name, eventId, state,
+            exception, formatter);
+        this.Formatter.Write(in logEntry, tStreamWriter);
+    }
 
     #endregion
 }

@@ -21,13 +21,13 @@ public class SpyderMetrics : IDisposable
 
 
     public SpyderMetrics(IMeterFactory meterFactory)
-        {
-            _meter = meterFactory.Create("Spyder.Cache");
-            _urlsCrawled = _meter.CreateCounter<int>("spyder.cache.crawl-count", "{url}",
-                "accumulative count of urls this session");
-            _urlTimining = _meter.CreateHistogram<float>("spyder.cache.crawl-rate", "milliseconds",
-                "Rate at which a single url is being handled.");
-        }
+    {
+        _meter = meterFactory.Create("Spyder.Cache");
+        _urlsCrawled = _meter.CreateCounter<int>("spyder.cache.crawl-count", "{url}",
+            "accumulative count of urls this session");
+        _urlTimining = _meter.CreateHistogram<float>("spyder.cache.crawl-rate", "milliseconds",
+            "Rate at which a single url is being handled.");
+    }
 
 
 
@@ -37,20 +37,20 @@ public class SpyderMetrics : IDisposable
     #region Private Methods
 
     protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposedValue)
         {
-            if (!_disposedValue)
-                {
-                    if (disposing)
-                        {
-                            // toODO: dispose managed state (managed objects)
-                        }
+            if (disposing)
+            {
+                // toODO: dispose managed state (managed objects)
+            }
 
-                    _meter.Dispose();
-                    // toODO: free unmanaged resources (unmanaged objects) and override finalizer
-                    // toODO: set large fields to null
-                    _disposedValue = true;
-                }
+            _meter.Dispose();
+            // toODO: free unmanaged resources (unmanaged objects) and override finalizer
+            // toODO: set large fields to null
+            _disposedValue = true;
         }
+    }
 
     #endregion
 
@@ -62,9 +62,9 @@ public class SpyderMetrics : IDisposable
     #region Public Methods
 
     public void CrawlElapsedTime(float timing)
-        {
-            _urlTimining.Record(timing);
-        }
+    {
+        _urlTimining.Record(timing);
+    }
 
 
 
@@ -72,11 +72,11 @@ public class SpyderMetrics : IDisposable
 
 
     public void Dispose()
-        {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 
 
 
@@ -84,12 +84,12 @@ public class SpyderMetrics : IDisposable
 
 
     public void UrlCrawled(int qty, bool fromCache)
-        {
-            _urlsCrawled.Add(qty,
-                fromCache
-                    ? new("from.cache", null)
-                    : new KeyValuePair<string, object>("from.web", null));
-        }
+    {
+        _urlsCrawled.Add(qty,
+            fromCache
+                ? new("from.cache", null)
+                : new KeyValuePair<string, object>("from.web", null));
+    }
 
     #endregion
 }

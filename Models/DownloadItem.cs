@@ -10,14 +10,14 @@ public class DownloadItem
         string savePath,
         long actualBytes = 0,
         long expectedBytes = 0)
-        {
-            ArgumentNullException.ThrowIfNull(link);
+    {
+        ArgumentNullException.ThrowIfNull(link);
 
-            this.SavePath = savePath ?? throw new ArgumentNullException(nameof(savePath));
-            this.ActualBytes = actualBytes;
-            this.ExpectedBytes = expectedBytes;
-            this.Link = link;
-        }
+        this.SavePath = savePath ?? throw new ArgumentNullException(nameof(savePath));
+        this.ActualBytes = actualBytes;
+        this.ExpectedBytes = expectedBytes;
+        this.Link = link;
+    }
 
 
 

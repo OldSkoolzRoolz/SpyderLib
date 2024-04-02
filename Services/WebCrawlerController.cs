@@ -14,17 +14,12 @@ using HtmlAgilityPack;
 using KC.Apps.SpyderLib.Control;
 using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Modules;
-using KC.Apps.SpyderLib.Properties;
 
 using Microsoft.Extensions.Logging;
 
 
 
-// ReSharper disable LocalizableElement
 namespace KC.Apps.SpyderLib.Services;
-
-//false positive for disposable token source.
-
 
 
 
@@ -49,8 +44,6 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
     private int _crawlMethod;
     private Stopwatch _crawlTimer;
     private bool _isCrawling;
-    private bool _isPaused;
-    private bool _isStopped;
     private ICommand _pauseCommand;
     private string _startingHost;
     private ICommand _stopCommand;
@@ -104,6 +97,7 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         _logger.SpyderInfoMessage($"Crawler Finished. Urls Crawled {e.UrlsCrawled}");
         this.IsCrawling = false;
         _cancellationTokenSource.Dispose();
+        PrintStats();
     }
 
 
@@ -194,30 +188,31 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         try
         {
             Console.WriteLine("Starting crawler");
+
             await CrawlAsync(Options.StartingUrl, 1).ConfigureAwait(false);
 
             // Wait for all the crawlers to finish
             await Task.WhenAll(_crawlerTasks.ToArray()).ConfigureAwait(false);
 
 
-
+        }
+        catch (SpyderException e)
+        {
+            _logger.SpyderWebException(e.Message);
+        }
+        catch (Exception ex)
+        {
+            Log.AndContinue(ex, "Crawler aborted");
+        }
+        finally
+        {
             _crawlTimer.Stop();
             Console.WriteLine($"Elapsed Crawl time {_crawlTimer.ElapsedMilliseconds:000.00}");
 
             // Fire off the completion event for anyone who is listening
             this.CrawlerTasksFinished?.Invoke(this, new());
         }
-        catch (SpyderException e)
-        {
-            _logger.SpyderWebException(e.Message);
-            _crawlTimer.Stop();
-        }
-        finally
-        {
-            _isCrawling = false;
-            _cancellationTokenSource.Dispose();
-            PrintStats();
-        }
+
     }
 
 
@@ -331,22 +326,22 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         {
             await HandleCrawlUrlAsync(cleanUrl, currentDepth).ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException oce)
         {
             _logger.SpyderInfoMessage(
                 $"Crawling task forURL: {cleanUrl} was cancelled.");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            _logger.SpyderInfoMessage(
-                $"An unhandled error occurred when crawling URL: {cleanUrl}. Spyder will now exit.");
+            //_logger.SpyderInfoMessage($"An unhandled error occurred when crawling URL: {cleanUrl}. Spyder will now exit.");
+            Console.WriteLine("Unhandled crawler error occurred.. 340 ex.Message *********");
         }
         finally
         {
             _crawlTasksGate.Release();
         }
 
-        await Task.WhenAll(_crawlerTasks.ToArray()).ConfigureAwait(false);
+
     }
 
 
@@ -375,8 +370,6 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
     /// <returns>A `Task` that represents the asynchronous operation.</returns>
     private async Task HandleCrawlUrlAsync([NotNull] string url, int currentDepth)
     {
-        // _logger.SpyderDebug($"Crawling URL: {url} at depth: {currentDepth}");
-        // Create a semaphore to limit the number of concurrent tasks
 
 
         // Check if the URL has already been visited and that the depth limit has not been reached
@@ -401,7 +394,7 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         // Create a task for each hyperlink found
         if (newPageLinks != null)
         {
-            var filteredLinks = VerifySeparateFilterUrls(newPageLinks, url);
+            var filteredLinks = SeparateAndFilterUrls(newPageLinks, url);
 
             var tasks = filteredLinks.Select(async url =>
                 {
@@ -649,7 +642,7 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 
         while (_urlsToCrawl.Count > 0 && !token.IsCancellationRequested)
         {
-            // ReSharper disable once InvertIf
+
             var url = _urlsToCrawl.First();
 
             var depth = 0;
@@ -670,7 +663,7 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
             }
             catch (SpyderException e)
             {
-                _logger.SpyderError(e.Message);
+                Log.AndContinue(e, "Error adding url to visitedUrls");
             }
         }
 
@@ -683,29 +676,64 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 
 
 
-
-    private List<string> VerifySeparateFilterUrls(IEnumerable<string> urls, string optionsStartingUrl)
+    /// <summary>
+    /// Method ensures urls are structured properly, seperates external and internal links
+    /// and also filters out dupes and checks urls agains filter settings
+    /// </summary>
+    /// <param name="urls"></param>
+    /// <param name="optionsStartingUrl"></param>
+    /// <returns> A List of urls as strings </returns>
+    private List<string> SeparateAndFilterUrls(IEnumerable<string> urls, string optionsStartingUrl)
     {
         _ = Uri.TryCreate(optionsStartingUrl, UriKind.Absolute, out var baseUri);
 
+        //Checks filter settings in Spyder options and remove any hits
         var sanitizedUrls = HtmlParser.SanitizeUrls(urls);
+
+        // Seperate Internal and external links
         var (baseUrls, otherUrls) = SeparateUrls(sanitizedUrls, baseUri);
 
-        var newurls = new List<string>();
-        if (SpyderControlService.CrawlerOptions.FollowExternalLinks)
-        {
-            newurls = baseUrls
-                .Concat(otherUrls)
-                .Distinct()
-                .ToList();
-        }
-        {
-            newurls = baseUrls;
-        }
+        // If enabled in settings adds urls to output
         AddUrlsToOutputModel(baseUrls, otherUrls);
 
-        return newurls;
+
+
+        try
+        {
+            var combo = baseUrls.Concat(otherUrls);
+            var combined = combo.Distinct().Except(_visitedUrls.Keys);
+
+
+            var inturls = combined.Distinct().Except(_visitedUrls.Keys);
+
+
+            if (Options.FollowExternalLinks == true)
+            {
+                return combined.ToList();
+            }
+            return inturls.ToList();
+
+
+        }
+        catch (Exception ex)
+        {
+
+            Log.AndContinue(ex, "Error while filtering urls");
+            return new List<string>();
+        }
+
+
+
+
+
+
     }
 
+
+
+
+
     #endregion
+
+
 }

@@ -39,11 +39,11 @@ public class TextFileLoggerProvider : ILoggerProvider
     /// </summary>
     /// <param name="config"></param>
     public TextFileLoggerProvider(IOptions<TextFileLoggerConfiguration> config)
-        {
-            Guard.IsNotNull(config);
-            _currentConfig = config.Value;
-            _formatter = new(_currentConfig);
-        }
+    {
+        Guard.IsNotNull(config);
+        _currentConfig = config.Value;
+        _formatter = new(_currentConfig);
+    }
 
 
 
@@ -54,11 +54,11 @@ public class TextFileLoggerProvider : ILoggerProvider
 
     public ILogger CreateLogger(
         string categoryName)
-        {
-            return _loggers.GetOrAdd(
-                categoryName, name =>
-                    new(name, _formatter, GetCurrentConfig()));
-        }
+    {
+        return _loggers.GetOrAdd(
+            categoryName, name =>
+                new(name, _formatter, GetCurrentConfig()));
+    }
 
 
 
@@ -66,10 +66,10 @@ public class TextFileLoggerProvider : ILoggerProvider
 
 
     public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 
     #endregion
 
@@ -82,21 +82,21 @@ public class TextFileLoggerProvider : ILoggerProvider
 
     protected virtual void Dispose(
         bool disposing)
+    {
+        if (_disposed)
         {
-            if (_disposed)
-                {
-                    return;
-                }
-
-            if (disposing)
-                {
-                    _loggers.Clear();
-                }
-
-            // Clean up unmanaged resources here if required.
-
-            _disposed = true;
+            return;
         }
+
+        if (disposing)
+        {
+            _loggers.Clear();
+        }
+
+        // Clean up unmanaged resources here if required.
+
+        _disposed = true;
+    }
 
 
 
@@ -104,9 +104,9 @@ public class TextFileLoggerProvider : ILoggerProvider
 
 
     private TextFileLoggerConfiguration GetCurrentConfig()
-        {
-            return _currentConfig;
-        }
+    {
+        return _currentConfig;
+    }
 
     #endregion
 }

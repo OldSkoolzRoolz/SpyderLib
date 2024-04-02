@@ -17,10 +17,10 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
         SpyderMetrics metrics,
         ILogger<CacheIndexService> logger,
         IMyClient client) : base(client, logger, metrics)
-        {
-            _logger.SpyderInfoMessage("Cache Index Service Loaded...");
-            CacheIndexLoadComplete.TrySetResult(true);
-        }
+    {
+        _logger.SpyderInfoMessage("Cache Index Service Loaded...");
+        CacheIndexLoadComplete.TrySetResult(true);
+    }
 
 
 
@@ -50,10 +50,10 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
     #region Public Methods
 
     public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 
 
 
@@ -61,30 +61,30 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
 
 
     public async Task<string> GetAndSetContentFromCacheAsync(string address)
+    {
+        try
         {
-            try
-                {
-                    Stopwatch timer = new();
-                    timer.Start();
+            Stopwatch timer = new();
+            timer.Start();
 
-                    var content = await GetAndSetContentFromCacheCoreAsync(address)
-                        .ConfigureAwait(false);
+            var content = await GetAndSetContentFromCacheCoreAsync(address)
+                .ConfigureAwait(false);
 
-                    timer.Stop();
-                    if (_options.UseMetrics)
-                        {
-                            _metrics.CrawlElapsedTime(timer.ElapsedMilliseconds);
-                        }
+            timer.Stop();
+            if (_options.UseMetrics)
+            {
+                _metrics.CrawlElapsedTime(timer.ElapsedMilliseconds);
+            }
 
-                    return content;
-                }
-            catch (SpyderException)
-                {
-                    _logger.SpyderWebException("An error occured during a url retrieval.");
-
-                    return "error";
-                }
+            return content;
         }
+        catch (SpyderException)
+        {
+            _logger.SpyderWebException("An error occured during a url retrieval.");
+
+            return "error";
+        }
+    }
 
 
 
@@ -94,9 +94,9 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
     public Task<PageContent> SetContentCachePublicWrapperAsync(
         string content,
         string address)
-        {
-            return SetContentCacheAsync(content, address);
-        }
+    {
+        return SetContentCacheAsync(content, address);
+    }
 
     #endregion
 
@@ -108,20 +108,20 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
     #region Private Methods
 
     protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
         {
-            if (!_disposed)
-                {
-                    if (disposing)
-                        {
-                            // unsubscribe from static event
-                            SpyderControlService.LibraryHostShuttingDown -= OnStopping;
-                        }
+            if (disposing)
+            {
+                // unsubscribe from static event
+                SpyderControlService.LibraryHostShuttingDown -= OnStopping;
+            }
 
-                    // Here you can release unmanaged resources if any
+            // Here you can release unmanaged resources if any
 
-                    _disposed = true;
-                }
+            _disposed = true;
         }
+    }
 
 
 
@@ -130,9 +130,9 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
 
     // Destructor
     ~CacheIndexService()
-        {
-            Dispose(false);
-        }
+    {
+        Dispose(false);
+    }
 
     #endregion
 } //namespace

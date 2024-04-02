@@ -3,12 +3,12 @@ namespace KC.Apps.SpyderLib.Models;
 public record struct PageContent
 {
     public PageContent(Uri url) : this()
-        {
-            this.Url = url;
-            this.CacheFileName = string.Empty;
-            this.Content = string.Empty;
-            this.FromCache = false;
-        }
+    {
+        this.Url = url;
+        this.CacheFileName = string.Empty;
+        this.Content = string.Empty;
+        this.FromCache = false;
+    }
 
 
 

@@ -44,12 +44,12 @@ public class SpyderControlService : ServiceBase, IHostedService
         IHostApplicationLifetime lifetime,
         IWebCrawlerController webCrawlerController,
         IDownloadController downloadController) : base(lifetime)
-        {
-            lifetime.ApplicationStarted.Register(OnStarted);
-            lifetime.ApplicationStopping.Register(OnStopping);
-            _downControl = downloadController;
-            _webCrawlerController = webCrawlerController;
-        }
+    {
+        lifetime.ApplicationStarted.Register(OnStarted);
+        lifetime.ApplicationStopping.Register(OnStopping);
+        _downControl = downloadController;
+        _webCrawlerController = webCrawlerController;
+    }
 
 
 
@@ -64,17 +64,17 @@ public class SpyderControlService : ServiceBase, IHostedService
 
 
     public string LastCrawlerStatus
+    {
+        get => s_crawlStatus;
+        set
         {
-            get => s_crawlStatus;
-            set
-                {
-                    if (value != s_crawlStatus)
-                        {
-                            SetProperty(ref s_crawlStatus, value);
-                            RaisePropertyChanged(this.LastCrawlerStatus);
-                        }
-                }
+            if (value != s_crawlStatus)
+            {
+                SetProperty(ref s_crawlStatus, value);
+                RaisePropertyChanged(this.LastCrawlerStatus);
+            }
         }
+    }
 
 
 
@@ -98,14 +98,14 @@ public class SpyderControlService : ServiceBase, IHostedService
 
     [MemberNotNull(nameof(_cancellationTokenSource))]
     public Task StartAsync(CancellationToken cancellationToken)
-        {
-            Logger = Factory.CreateLogger<SpyderControlService>();
-            _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            Logger.SpyderInfoMessage("Spyder Control loaded");
+    {
+        Logger = Factory.CreateLogger<SpyderControlService>();
+        _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        Logger.SpyderInfoMessage("Spyder Control loaded");
 
 
-            return Task.CompletedTask;
-        }
+        return Task.CompletedTask;
+    }
 
 
 
@@ -114,15 +114,15 @@ public class SpyderControlService : ServiceBase, IHostedService
 
     public Task StopAsync(
         CancellationToken cancellationToken)
-        {
-            Console.WriteLine(
-                cancellationToken.IsCancellationRequested
-                    ? "Immediate (non gracefull) exit is reqeusted"
-                    : "Spyder is exiting gracefully");
+    {
+        Console.WriteLine(
+            cancellationToken.IsCancellationRequested
+                ? "Immediate (non gracefull) exit is reqeusted"
+                : "Spyder is exiting gracefully");
 
 
-            return Task.CompletedTask;
-        }
+        return Task.CompletedTask;
+    }
 
     #endregion
 
@@ -134,36 +134,36 @@ public class SpyderControlService : ServiceBase, IHostedService
     #region Private Methods
 
     private static bool CreateIfNotExists([NotNull] string path, string errorMessage)
+    {
+        ArgumentNullException.ThrowIfNull(path);
+
+        if (Directory.Exists(path))
         {
-            ArgumentNullException.ThrowIfNull(path);
-
-            if (Directory.Exists(path))
-                {
-                    return true;
-                }
-
-            try
-                {
-                    var info = Directory.CreateDirectory(path);
-                    if (!info.Exists)
-                        {
-                            Console.WriteLine(errorMessage);
-                            return false;
-                        }
-                }
-            catch (UnauthorizedAccessException ua)
-                {
-                    Logger.InternalSpyderError(ua.Message);
-                    return false;
-                }
-            catch (SpyderException)
-                {
-                    Console.WriteLine(errorMessage);
-                    return false;
-                }
-
             return true;
         }
+
+        try
+        {
+            var info = Directory.CreateDirectory(path);
+            if (!info.Exists)
+            {
+                Console.WriteLine(errorMessage);
+                return false;
+            }
+        }
+        catch (UnauthorizedAccessException ua)
+        {
+            Logger.InternalSpyderError(ua.Message);
+            return false;
+        }
+        catch (SpyderException)
+        {
+            Console.WriteLine(errorMessage);
+            return false;
+        }
+
+        return true;
+    }
 
 
 
@@ -171,37 +171,37 @@ public class SpyderControlService : ServiceBase, IHostedService
 
 
     private void OnStarted()
+    {
+        if (!ValidateSpyderPathOptions(Options))
         {
-            if (!ValidateSpyderPathOptions(Options))
-                {
-                    Environment.Exit(555);
-                }
-
-
-            Logger.SpyderInfoMessage("Waiting for all modules to load...");
-            try
-                {
-                    //Ensure all modules are loaded
-                    Task.WhenAll(
-                        WebCrawlerController.StartupComplete.Task,
-                        DownloadController.StartupComplete.Task,
-                        AbstractCacheIndex.StartupComplete.Task,
-                        BackgroundDownloadQue.DownloadQueLoadComplete.Task,
-                        QueueProcessingService.QueueProcessorLoadComplete.Task).ConfigureAwait(false);
-                }
-            catch (TimeoutException)
-                {
-                    Logger.InternalSpyderError(
-                        "Error 120::A module failed to load within the timeout period. Exiting application");
-                    Environment.Exit(120);
-                }
-
-            Logger.SpyderInfoMessage("Dependencies loaded!");
-
-            PrintConfig();
-
-            _ = Task.Run(() => PrintMenu(_cancellationTokenSource!.Token));
+            Environment.Exit(555);
         }
+
+
+        Logger.SpyderInfoMessage("Waiting for all modules to load...");
+        try
+        {
+            //Ensure all modules are loaded
+            Task.WhenAll(
+                WebCrawlerController.StartupComplete.Task,
+                DownloadController.StartupComplete.Task,
+                AbstractCacheIndex.StartupComplete.Task,
+                BackgroundDownloadQue.DownloadQueLoadComplete.Task,
+                QueueProcessingService.QueueProcessorLoadComplete.Task).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            Logger.InternalSpyderError(
+                "Error 120::A module failed to load within the timeout period. Exiting application");
+            Environment.Exit(120);
+        }
+
+        Logger.SpyderInfoMessage("Dependencies loaded!");
+
+        PrintConfig();
+
+        _ = Task.Run(() => PrintMenu(_cancellationTokenSource!.Token));
+    }
 
 
 
@@ -209,11 +209,11 @@ public class SpyderControlService : ServiceBase, IHostedService
 
 
     private void OnStopping()
-        {
-            Console.WriteLine("output triggered");
-            OutputControl.Instance.OnLibraryShutdown();
-            LibraryHostShuttingDown?.Invoke(null, EventArgs.Empty);
-        }
+    {
+        Console.WriteLine("output triggered");
+        OutputControl.Instance.OnLibraryShutdown();
+        LibraryHostShuttingDown?.Invoke(null, EventArgs.Empty);
+    }
 
 
 
@@ -222,38 +222,38 @@ public class SpyderControlService : ServiceBase, IHostedService
 
     [SuppressMessage("Performance", "CA1822:Mark members as static")]
     private void PrintConfig()
-        {
+    {
 #pragma warning disable CA1303
-            Console.WriteLine("******************************************************");
-            Console.WriteLine("**             Spyder Configuration                 **");
-            Console.WriteLine("**  {0,15}:   {1,-28} {2,-8}", "Output Path",
-                Options.OutputFilePath, "**");
-            Console.WriteLine("**  {0,15}:   {1,-28} {2,-10}", "Log Path", Options.LogPath,
-                "**");
-            Console.WriteLine(
-                "**  {0,15}:   {1,-28} {2,-9}", "Cache Location", Options.CacheLocation,
-                "**");
+        Console.WriteLine("******************************************************");
+        Console.WriteLine("**             Spyder Configuration                 **");
+        Console.WriteLine("**  {0,15}:   {1,-28} {2,-8}", "Output Path",
+            Options.OutputFilePath, "**");
+        Console.WriteLine("**  {0,15}:   {1,-28} {2,-10}", "Log Path", Options.LogPath,
+            "**");
+        Console.WriteLine(
+            "**  {0,15}:   {1,-28} {2,-9}", "Cache Location", Options.CacheLocation,
+            "**");
 
-            Console.WriteLine(
-                "**  {0,15}:   {1,-28} {2,-10}", "Captured Ext",
-                Options.CapturedExternalLinksFilename,
-                "**");
+        Console.WriteLine(
+            "**  {0,15}:   {1,-28} {2,-10}", "Captured Ext",
+            Options.CapturedExternalLinksFilename,
+            "**");
 
-            Console.WriteLine(
-                "**  {0,15}:   {1,-28} {2,-10}", "Captured Seed",
-                Options.CapturedSeedUrlsFilename,
-                "**");
+        Console.WriteLine(
+            "**  {0,15}:   {1,-28} {2,-10}", "Captured Seed",
+            Options.CapturedSeedUrlsFilename,
+            "**");
 
-            Console.WriteLine(
-                "**  {0,15}:   {1,-28} {2,-10}", "Output FName", Options.OutputFileName,
-                "**");
+        Console.WriteLine(
+            "**  {0,15}:   {1,-28} {2,-10}", "Output FName", Options.OutputFileName,
+            "**");
 
-            Console.WriteLine("**  {0,15}:   {1,-28} {2,-10}", "Starting Url",
-                Options.StartingUrl, "**");
+        Console.WriteLine("**  {0,15}:   {1,-28} {2,-10}", "Starting Url",
+            Options.StartingUrl, "**");
 
-            Console.WriteLine("**                                                  **");
-            Console.WriteLine("******************************************************");
-        }
+        Console.WriteLine("**                                                  **");
+        Console.WriteLine("******************************************************");
+    }
 
     #endregion
 
@@ -264,64 +264,64 @@ public class SpyderControlService : ServiceBase, IHostedService
 
     private async Task PrintMenu(
         CancellationToken cancellationToken)
+    {
+        string userInput;
+        do
         {
-            string userInput;
-            do
-                {
-                    Console.WriteLine("--------------- Menu ---------------");
-                    Console.WriteLine("1. Start Crawler using current settings");
-                    Console.WriteLine("2. Search cache and download any videos");
-                    Console.WriteLine("3. Start crawler searching for html tag");
-                    Console.WriteLine("4. TBD..");
-                    Console.WriteLine("5. TBD..");
-                    Console.WriteLine("9. Exit");
-                    Console.WriteLine("Enter your choice:");
-                    userInput = Console.ReadLine();
-                    switch (userInput)
-                        {
-                            case "1":
-                                await StartCrawlingAsync(_cancellationTokenSource!.Token).ConfigureAwait(false);
+            Console.WriteLine("--------------- Menu ---------------");
+            Console.WriteLine("1. Start Crawler using current settings");
+            Console.WriteLine("2. Search cache and download any videos");
+            Console.WriteLine("3. Start crawler searching for html tag");
+            Console.WriteLine("4. TBD..");
+            Console.WriteLine("5. TBD..");
+            Console.WriteLine("9. Exit");
+            Console.WriteLine("Enter your choice:");
+            userInput = Console.ReadLine();
+            switch (userInput)
+            {
+                case "1":
+                    await StartCrawlingAsync(_cancellationTokenSource!.Token).ConfigureAwait(false);
 
 
-                                break;
+                    break;
 
-                            case "2":
-                                _downControl.Start();
+                case "2":
+                    _downControl.Start();
 
-                                break;
+                    break;
 
-                            case "3":
-                                Console.WriteLine("Starting Search for sites with html tag");
-                                CrawlerOptions.FollowExternalLinks = true;
-                                CrawlerOptions.DownloadTagSource = false;
-                                CrawlerOptions.EnableTagSearch = true;
-                                //Save our option changes back to the appcontext for other modules.
-                                AppContext.SetData("options", CrawlerOptions);
+                case "3":
+                    Console.WriteLine("Starting Search for sites with html tag");
+                    CrawlerOptions.FollowExternalLinks = true;
+                    CrawlerOptions.DownloadTagSource = false;
+                    CrawlerOptions.EnableTagSearch = true;
+                    //Save our option changes back to the appcontext for other modules.
+                    AppContext.SetData("options", CrawlerOptions);
 
-                                await StartTagSearch(_cancellationTokenSource.Token).ConfigureAwait(false);
+                    await StartTagSearch(_cancellationTokenSource.Token).ConfigureAwait(false);
 
-                                break;
+                    break;
 
-                            case "4":
-                                Debug.Write("Enter Url to download from:: ");
+                case "4":
+                    Debug.Write("Enter Url to download from:: ");
 
-                                break;
+                    break;
 
-                            case "9":
-                                // Exit scenario
-                                _cancellationTokenSource.Cancel();
-                                this.AppLifetime.StopApplication();
+                case "9":
+                    // Exit scenario
+                    _cancellationTokenSource.Cancel();
+                    this.AppLifetime.StopApplication();
 
-                                break;
+                    break;
 
-                            default:
-                                Console.WriteLine("Invalid choice. Press a key to try again...");
-                                _ = Console.ReadKey();
+                default:
+                    Console.WriteLine("Invalid choice. Press a key to try again...");
+                    _ = Console.ReadKey();
 
-                                break;
-                        }
-                } while (userInput != "9" && !cancellationToken.IsCancellationRequested);
-        }
+                    break;
+            }
+        } while (userInput != "9" && !cancellationToken.IsCancellationRequested);
+    }
 
 
 
@@ -329,9 +329,9 @@ public class SpyderControlService : ServiceBase, IHostedService
 
 
     private async Task StartTagSearch(CancellationToken token)
-        {
-            await _webCrawlerController.StartTagSearch(token).ConfigureAwait(false);
-        }
+    {
+        await _webCrawlerController.StartTagSearch(token).ConfigureAwait(false);
+    }
 
 
 
@@ -342,9 +342,9 @@ public class SpyderControlService : ServiceBase, IHostedService
     ///     Start Crawling
     /// </summary>
     public async Task StartCrawlingAsync(CancellationToken token)
-        {
-            await _webCrawlerController.StartCrawlingAsync(token).ConfigureAwait(false);
-        }
+    {
+        await _webCrawlerController.StartCrawlingAsync(token).ConfigureAwait(false);
+    }
 
 
 
@@ -352,32 +352,32 @@ public class SpyderControlService : ServiceBase, IHostedService
 
 
     private static bool ValidateSpyderPathOptions(SpyderOptions options)
+    {
+        if (options.UseLocalCache &&
+            !CreateIfNotExists(options.CacheLocation,
+                "Configuration Error, cache location is not valid aborting."))
         {
-            if (options.UseLocalCache &&
-                !CreateIfNotExists(options.CacheLocation,
-                    "Configuration Error, cache location is not valid aborting."))
-                {
-                    return false;
-                }
-
-            if (!CreateIfNotExists(options.LogPath,
-                    "Configuration Error, log path is not valid aborting."))
-                {
-                    return false;
-                }
-
-            if (!CreateIfNotExists(options.OutputFilePath,
-                    "Configuration Error, output path is not valid aborting."))
-                {
-                    return false;
-                }
-
-            if (!string.IsNullOrWhiteSpace(options.StartingUrl))
-                {
-                    return true;
-                }
-
-            Console.WriteLine(Resources1.ConfigError);
             return false;
         }
+
+        if (!CreateIfNotExists(options.LogPath,
+                "Configuration Error, log path is not valid aborting."))
+        {
+            return false;
+        }
+
+        if (!CreateIfNotExists(options.OutputFilePath,
+                "Configuration Error, output path is not valid aborting."))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.StartingUrl))
+        {
+            return true;
+        }
+
+        Console.WriteLine(Resources1.ConfigError);
+        return false;
+    }
 }

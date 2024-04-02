@@ -1,5 +1,6 @@
 namespace KC.Apps.SpyderLib;
 
+[Serializable]
 public class SpyderOptionsException : Exception
 {
     public SpyderOptionsException() { }

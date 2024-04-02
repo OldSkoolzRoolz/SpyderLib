@@ -25,11 +25,11 @@ internal class LogFormatter : ConsoleFormatter
 
 
     public LogFormatter(LogFormatterOptions options) : base("SpyderFormatter")
-        {
-            Guard.IsNotNull(options);
-            _timeFormat = options.TimestampFormat;
-            _dateFormat = "mm/dd/yyyy";
-        }
+    {
+        Guard.IsNotNull(options);
+        _timeFormat = options.TimestampFormat;
+        _dateFormat = "mm/dd/yyyy";
+    }
 
 
 
@@ -50,31 +50,31 @@ internal class LogFormatter : ConsoleFormatter
         in LogEntry<TState> logEntry,
         IExternalScopeProvider scopeProvider,
         TextWriter textWriter)
+    {
+        ArgumentNullException.ThrowIfNull(scopeProvider);
+        ArgumentNullException.ThrowIfNull(textWriter);
+        var logLevel = logEntry.LogLevel;
+        var logMessage = logEntry.Formatter(logEntry.State, logEntry.Exception);
+
+        // Format the log message
+        var formattedMessage = $"{PrintTime(DateTime.Now)} {logLevel}: {logMessage}";
+
+
+        // If exception exists, include it in the message 
+        if (logEntry.Exception != null)
         {
-            ArgumentNullException.ThrowIfNull(scopeProvider);
-            ArgumentNullException.ThrowIfNull(textWriter);
-            var logLevel = logEntry.LogLevel;
-            var logMessage = logEntry.Formatter(logEntry.State, logEntry.Exception);
-
-            // Format the log message
-            var formattedMessage = $"{PrintTime(DateTime.Now)} {logLevel}: {logMessage}";
-
-
-            // If exception exists, include it in the message 
-            if (logEntry.Exception != null)
-                {
-                    formattedMessage += Environment.NewLine + logEntry.Exception;
-                }
-
-            // Prepend custom prefix from formatter options, if it exists
-            if (!string.IsNullOrEmpty(LogFormatterOptions.CustomPrefix))
-                {
-                    formattedMessage = LogFormatterOptions.CustomPrefix + formattedMessage;
-                }
-
-            // Write the log message to the provided TextWriter
-            textWriter.WriteLine(formattedMessage);
+            formattedMessage += Environment.NewLine + logEntry.Exception;
         }
+
+        // Prepend custom prefix from formatter options, if it exists
+        if (!string.IsNullOrEmpty(LogFormatterOptions.CustomPrefix))
+        {
+            formattedMessage = LogFormatterOptions.CustomPrefix + formattedMessage;
+        }
+
+        // Write the log message to the provided TextWriter
+        textWriter.WriteLine(formattedMessage);
+    }
 
     #endregion
 
@@ -92,9 +92,9 @@ internal class LogFormatter : ConsoleFormatter
     /// <returns>The parsed date.</returns>
     internal DateTime ParseDate(
         string dateStr)
-        {
-            return DateTime.ParseExact(dateStr, _dateFormat, CultureInfo.InvariantCulture);
-        }
+    {
+        return DateTime.ParseExact(dateStr, _dateFormat, CultureInfo.InvariantCulture);
+    }
 
 
 
@@ -108,9 +108,9 @@ internal class LogFormatter : ConsoleFormatter
     /// <returns>Formatted string representation of the input data, in the printable format used by the Logger subsystem.</returns>
     internal string PrintDate(
         DateTime date)
-        {
-            return date.ToString(_dateFormat, CultureInfo.InvariantCulture);
-        }
+    {
+        return date.ToString(_dateFormat, CultureInfo.InvariantCulture);
+    }
 
 
 
@@ -124,9 +124,9 @@ internal class LogFormatter : ConsoleFormatter
     /// <returns>Formatted string representation of the input data, in the printable format used by the Logger subsystem.</returns>
     private string PrintTime(
         DateTime date)
-        {
-            return date.ToString(_timeFormat, CultureInfo.InvariantCulture);
-        }
+    {
+        return date.ToString(_timeFormat, CultureInfo.InvariantCulture);
+    }
 
     #endregion
 }

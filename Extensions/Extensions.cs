@@ -35,24 +35,24 @@ public static class SpyderLibExtensions
     public static void AddSpyderLogging(
         this ILoggingBuilder builder,
         TextFileLoggerConfiguration config)
-        {
-            ArgumentNullException.ThrowIfNull(builder);
-            ArgumentNullException.ThrowIfNull(config);
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(config);
 
-            _ = builder.Services.AddOptions<TextFileLoggerConfiguration>().Configure(logConfig =>
-                logConfig.SetProperties(config));
+        _ = builder.Services.AddOptions<TextFileLoggerConfiguration>().Configure(logConfig =>
+            logConfig.SetProperties(config));
 
-            builder.AddDebug().AddCustomFormatter(
-                options =>
-                    {
-                        options.CustomPrefix = "~~<{ ";
-                        options.CustomSuffix = " }>~~";
-                    });
-            builder.SetMinimumLevel(s_spyderOptions.LoggingLevel);
-            _ = builder.AddFilter("TextFileLogger", s_spyderOptions.LoggingLevel);
-            _ = builder.AddFilter("Microsoft", LogLevel.Information);
-            _ = builder.AddFilter("System.Net.Http", LogLevel.Warning);
-        }
+        builder.AddDebug().AddCustomFormatter(
+            options =>
+                {
+                    options.CustomPrefix = "~~<{ ";
+                    options.CustomSuffix = " }>~~";
+                });
+        builder.SetMinimumLevel(s_spyderOptions.LoggingLevel);
+        _ = builder.AddFilter("TextFileLogger", s_spyderOptions.LoggingLevel);
+        _ = builder.AddFilter("Microsoft", LogLevel.Information);
+        _ = builder.AddFilter("System.Net.Http", LogLevel.Warning);
+    }
 
 
 
@@ -62,15 +62,15 @@ public static class SpyderLibExtensions
     public static IServiceCollection AddSpyderService(
         this IServiceCollection services,
         SpyderOptions spyderOptions)
-        {
-            s_spyderOptions = spyderOptions ?? throw new ArgumentNullException(nameof(spyderOptions));
+    {
+        s_spyderOptions = spyderOptions ?? throw new ArgumentNullException(nameof(spyderOptions));
 
 
-            services.RegisterServicesAndConfigureOptions(spyderOptions);
+        services.RegisterServicesAndConfigureOptions(spyderOptions);
 
 
-            return services;
-        }
+        return services;
+    }
 
 
 
@@ -79,18 +79,18 @@ public static class SpyderLibExtensions
 
     public static ILoggingBuilder AddTextFileLogger(
         this ILoggingBuilder builder)
-        {
-            Guard.IsNotNull(builder);
-            builder.AddConfiguration();
+    {
+        Guard.IsNotNull(builder);
+        builder.AddConfiguration();
 
-            builder.Services.TryAddEnumerable(
-                ServiceDescriptor.Singleton<ILoggerProvider, TextFileLoggerProvider>());
+        builder.Services.TryAddEnumerable(
+            ServiceDescriptor.Singleton<ILoggerProvider, TextFileLoggerProvider>());
 
-            LoggerProviderOptions.RegisterProviderOptions
-                <TextFileLoggerConfiguration, TextFileLoggerProvider>(builder.Services);
+        LoggerProviderOptions.RegisterProviderOptions
+            <TextFileLoggerConfiguration, TextFileLoggerProvider>(builder.Services);
 
-            return builder;
-        }
+        return builder;
+    }
 
 
 
@@ -100,12 +100,12 @@ public static class SpyderLibExtensions
     public static ILoggingBuilder AddTextFileLogger(
         this ILoggingBuilder builder,
         Action<TextFileLoggerConfiguration> configure)
-        {
-            builder.AddTextFileLogger();
-            builder.Services.Configure(configure);
+    {
+        builder.AddTextFileLogger();
+        builder.Services.Configure(configure);
 
-            return builder;
-        }
+        return builder;
+    }
 
     #endregion
 
@@ -117,33 +117,33 @@ public static class SpyderLibExtensions
     #region Private Methods
 
     private static SpyderOptions GetDefaultOptions()
+    {
+        return new()
         {
-            return new()
-                {
-                    CacheLocation = null,
-                    CapturedExternalLinksFilename = null,
-                    CapturedSeedUrlsFilename = null,
-                    ConcurrentCrawlingTasks = 0,
-                    CrawlInputFile = false,
-                    DownloadTagSource = false,
-                    EnableTagSearch = false,
-                    FollowExternalLinks = false,
-                    HtmlTagToSearchFor = null,
-                    InputFileName = null,
-                    KeepBaseLinks = false,
-                    KeepExternalLinks = false,
-                    LinkDepthLimit = 0,
-                    LinkPatternExclusions = Array.Empty<string>(),
-                    LoggingLevel = LogLevel.Trace,
-                    LogPath = null,
-                    OutputFileName = null,
-                    OutputFilePath = null,
-                    QueueCapacity = 0,
-                    StartingUrl = null,
-                    UseLocalCache = false,
-                    UseMetrics = false
-                };
-        }
+            CacheLocation = null,
+            CapturedExternalLinksFilename = null,
+            CapturedSeedUrlsFilename = null,
+            ConcurrentCrawlingTasks = 0,
+            CrawlInputFile = false,
+            DownloadTagSource = false,
+            EnableTagSearch = false,
+            FollowExternalLinks = false,
+            HtmlTagToSearchFor = null,
+            InputFileName = null,
+            KeepBaseLinks = false,
+            KeepExternalLinks = false,
+            LinkDepthLimit = 0,
+            LinkPatternExclusions = Array.Empty<string>(),
+            LoggingLevel = LogLevel.Trace,
+            LogPath = null,
+            OutputFileName = null,
+            OutputFilePath = null,
+            QueueCapacity = 0,
+            StartingUrl = null,
+            UseLocalCache = false,
+            UseMetrics = false
+        };
+    }
 
 
 
@@ -153,22 +153,22 @@ public static class SpyderLibExtensions
     private static void RegisterServicesAndConfigureOptions(
         this IServiceCollection services,
         SpyderOptions spyderOptions)
-        {
-            _ = services.AddOptions<SpyderOptions>()
-                .Configure(options => options.SetProperties(spyderOptions));
+    {
+        _ = services.AddOptions<SpyderOptions>()
+            .Configure(options => options.SetProperties(spyderOptions));
 
 
-            _ = services.AddSingleton<IBackgroundDownloadQue, BackgroundDownloadQue>();
-            _ = services.AddSingleton<DownloadController>();
-            _ = services.AddHostedService<QueueProcessingService>();
+        _ = services.AddSingleton<IBackgroundDownloadQue, BackgroundDownloadQue>();
+        _ = services.AddSingleton<DownloadController>();
+        _ = services.AddHostedService<QueueProcessingService>();
 
-            _ = services.AddSingleton<SpyderMetrics>();
-            _ = services.AddHttpClient("SpyderClient");
-            _ = services.AddSingleton<OutputControl>();
-            _ = services.AddSingleton<ICacheIndexService, CacheIndexService>();
-            _ = services.AddSingleton<IWebCrawlerController, WebCrawlerController>();
-            _ = services.AddHostedService<SpyderControlService>();
-        }
+        _ = services.AddSingleton<SpyderMetrics>();
+        _ = services.AddHttpClient("SpyderClient");
+        _ = services.AddSingleton<OutputControl>();
+        _ = services.AddSingleton<ICacheIndexService, CacheIndexService>();
+        _ = services.AddSingleton<IWebCrawlerController, WebCrawlerController>();
+        _ = services.AddHostedService<SpyderControlService>();
+    }
 
 
 
@@ -178,16 +178,16 @@ public static class SpyderLibExtensions
     private static void SetProperties<T>(
         this T options,
         T sourceOptions) where T : class
+    {
+        var type = typeof(T);
+        foreach (var prop in type.GetProperties())
         {
-            var type = typeof(T);
-            foreach (var prop in type.GetProperties())
-                {
-                    if (prop.CanRead && prop.CanWrite)
-                        {
-                            prop.SetValue(options, prop.GetValue(sourceOptions));
-                        }
-                }
+            if (prop.CanRead && prop.CanWrite)
+            {
+                prop.SetValue(options, prop.GetValue(sourceOptions));
+            }
         }
+    }
 
     #endregion
 } // SpyderLibExtensions#
@@ -199,16 +199,16 @@ internal static class TaskExtensions
     #region Public Methods
 
     public static async Task<T> WithTimeout<T>(this Task<T> task, TimeSpan timeout)
+    {
+        if (task ==
+            await Task.WhenAny(task, Task.Delay((int)timeout.TotalMilliseconds))
+                .ConfigureAwait(false))
         {
-            if (task ==
-                await Task.WhenAny(task, Task.Delay((int)timeout.TotalMilliseconds))
-                    .ConfigureAwait(false))
-                {
-                    return await task.ConfigureAwait(false); // Task completed within timeout
-                }
-
-            throw new TimeoutException(); // Task timed out
+            return await task.ConfigureAwait(false); // Task completed within timeout
         }
+
+        throw new TimeoutException(); // Task timed out
+    }
 
 
 
@@ -216,16 +216,16 @@ internal static class TaskExtensions
 
 
     public static async Task WithTimeout(this Task task, TimeSpan timeout)
+    {
+        if (task == await Task.WhenAny(task, Task.Delay(timeout)).ConfigureAwait(false))
         {
-            if (task == await Task.WhenAny(task, Task.Delay(timeout)).ConfigureAwait(false))
-                {
-                    await task.ConfigureAwait(false);
-                }
-            else
-                {
-                    throw new TimeoutException();
-                }
+            await task.ConfigureAwait(false);
         }
+        else
+        {
+            throw new TimeoutException();
+        }
+    }
 
     #endregion
 }

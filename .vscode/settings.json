@@ -1,0 +1,13 @@
+{
+    "diffEditor.codeLens": true,
+    "inlineChat.acceptedOrDiscardBeforeSave": false,
+    "inlineChat.mode": "preview",
+    "editor.guides.indentation": false,
+    "editor.defaultFormatter": "ms-dotnettools.csharp",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "[csharp]": {
+        "editor.defaultFormatter": "ms-dotnettools.csharp"
+    }
+}

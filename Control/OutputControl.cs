@@ -8,9 +8,9 @@ namespace KC.Apps.SpyderLib.Control;
 public class OutputControl : IOutputControl
 {
     public OutputControl()
-        {
-            AppDomain.CurrentDomain.DomainUnload += OnDomainShutdown;
-        }
+    {
+        AppDomain.CurrentDomain.DomainUnload += OnDomainShutdown;
+    }
 
 
 
@@ -20,8 +20,8 @@ public class OutputControl : IOutputControl
     #region Public Methods
 
     public void OnLibraryShutdown()
-        {
-            var collectionDictionary = new Dictionary<ConcurrentScrapedUrlCollection, string>
+    {
+        var collectionDictionary = new Dictionary<ConcurrentScrapedUrlCollection, string>
                 {
                     { this.CapturedVideoLinks, "TestingVideoLinks.txt" },
                     { this.UrlsScrapedThisSession, "AllUrlsCaptured.txt" },
@@ -31,13 +31,13 @@ public class OutputControl : IOutputControl
                     { this.CapturedUrlWithSearchResults, "PositiveTagSearchResults.txt" }
                 };
 
-            foreach (var entry in collectionDictionary.Where(entry => !entry.Key.IsEmpty))
-                {
-                    SaveCollectionToFile(entry.Key, entry.Value);
-                }
-
-            Console.WriteLine("Output written");
+        foreach (var entry in collectionDictionary.Where(entry => !entry.Key.IsEmpty))
+        {
+            SaveCollectionToFile(entry.Key, entry.Value);
         }
+
+        Console.WriteLine("Output written");
+    }
 
     #endregion
 
@@ -47,9 +47,9 @@ public class OutputControl : IOutputControl
 
 
     private void OnDomainShutdown(object sender, EventArgs e)
-        {
-            OnLibraryShutdown();
-        }
+    {
+        OnLibraryShutdown();
+    }
 
 
 
@@ -59,23 +59,23 @@ public class OutputControl : IOutputControl
     #region Private Methods
 
     private static void SaveCollectionToFile(ConcurrentScrapedUrlCollection col, string fileName)
+    {
+        if (col is { IsEmpty: true })
         {
-            if (col is { IsEmpty: true })
-                {
-                    return;
-                }
-
-            var path = Path.Combine(Environment.CurrentDirectory, fileName);
-
-            using var fs = new FileStream(path, FileMode.Append);
-            using var sw = new StreamWriter(fs);
-            foreach (var item in col)
-                {
-                    sw.WriteLine(item.Key);
-                }
-
-            sw.Flush();
+            return;
         }
+
+        var path = Path.Combine(Environment.CurrentDirectory, fileName);
+
+        using var fs = new FileStream(path, FileMode.Append);
+        using var sw = new StreamWriter(fs);
+        foreach (var item in col)
+        {
+            sw.WriteLine(item.Key);
+        }
+
+        sw.Flush();
+    }
 
     #endregion
 

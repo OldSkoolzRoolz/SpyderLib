@@ -1,81 +1,130 @@
-//
+using JetBrains.Annotations;
 
-using System.Collections.Generic;
-using System.Linq;
+using KC.Apps.SpyderLib.Modules;
+
+
 
 namespace KC.Apps.SpyderLib.Models;
 
-
-public class ScrapedUrlCollection
+public class ScrapedUrls(Uri baseUrl)
 {
+    #region feeeldzzz
 
-    private HashSet<Uri> _allUrls { get; set; }
+    private readonly HashSet<Uri> _externalUrls = [];
+    private readonly HashSet<Uri> _internalUrls = [];
 
-
-    public Uri StartingUrl { get; set; }
-    public IEnumerable<Uri> BaseUrls { get; set; }
-    public IEnumerable<Uri> OtherUrls { get; set; }
-
+    #endregion
 
 
 
-    public void AddUrl(string newUrl)
+
+
+
+    public Uri BaseUrl { get; } =
+        baseUrl ?? throw new SpyderOptionsException("BaseUrl cannot be null. Check your options.");
+
+    public IEnumerable<Uri> BaseUrls => _internalUrls;
+    public IEnumerable<Uri> OtherUrls => _externalUrls;
+
+
+
+
+
+
+    /// <summary>
+    /// Adds a collection of URLs to the ScrapedUrlCollection
+    /// </summary>
+    /// <param name="urls">A collection of URLs</param>
+    /// <exception cref="ArgumentNullException">Thrown if the input collection is null</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown if the input collection contains at least one null URL or an invalid URL
+    /// </exception>
+    public void AddRange([NotNull] IEnumerable<string> urls)
     {
+        var filteredUrls = urls.Where(IsValidUrl).Select(url => new Uri(url)).ToList();
 
-
-        if (!string.IsNullOrEmpty(newUrl) && IsValidUrl(newUrl))
+        foreach (var uri in filteredUrls)
         {
-            _ = TryAdd(newUrl);
+            AddUrl(uri);
         }
     }
 
 
 
 
-        /// <summary>
-        /// Determines whether the given URL is valid.
-        /// </summary>
-        /// <param name="newUrl">The URL to be validated.</param>
-        /// <returns>True if the URL is valid, false otherwise.</returns>
+
+
+
+    private void AddUrl([NotNull] Uri newUrl)
+    {
+        // Add the Uri object to the appropriate collection based on its kind
+        _ = IsExternalUrl(newUrl)
+            ? _externalUrls.Add(newUrl)
+            : _internalUrls.Add(newUrl);
+    }
+
+
+
+
+
+
+    /// <summary>
+    ///     Adds a URL to the internal or external URL collections based on its kind.
+    /// </summary>
+    /// <param name="url">The URL to be added. Must not be null.</param>
+    public void AddUrl([NotNull] string url)
+    {
+        // Throw an exception if the URL is null
+        ArgumentNullException.ThrowIfNull(url);
+        if (IsValidUrl(url))
+        {
+            // Try to create a Uri object from the URL
+            _ = Uri.TryCreate(url, UriKind.Absolute, out var uriResult);
+
+            // Add the Uri object to the appropriate collection based on its kind
+            _ = IsExternalUrl(uriResult)
+                ? _externalUrls.Add(uriResult)
+                : _internalUrls.Add(uriResult);
+        }
+    }
+
+
+
+
+
+
+    /// <summary>
+    ///     Determines whether the given URL is an external URL.
+    /// </summary>
+    /// <param name="url">The URL to check.</param>
+    /// <returns>True if the URL is external, false otherwise.</returns>
+    private bool IsExternalUrl(Uri url)
+    {
+        ArgumentNullException.ThrowIfNull(url);
+        return this.BaseUrl.IsBaseOf(url);
+    }
+
+
+
+
+
+
+    /// <summary>
+    ///     Determines whether the given URL is valid.
+    /// </summary>
+    /// <param name="newUrl">The URL to be validated.</param>
+    /// <returns>True if the URL is valid, false otherwise.</returns>
     private static bool IsValidUrl(string newUrl)
     {
-        return Uri.IsWellFormedUriString(newUrl, UriKind.Absolute)
-               && Uri.TryCreate(newUrl, UriKind.Absolute, out var uriResult)
-               && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
-    }
-
-
-    public void AddUrls(IEnumerable<string> urls)
-    {
-        foreach (var url in urls)
-        {
-            AddUrl(url);
-        }
-    }
-
-    private bool TryAdd(string url)
-    {
-
-        var success = Uri.TryCreate(url, UriKind.Absolute, out var uriResult);
-
-        if (uriResult != null && success)
-        {
-            _ = _allUrls.Append(uriResult);
-        }
-        return success;
+        return Uri.IsWellFormedUriString(newUrl, UriKind.Absolute) &&
+               Uri.TryCreate(newUrl, UriKind.Absolute, out var uriResult) &&
+               (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
     }
 
 
 
 
 
-    public void AddRange(IEnumerable<string> urls)
-    {
 
-    }
 
-    public void AddUrl(Uri newUrl)
-    {
-        throw new NotImplementedException();
-    }
 }

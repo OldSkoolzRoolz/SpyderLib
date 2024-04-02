@@ -33,9 +33,9 @@ public class SpyderOptions
 
     #region Properteez
 
-    [Required] [AllowNull] public string CacheLocation { get; init; }
-    [Required] [AllowNull] public string CapturedExternalLinksFilename { get; init; } = "CapturedExternalLinks.txt";
-    [Required] [AllowNull] public string CapturedSeedUrlsFilename { get; init; } = "CapturedSeedUrls.txt";
+    [Required][AllowNull] public string CacheLocation { get; init; }
+    [Required][AllowNull] public string CapturedExternalLinksFilename { get; init; } = "CapturedExternalLinks.txt";
+    [Required][AllowNull] public string CapturedSeedUrlsFilename { get; init; } = "CapturedSeedUrls.txt";
 
     /// <summary>
     ///     Concurrent limit on number of active crawlers
@@ -57,8 +57,8 @@ public class SpyderOptions
     [Required]
     public bool FollowExternalLinks { get; set; }
 
-    [Required] [AllowNull] public string HtmlTagToSearchFor { get; init; }
-    [Required] [AllowNull] public string InputFileName { get; init; }
+    [Required][AllowNull] public string HtmlTagToSearchFor { get; init; }
+    [Required][AllowNull] public string InputFileName { get; init; }
     [Required] public bool KeepBaseLinks { get; init; }
     [Required] public bool KeepExternalLinks { get; init; }
 
@@ -75,8 +75,8 @@ public class SpyderOptions
     [Required] public LogLevel LoggingLevel { get; init; }
     [Required] public string LogPath { get; init; }
     public int MaxConnectionsPerServer { get; set; }
-    [Required] [AllowNull] public string OutputFileName { get; init; } = "OutputFilename.txt";
-    [Required] [AllowNull] public string OutputFilePath { get; init; }
+    [Required][AllowNull] public string OutputFileName { get; init; } = "OutputFilename.txt";
+    [Required][AllowNull] public string OutputFilePath { get; init; }
     public TimeSpan PooledConnectionIdleTimeout { get; set; }
     public TimeSpan PooledConnectionLifetime { get; set; }
     [Required] public int QueueCapacity { get; set; } = 200;

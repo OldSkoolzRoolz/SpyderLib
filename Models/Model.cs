@@ -36,9 +36,9 @@ public abstract class Model : INotifyPropertyChanged
     /// <param name="propertyName">Optional parameter. If not given or null, the name of the calling member will be used.</param>
     protected virtual void OnPropertyChanged(
         [CallerMemberName] string propertyName = null)
-        {
-            this.PropertyChanged?.Invoke(this, new(propertyName));
-        }
+    {
+        this.PropertyChanged?.Invoke(this, new(propertyName));
+    }
 
 
 
@@ -51,10 +51,10 @@ public abstract class Model : INotifyPropertyChanged
     /// <param name="e">The <see cref="System.ComponentModel.PropertyChangedEventArgs" /> instance containing the event data.</param>
     protected virtual void OnPropertyChanged(
         PropertyChangedEventArgs e)
-        {
-            var handler = this.PropertyChanged;
-            handler?.Invoke(this, e);
-        }
+    {
+        var handler = this.PropertyChanged;
+        handler?.Invoke(this, e);
+    }
 
 
 
@@ -70,9 +70,9 @@ public abstract class Model : INotifyPropertyChanged
     /// </param>
     private void RaisePropertyChanged(
         [CallerMemberName] string propertyName = null)
-        {
-            OnPropertyChanged(new PropertyChangedEventArgs(propertyName));
-        }
+    {
+        OnPropertyChanged(new PropertyChangedEventArgs(propertyName));
+    }
 
 
 
@@ -100,18 +100,18 @@ public abstract class Model : INotifyPropertyChanged
         ref T field,
         T value,
         [CallerMemberName] string propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value))
         {
-            if (EqualityComparer<T>.Default.Equals(field, value))
-                {
-                    return false;
-                }
-
-            field = value;
-            OnPropertyChanged(propertyName);
-
-
-            return true;
+            return false;
         }
+
+        field = value;
+        OnPropertyChanged(propertyName);
+
+
+        return true;
+    }
 
 
 
@@ -134,18 +134,18 @@ public abstract class Model : INotifyPropertyChanged
         ref T field,
         T value,
         [CallerMemberName] string propertyName = null)
+    {
+        if (Equals(field, value))
         {
-            if (Equals(field, value))
-                {
-                    return false;
-                }
-
-            field = value;
-            RaisePropertyChanged(propertyName);
-
-
-            return true;
+            return false;
         }
+
+        field = value;
+        RaisePropertyChanged(propertyName);
+
+
+        return true;
+    }
 
     #endregion
 }
