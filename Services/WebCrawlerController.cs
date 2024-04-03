@@ -13,11 +13,10 @@ using HtmlAgilityPack;
 
 using KC.Apps.SpyderLib.Control;
 using KC.Apps.SpyderLib.Logging;
+using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Modules;
 
 using Microsoft.Extensions.Logging;
-
-
 
 namespace KC.Apps.SpyderLib.Services;
 
@@ -202,7 +201,7 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         }
         catch (Exception ex)
         {
-            Log.AndContinue(ex, "Crawler aborted");
+            Log.AndContinue(ex, "Crawler aborted unknown error");
         }
         finally
         {
@@ -229,7 +228,7 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
             return;
         }
 
-        _visitedUrls.TryAdd(Options.StartingUrl, 0);
+        _ = _visitedUrls.TryAdd(Options.StartingUrl, 0);
 
         await ProcessUrlAsync(Options.StartingUrl, token).ConfigureAwait(false);
 
@@ -240,7 +239,7 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
             _urlsToCrawl.RemoveAt(0);
             if (url != null && !visitedHosts.Contains(new Uri(url).Host))
             {
-                visitedHosts.Add(new Uri(url).Host);
+                _ = visitedHosts.Add(new Uri(url).Host);
 
                 await ProcessUrlAsync(url, token).ConfigureAwait(false);
             }
@@ -275,17 +274,19 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
     /// </summary>
     /// <param name="baseUrls">A list of base URLs to be added.</param>
     /// <param name="otherUrls">A list of other URLs to be added.</param>
-    private static void AddUrlsToOutputModel(List<string> baseUrls, List<string> otherUrls)
+    private static void AddUrlsToOutputModel(ScrapedUrls scrapeUrls)
     {
         // Add otherUrls array to the CapturedExternalLinks in output object.
-        OutputControl.Instance.CapturedExternalLinks.AddArray(otherUrls.ToArray());
+        OutputControl.Instance.CapturedExternalLinks.AddRange(scrapeUrls.OtherUrls);
+
 
         // Add baseUrls array to the CapturedSeedLinks in output object.
-        OutputControl.Instance.CapturedSeedLinks.AddArray(baseUrls.ToArray());
+        OutputControl.Instance.CapturedSeedLinks.AddRange(scrapeUrls.BaseUrls);
 
         // Add both otherUrls and baseUrls arrays to the UrlsScrapedThisSession in the output object.
-        OutputControl.Instance.UrlsScrapedThisSession.AddArray(otherUrls.ToArray());
-        OutputControl.Instance.UrlsScrapedThisSession.AddArray(baseUrls.ToArray());
+        OutputControl.Instance.UrlsScrapedThisSession.AddRange(scrapeUrls.AllUrls);
+
+
     }
 
 
@@ -334,11 +335,11 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         catch (Exception ex)
         {
             //_logger.SpyderInfoMessage($"An unhandled error occurred when crawling URL: {cleanUrl}. Spyder will now exit.");
-            Console.WriteLine("Unhandled crawler error occurred.. 340 ex.Message *********");
+            Console.WriteLine("Unhandled crawler error occurred.. <WebCrawlerController-340>");
         }
         finally
         {
-            _crawlTasksGate.Release();
+            _ = _crawlTasksGate.Release();
         }
 
 
@@ -371,6 +372,7 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
     private async Task HandleCrawlUrlAsync([NotNull] string url, int currentDepth)
     {
 
+        ScrapedUrls scrapedUrls = new(Options.StartingUrl);
 
         // Check if the URL has already been visited and that the depth limit has not been reached
         if (currentDepth >= Options.LinkDepthLimit || _visitedUrls.ContainsKey(url))
@@ -379,7 +381,7 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         }
 
         // Add the URL to the list of visited URLs
-        _visitedUrls.TryAdd(url, 0);
+        _ = _visitedUrls.TryAdd(url, 0);
 
 
 
@@ -391,26 +393,25 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         // Parse the html and extract all hyperlink
         var newPageLinks = HtmlParser.GetHrefLinksFromDocumentSourceProposed(documentsrc, url);
 
-        // Create a task for each hyperlink found
-        if (newPageLinks != null)
-        {
-            var filteredLinks = SeparateAndFilterUrls(newPageLinks, url);
+        scrapedUrls.AddRange(newPageLinks);
 
-            var tasks = filteredLinks.Select(async url =>
+
+
+
+        var tasks = scrapedUrls.AllUrls.Select(async url =>
+            {
+                try
                 {
-                    try
-                    {
-                        await CrawlAsync(url, currentDepth + 1).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.AndContinue(ex);
-                    }
-                });
+                    await CrawlAsync(url.OriginalString, currentDepth + 1).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log.AndContinue(ex);
+                }
+            });
 
 
-            _crawlerTasks.AddRange(tasks);
-        }
+        _crawlerTasks.AddRange(tasks);
     }
 
 
@@ -552,7 +553,7 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
             if (HtmlParser.SearchPageForTagName(pageSource, "video"))
             {
                 //A video tag was found, so add to OutputControl.CapturedUrlWithSearchResults
-                OutputControl.Instance!.CapturedUrlWithSearchResults?.Add(url);
+                OutputControl.Instance!.CapturedUrlWithSearchResults.AddUrl(url);
             }
         }
 
@@ -561,20 +562,9 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         // Scrape the page for links add to var _urlsToCrawl
         var newurls = HtmlParser.GetHrefLinksFromDocumentSource(doc);
 
-
-        _urlsToCrawl = _urlsToCrawl.Concat(newurls.BaseUrls)
-            .Concat(newurls.OtherUrls).ToList();
+        _urlsToCrawl.AddRange(from uri in newurls.AllUrls select url);
 
 
-        foreach (var b in newurls.BaseUrls)
-        {
-            _urlsToCrawl.Add(b);
-        }
-
-        foreach (var bw in newurls.OtherUrls)
-        {
-            _urlsToCrawl.Add(bw);
-        }
     }
 
 
@@ -671,66 +661,6 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 
         return Task.CompletedTask;
     }
-
-
-
-
-
-    /// <summary>
-    /// Method ensures urls are structured properly, seperates external and internal links
-    /// and also filters out dupes and checks urls agains filter settings
-    /// </summary>
-    /// <param name="urls"></param>
-    /// <param name="optionsStartingUrl"></param>
-    /// <returns> A List of urls as strings </returns>
-    private List<string> SeparateAndFilterUrls(IEnumerable<string> urls, string optionsStartingUrl)
-    {
-        _ = Uri.TryCreate(optionsStartingUrl, UriKind.Absolute, out var baseUri);
-
-        //Checks filter settings in Spyder options and remove any hits
-        var sanitizedUrls = HtmlParser.SanitizeUrls(urls);
-
-        // Seperate Internal and external links
-        var (baseUrls, otherUrls) = SeparateUrls(sanitizedUrls, baseUri);
-
-        // If enabled in settings adds urls to output
-        AddUrlsToOutputModel(baseUrls, otherUrls);
-
-
-
-        try
-        {
-            var combo = baseUrls.Concat(otherUrls);
-            var combined = combo.Distinct().Except(_visitedUrls.Keys);
-
-
-            var inturls = combined.Distinct().Except(_visitedUrls.Keys);
-
-
-            if (Options.FollowExternalLinks == true)
-            {
-                return combined.ToList();
-            }
-            return inturls.ToList();
-
-
-        }
-        catch (Exception ex)
-        {
-
-            Log.AndContinue(ex, "Error while filtering urls");
-            return new List<string>();
-        }
-
-
-
-
-
-
-    }
-
-
-
 
 
     #endregion

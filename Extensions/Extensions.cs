@@ -42,13 +42,13 @@ public static class SpyderLibExtensions
         _ = builder.Services.AddOptions<TextFileLoggerConfiguration>().Configure(logConfig =>
             logConfig.SetProperties(config));
 
-        builder.AddDebug().AddCustomFormatter(
+        _ = builder.AddDebug().AddCustomFormatter(
             options =>
                 {
                     options.CustomPrefix = "~~<{ ";
                     options.CustomSuffix = " }>~~";
                 });
-        builder.SetMinimumLevel(s_spyderOptions.LoggingLevel);
+        _ = builder.SetMinimumLevel(s_spyderOptions.LoggingLevel);
         _ = builder.AddFilter("TextFileLogger", s_spyderOptions.LoggingLevel);
         _ = builder.AddFilter("Microsoft", LogLevel.Information);
         _ = builder.AddFilter("System.Net.Http", LogLevel.Warning);
@@ -101,8 +101,8 @@ public static class SpyderLibExtensions
         this ILoggingBuilder builder,
         Action<TextFileLoggerConfiguration> configure)
     {
-        builder.AddTextFileLogger();
-        builder.Services.Configure(configure);
+        _ = builder.AddTextFileLogger();
+        _ = builder.Services.Configure(configure);
 
         return builder;
     }

@@ -6,7 +6,7 @@ namespace KC.Apps.SpyderLib.Modules;
 
 /// <inheritdoc />
 [Serializable]
-internal class QueItem(Uri url) : Model
+internal sealed class QueItem(Uri url) : Model
 {
     #region feeeldzzz
 

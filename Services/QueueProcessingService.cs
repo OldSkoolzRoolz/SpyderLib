@@ -96,7 +96,7 @@ public sealed class QueueProcessingService : BackgroundService
                             }
                             finally
                             {
-                                semi.Release();
+                                _ = semi.Release();
                             }
                         }));
                 }
@@ -160,7 +160,7 @@ public sealed class QueueProcessingService : BackgroundService
         Guard.IsNotNull(workItem);
         Guard.IsNotNull(_logger);
 
-        Interlocked.Increment(ref s_downloadAttempts);
+        _ = Interlocked.Increment(ref s_downloadAttempts);
 
         var randomFileName = Path.GetRandomFileName();
         var savePath = Path.Combine(workItem.SavePath, randomFileName + ".mp4");
@@ -204,7 +204,7 @@ public sealed class QueueProcessingService : BackgroundService
 
     private void OnDownloadQueueLoadComplete(object sender, EventArgs e)
     {
-        DoQueProcessingAsync();
+        _ = DoQueProcessingAsync();
     }
 
 
@@ -214,7 +214,7 @@ public sealed class QueueProcessingService : BackgroundService
 
     private static void Init()
     {
-        QueueProcessorLoadComplete.TrySetResult(true);
+        _ = QueueProcessorLoadComplete.TrySetResult(true);
     }
 
     #endregion

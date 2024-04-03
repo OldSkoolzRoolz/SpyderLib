@@ -83,7 +83,7 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
         logger.SpyderInfoMessage("Background download Que is loaded");
 
         // Set the Download Queue Load Complete Task to be Complete
-        DownloadQueLoadComplete.TrySetResult(true);
+        _ = DownloadQueLoadComplete.TrySetResult(true);
     }
 
 
@@ -160,7 +160,7 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
         Guard.IsNotNull(workItem);
         try
         {
-            await this.Block.SendAsync(workItem).ConfigureAwait(false);
+            _ = await this.Block.SendAsync(workItem).ConfigureAwait(false);
         }
         catch (Exception e)
         {

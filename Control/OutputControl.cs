@@ -1,5 +1,6 @@
 using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Properties;
+using KC.Apps.SpyderLib.Services;
 
 
 
@@ -21,7 +22,7 @@ public class OutputControl : IOutputControl
 
     public void OnLibraryShutdown()
     {
-        var collectionDictionary = new Dictionary<ConcurrentScrapedUrlCollection, string>
+        var collectionDictionary = new Dictionary<ScrapedUrls, string>
                 {
                     { this.CapturedVideoLinks, "TestingVideoLinks.txt" },
                     { this.UrlsScrapedThisSession, "AllUrlsCaptured.txt" },
@@ -31,12 +32,12 @@ public class OutputControl : IOutputControl
                     { this.CapturedUrlWithSearchResults, "PositiveTagSearchResults.txt" }
                 };
 
-        foreach (var entry in collectionDictionary.Where(entry => !entry.Key.IsEmpty))
+        foreach (var entry in collectionDictionary)
         {
             SaveCollectionToFile(entry.Key, entry.Value);
         }
 
-        Console.WriteLine("Output written");
+        Console.WriteLine("Spyder Output written");
     }
 
     #endregion
@@ -58,9 +59,9 @@ public class OutputControl : IOutputControl
 
     #region Private Methods
 
-    private static void SaveCollectionToFile(ConcurrentScrapedUrlCollection col, string fileName)
+    private static void SaveCollectionToFile(ScrapedUrls col, string fileName)
     {
-        if (col is { IsEmpty: true })
+        if (col is null)
         {
             return;
         }
@@ -69,9 +70,9 @@ public class OutputControl : IOutputControl
 
         using var fs = new FileStream(path, FileMode.Append);
         using var sw = new StreamWriter(fs);
-        foreach (var item in col)
+        foreach (var item in col.AllUrls)
         {
-            sw.WriteLine(item.Key);
+            sw.WriteLine(item.OriginalString);
         }
 
         sw.Flush();
@@ -89,29 +90,29 @@ public class OutputControl : IOutputControl
     /// <summary>
     ///     The urls collected that are NOT on the same host as the <see cref="SpyderOptions.StartingUrl" />
     /// </summary>
-    public ConcurrentScrapedUrlCollection CapturedExternalLinks { get; } = new();
+    public ScrapedUrls CapturedExternalLinks { get; } = new(SpyderControlService.Options.StartingUrl);
 
     /// <summary>
     ///     The urls collected that are on the same host as the <see cref="SpyderOptions.StartingUrl" />
     /// </summary>
-    public ConcurrentScrapedUrlCollection CapturedSeedLinks { get; } = new();
+    public ScrapedUrls CapturedSeedLinks { get; } = new(SpyderControlService.Options.StartingUrl);
 
     /// <summary>
     ///     The urls collected that were found to contain  the html tag searched for
     /// </summary>
-    public ConcurrentScrapedUrlCollection CapturedUrlWithSearchResults { get; } = new();
+    public ScrapedUrls CapturedUrlWithSearchResults { get; } = new(SpyderControlService.Options.StartingUrl);
 
-    public ConcurrentScrapedUrlCollection CapturedVideoLinks { get; } = new();
+    public ScrapedUrls CapturedVideoLinks { get; } = new(SpyderControlService.Options.StartingUrl);
 
     /// <summary>
     ///     Represents the urls of the pages that were scraped for content
     /// </summary>
-    public ConcurrentScrapedUrlCollection CrawledUrls { get; } = new();
+    public ScrapedUrls CrawledUrls { get; } = new(SpyderControlService.Options.StartingUrl);
 
     /// <summary>
     ///     The collection of urls that failed during the attempt to scrape.
     /// </summary>
-    public ConcurrentScrapedUrlCollection FailedCrawlerUrls { get; } = new();
+    public ScrapedUrls FailedCrawlerUrls { get; } = new(SpyderControlService.Options.StartingUrl);
 
     /// <summary>
     ///     Represents a singleton instance of an OutputControl object.
@@ -121,7 +122,7 @@ public class OutputControl : IOutputControl
     /// <summary>
     ///     Represents the urls that have been scraped from the pages that were crawled
     /// </summary>
-    public ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; } = new();
+    public ScrapedUrls UrlsScrapedThisSession { get; } = new(SpyderControlService.Options.StartingUrl);
 
     #endregion
 }
@@ -152,35 +153,35 @@ public interface IOutputControl
     /// <summary>
     ///     Gets or sets the collection of captured external links
     /// </summary>
-    ConcurrentScrapedUrlCollection CapturedExternalLinks { get; }
+    ScrapedUrls CapturedExternalLinks { get; }
 
     /// <summary>
     ///     Gets or sets the collection of captured seed links
     /// </summary>
-    ConcurrentScrapedUrlCollection CapturedSeedLinks { get; }
+    ScrapedUrls CapturedSeedLinks { get; }
 
     /// <summary>
     ///     Gets or sets the collection of URLs which resulted producing search results
     /// </summary>
-    ConcurrentScrapedUrlCollection CapturedUrlWithSearchResults { get; }
+    ScrapedUrls CapturedUrlWithSearchResults { get; }
 
     /// <summary>
     ///     Gets or sets the collection of captured video links
     /// </summary>
-    ConcurrentScrapedUrlCollection CapturedVideoLinks { get; }
+    ScrapedUrls CapturedVideoLinks { get; }
 
-    ConcurrentScrapedUrlCollection CrawledUrls { get; }
+    ScrapedUrls CrawledUrls { get; }
 
     /// <summary>
     ///     Gets or sets the collection of URLs that the web crawler failed to process
     /// </summary>
-    ConcurrentScrapedUrlCollection FailedCrawlerUrls { get; }
+    ScrapedUrls FailedCrawlerUrls { get; }
 
     /// <summary>
     ///     Gets or sets the collection of URLs that have been scraped in the current session.
     ///     This collection is used for exclusion purposes.
     /// </summary>
-    ConcurrentScrapedUrlCollection UrlsScrapedThisSession { get; }
+    ScrapedUrls UrlsScrapedThisSession { get; }
 
     #endregion
 }

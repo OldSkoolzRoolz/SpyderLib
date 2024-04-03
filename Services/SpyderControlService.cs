@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 
 using KC.Apps.SpyderLib.Control;
 using KC.Apps.SpyderLib.Logging;
-using KC.Apps.SpyderLib.Modules;
 using KC.Apps.SpyderLib.Properties;
 
 using Microsoft.Extensions.Hosting;
@@ -45,8 +44,8 @@ public class SpyderControlService : ServiceBase, IHostedService
         IWebCrawlerController webCrawlerController,
         IDownloadController downloadController) : base(lifetime)
     {
-        lifetime.ApplicationStarted.Register(OnStarted);
-        lifetime.ApplicationStopping.Register(OnStopping);
+        _ = lifetime.ApplicationStarted.Register(OnStarted);
+        _ = lifetime.ApplicationStopping.Register(OnStopping);
         _downControl = downloadController;
         _webCrawlerController = webCrawlerController;
     }
@@ -70,7 +69,7 @@ public class SpyderControlService : ServiceBase, IHostedService
         {
             if (value != s_crawlStatus)
             {
-                SetProperty(ref s_crawlStatus, value);
+                _ = SetProperty(ref s_crawlStatus, value);
                 RaisePropertyChanged(this.LastCrawlerStatus);
             }
         }
@@ -182,7 +181,7 @@ public class SpyderControlService : ServiceBase, IHostedService
         try
         {
             //Ensure all modules are loaded
-            Task.WhenAll(
+            _ = Task.WhenAll(
                 WebCrawlerController.StartupComplete.Task,
                 DownloadController.StartupComplete.Task,
                 AbstractCacheIndex.StartupComplete.Task,

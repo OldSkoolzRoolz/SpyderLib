@@ -134,7 +134,7 @@ public class DownloadController : IDownloadController
 
     private void OnInitComplete(object sender, EventArgs e)
     {
-        StartupComplete.TrySetResult(true);
+        _ = StartupComplete.TrySetResult(true);
     }
 
 
@@ -195,7 +195,7 @@ public class DownloadController : IDownloadController
         {
             var finishedTask = await Task.WhenAny(taskList).ConfigureAwait(false);
             await finishedTask.ConfigureAwait(false);
-            taskList.Remove(finishedTask);
+            _ = taskList.Remove(finishedTask);
         }
 
         stopwatch.Stop();

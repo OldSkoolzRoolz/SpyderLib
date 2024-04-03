@@ -19,7 +19,7 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService, IDispos
         IMyClient client) : base(client, logger, metrics)
     {
         _logger.SpyderInfoMessage("Cache Index Service Loaded...");
-        CacheIndexLoadComplete.TrySetResult(true);
+        _ = CacheIndexLoadComplete.TrySetResult(true);
     }
 
 

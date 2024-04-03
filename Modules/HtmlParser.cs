@@ -23,7 +23,7 @@ internal static class HtmlParser
 
         var doc = new HtmlDocument
         {
-                                DisableServerSideCode = true
+            DisableServerSideCode = true
         };
 
 
@@ -203,20 +203,6 @@ internal static class HtmlParser
 
 
 
-    private static IEnumerable<string> RemoveDuplicatedUrls(IEnumerable<string> urls)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(nameof(urls));
-
-        //Make sure we don't have any duplicates in our new urls
-        if (!OutputControl.Instance.UrlsScrapedThisSession.IsEmpty)
-        {
-            var distinctUrls = urls.Except(OutputControl.Instance.UrlsScrapedThisSession.Keys);
-            return distinctUrls;
-        }
-
-        return urls;
-    }
-
 
 
 
@@ -350,8 +336,11 @@ internal static class HtmlParser
     /// <returns>
     ///     Returns tuple of seed urls and external urls.
     /// </returns>
-    public static (List<string> BaseUrls, List<string> OtherUrls) GetHrefLinksFromDocumentSource(HtmlDocument doc)
+    public static ScrapedUrls GetHrefLinksFromDocumentSource(HtmlDocument doc)
     {
+
+        ScrapedUrls pageUrls = new(SpyderControlService.Options.StartingUrl);
+
         try
         {
             //Extract all html nodes containing links
@@ -366,21 +355,15 @@ internal static class HtmlParser
             //Extract all 'href' values from the links//
             var pglinks = links.Select(a => a.GetAttributeValue("href", null))
                 .Where(u => !string.IsNullOrEmpty(u)).ToList();
-
-
-            var scrubbedUrls = SanitizeUrls(pglinks);
-
+            pageUrls.AddRange(pglinks);
 
 
 
-            var urlTuple = SeparateUrls(scrubbedUrls, new(SpyderControlService.CrawlerOptions.StartingUrl));
+            OutputControl.Instance.UrlsScrapedThisSession.AddRange(pageUrls.AllUrls);
+            OutputControl.Instance.CapturedExternalLinks.AddRange(pageUrls.OtherUrls);
+            OutputControl.Instance.CapturedSeedLinks.AddRange(pageUrls.BaseUrls);
 
-
-            OutputControl.Instance.UrlsScrapedThisSession.AddRange(scrubbedUrls);
-            OutputControl.Instance.CapturedExternalLinks.AddRange(urlTuple.OtherUrls);
-            OutputControl.Instance.CapturedSeedLinks.AddRange(urlTuple.BaseUrls);
-
-            return urlTuple;
+            return pageUrls;
         }
         catch (IOException ex)
         {
@@ -396,39 +379,6 @@ internal static class HtmlParser
 
 
 
-
-    //<<<<<<<<<<<<<  ✨ Codeium AI Suggestion  >>>>>>>>>>>>>>
-    // Sanitizes a collection of raw URLs by converting them to absolute URLs, filtering out 
-    // patterns, removing duplicates, and returning the sanitized URLs.
-    //
-    // Parameters:
-    //   rawUrls: A collection of raw URLs to be sanitized.
-    //
-    // Returns:
-    //   An IEnumerable of strings containing the sanitized URLs.
-    public static IEnumerable<string> SanitizeUrls(IEnumerable<string> rawUrls)
-    {
-        var newU = new List<string>();
-      
-
-
-        try
-        {
-
-            var converted = ToAbsoluteUrls(SpyderControlService.CrawlerOptions.StartingUrl, newU);
-
-            var cleaner = FilterPatternsFromUrls(converted);
-
-            var set3 = RemoveDuplicatedUrls(cleaner);
-
-            return set3;
-        }
-        catch (Exception)
-        {
-
-            throw;
-        }
-    }
 
 
 
