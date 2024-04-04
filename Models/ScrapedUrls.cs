@@ -1,6 +1,6 @@
 using JetBrains.Annotations;
 
-using KC.Apps.SpyderLib.Services;
+using KC.Apps.SpyderLib.Properties;
 
 
 
@@ -12,8 +12,7 @@ public class ScrapedUrls(string startingHost)
 
     private readonly HashSet<Uri> _externalUrls = [];
     private readonly HashSet<Uri> _internalUrls = [];
-
-
+    private readonly SpyderOptions _options = AppContext.GetData("options") as SpyderOptions;
 
     #endregion
 
@@ -22,33 +21,34 @@ public class ScrapedUrls(string startingHost)
 
 
 
-    public Uri BaseUrl { get; } = new Uri(startingHost);
-
+    public Uri BaseUrl { get; } = new(startingHost);
     public IEnumerable<Uri> BaseUrls => _internalUrls;
     public IEnumerable<Uri> OtherUrls => _externalUrls;
-
     public IEnumerable<Uri> AllUrls => _internalUrls.Union(_externalUrls);
-
+    public IEnumerable<string> AllUrlsAsStrings => AllUrls.Select(x => x.AbsoluteUri);
     public int Count => _internalUrls.Count + _externalUrls.Count;
 
 
 
 
-
+    public bool Any()
+    {
+        return AllUrls.Any();
+    }
 
     /// <summary>
-    /// Adds a collection of URLs to the ScrapedUrlCollection
+    ///     Adds a collection of URLs to the ScrapedUrlCollection
     /// </summary>
     /// <param name="urls">A collection of URLs</param>
     /// <exception cref="ArgumentNullException">Thrown if the input collection is null</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown if the input collection contains at least one null URL or an invalid URL
+    ///     Thrown if the input collection contains at least one null URL or an invalid URL
     /// </exception>
     public void AddRange([NotNull] IEnumerable<string> urls)
     {
         ArgumentNullException.ThrowIfNull(urls);
 
-        foreach (string uri in urls)
+        foreach (var uri in urls)
         {
             AddUrl(uri);
         }
@@ -59,10 +59,8 @@ public class ScrapedUrls(string startingHost)
 
 
 
-
-
     /// <summary>
-    /// Adds a collection of URLs to the ScrapedUrlCollection
+    ///     Adds a collection of URLs to the ScrapedUrlCollection
     /// </summary>
     /// <param name="urls">A collection of URLs</param>
     /// <exception cref="ArgumentNullException">Thrown if the input collection is null</exception>
@@ -70,7 +68,7 @@ public class ScrapedUrls(string startingHost)
     {
         ArgumentNullException.ThrowIfNull(urls, nameof(urls));
 
-        foreach (Uri uri in urls)
+        foreach (var uri in urls)
         {
             AddUrl(uri);
         }
@@ -81,18 +79,17 @@ public class ScrapedUrls(string startingHost)
 
 
 
-
     /// <summary>
-    /// Adds a URL to the internal or external URL collections based on its kind.
+    ///     Adds a URL to the internal or external URL collections based on its kind.
     /// </summary>
     /// <param name="newUrl">
-    /// The URL to be added. Must not be null and must be a valid absolute URI.
+    ///     The URL to be added. Must not be null and must be a valid absolute URI.
     /// </param>
     /// <exception cref="ArgumentNullException">
-    /// Thrown if the input parameter is null.
+    ///     Thrown if the input parameter is null.
     /// </exception>
     /// <exception cref="ArgumentException">
-    /// Thrown if the input parameter is not a valid absolute URI.
+    ///     Thrown if the input parameter is not a valid absolute URI.
     /// </exception>
     private void AddUrl([NotNull] Uri newUrl)
     {
@@ -120,7 +117,6 @@ public class ScrapedUrls(string startingHost)
 
 
 
-
     /// <summary>
     ///     Adds a URL to the internal or external URL collections based on its kind.
     /// </summary>
@@ -133,7 +129,7 @@ public class ScrapedUrls(string startingHost)
 
 
 
-        if (IsValidUrl(url) && !CheckStringForSubstring(url, SpyderControlService.Options.LinkPatternExclusions))
+        if (IsValidUrl(url) && !CheckStringForSubstring(url, _options.LinkPatternExclusions))
         {
             // Try to create a Uri object from the URL
             _ = Uri.TryCreate(url, UriKind.Absolute, out var uriResult);
@@ -180,6 +176,7 @@ public class ScrapedUrls(string startingHost)
 
 
 
+
     /// <summary>
     ///     Replaces any patterns in the given URL with an empty string.
     /// </summary>
@@ -193,21 +190,25 @@ public class ScrapedUrls(string startingHost)
     private string CheckUrlForPatterns(string url)
     {
         // Get the link pattern exclusions from the options.
-        var patterns = SpyderControlService.Options.LinkPatternExclusions;
+        var patterns = _options.LinkPatternExclusions;
 
         // If there are no link pattern exclusions, return the URL as is.
         if (!CheckStringForSubstring(url, patterns))
         {
             return url;
         }
+
         return string.Empty;
     }
 
 
 
+
+
+
     private bool CheckStringForSubstring(string inputString, string[] substrings)
     {
-        foreach (string substring in substrings)
+        foreach (var substring in substrings)
         {
             if (inputString.Contains(substring))
             {
@@ -218,9 +219,14 @@ public class ScrapedUrls(string startingHost)
         return false;
     }
 
+
+
+
+
+
     private IEnumerable<string> FilterPatternsFromUrls(IEnumerable<string> urls)
     {
-        var patterns = SpyderControlService.Options.LinkPatternExclusions;
+        var patterns = _options.LinkPatternExclusions;
 
         return patterns is null
             ? urls
@@ -229,14 +235,5 @@ public class ScrapedUrls(string startingHost)
             urls.Where(url =>
                 !patterns.Any(pattern =>
                     url.Contains(pattern, StringComparison.CurrentCultureIgnoreCase)));
-
     }
-
-
-
-
-
-
-
-
 }

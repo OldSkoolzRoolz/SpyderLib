@@ -1,6 +1,5 @@
 using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Properties;
-using KC.Apps.SpyderLib.Services;
 
 
 
@@ -8,10 +7,21 @@ namespace KC.Apps.SpyderLib.Control;
 
 public class OutputControl : IOutputControl
 {
+    #region feeeldzzz
+
+    private static readonly SpyderOptions _options = AppContext.GetData("options") as SpyderOptions;
+
+    #endregion
+
+
+
+
+
+
     public OutputControl()
-    {
-        AppDomain.CurrentDomain.DomainUnload += OnDomainShutdown;
-    }
+        {
+            AppDomain.CurrentDomain.DomainUnload += OnDomainShutdown;
+        }
 
 
 
@@ -21,8 +31,8 @@ public class OutputControl : IOutputControl
     #region Public Methods
 
     public void OnLibraryShutdown()
-    {
-        var collectionDictionary = new Dictionary<ScrapedUrls, string>
+        {
+            var collectionDictionary = new Dictionary<ScrapedUrls, string>
                 {
                     { this.CapturedVideoLinks, "TestingVideoLinks.txt" },
                     { this.UrlsScrapedThisSession, "AllUrlsCaptured.txt" },
@@ -32,13 +42,13 @@ public class OutputControl : IOutputControl
                     { this.CapturedUrlWithSearchResults, "PositiveTagSearchResults.txt" }
                 };
 
-        foreach (var entry in collectionDictionary)
-        {
-            SaveCollectionToFile(entry.Key, entry.Value);
-        }
+            foreach (var entry in collectionDictionary)
+                {
+                    SaveCollectionToFile(entry.Key, entry.Value);
+                }
 
-        Console.WriteLine("Spyder Output written");
-    }
+            Console.WriteLine("Spyder Output written");
+        }
 
     #endregion
 
@@ -48,9 +58,9 @@ public class OutputControl : IOutputControl
 
 
     private void OnDomainShutdown(object sender, EventArgs e)
-    {
-        OnLibraryShutdown();
-    }
+        {
+            OnLibraryShutdown();
+        }
 
 
 
@@ -60,23 +70,23 @@ public class OutputControl : IOutputControl
     #region Private Methods
 
     private static void SaveCollectionToFile(ScrapedUrls col, string fileName)
-    {
-        if (col is null)
         {
-            return;
+            if (col is null)
+                {
+                    return;
+                }
+
+            var path = Path.Combine(Environment.CurrentDirectory, fileName);
+
+            using var fs = new FileStream(path, FileMode.Append);
+            using var sw = new StreamWriter(fs);
+            foreach (var item in col.AllUrls)
+                {
+                    sw.WriteLine(item.OriginalString);
+                }
+
+            sw.Flush();
         }
-
-        var path = Path.Combine(Environment.CurrentDirectory, fileName);
-
-        using var fs = new FileStream(path, FileMode.Append);
-        using var sw = new StreamWriter(fs);
-        foreach (var item in col.AllUrls)
-        {
-            sw.WriteLine(item.OriginalString);
-        }
-
-        sw.Flush();
-    }
 
     #endregion
 
@@ -90,29 +100,29 @@ public class OutputControl : IOutputControl
     /// <summary>
     ///     The urls collected that are NOT on the same host as the <see cref="SpyderOptions.StartingUrl" />
     /// </summary>
-    public ScrapedUrls CapturedExternalLinks { get; } = new(SpyderControlService.Options.StartingUrl);
+    public ScrapedUrls CapturedExternalLinks { get; } = new(_options.StartingUrl);
 
     /// <summary>
     ///     The urls collected that are on the same host as the <see cref="SpyderOptions.StartingUrl" />
     /// </summary>
-    public ScrapedUrls CapturedSeedLinks { get; } = new(SpyderControlService.Options.StartingUrl);
+    public ScrapedUrls CapturedSeedLinks { get; } = new(_options.StartingUrl);
 
     /// <summary>
     ///     The urls collected that were found to contain  the html tag searched for
     /// </summary>
-    public ScrapedUrls CapturedUrlWithSearchResults { get; } = new(SpyderControlService.Options.StartingUrl);
+    public ScrapedUrls CapturedUrlWithSearchResults { get; } = new(_options.StartingUrl);
 
-    public ScrapedUrls CapturedVideoLinks { get; } = new(SpyderControlService.Options.StartingUrl);
+    public ScrapedUrls CapturedVideoLinks { get; } = new(_options.StartingUrl);
 
     /// <summary>
     ///     Represents the urls of the pages that were scraped for content
     /// </summary>
-    public ScrapedUrls CrawledUrls { get; } = new(SpyderControlService.Options.StartingUrl);
+    public ScrapedUrls CrawledUrls { get; } = new(_options.StartingUrl);
 
     /// <summary>
     ///     The collection of urls that failed during the attempt to scrape.
     /// </summary>
-    public ScrapedUrls FailedCrawlerUrls { get; } = new(SpyderControlService.Options.StartingUrl);
+    public ScrapedUrls FailedCrawlerUrls { get; } = new(_options.StartingUrl);
 
     /// <summary>
     ///     Represents a singleton instance of an OutputControl object.
@@ -122,7 +132,7 @@ public class OutputControl : IOutputControl
     /// <summary>
     ///     Represents the urls that have been scraped from the pages that were crawled
     /// </summary>
-    public ScrapedUrls UrlsScrapedThisSession { get; } = new(SpyderControlService.Options.StartingUrl);
+    public ScrapedUrls UrlsScrapedThisSession { get; } = new(_options.StartingUrl);
 
     #endregion
 }

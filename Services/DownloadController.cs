@@ -6,12 +6,15 @@ using CommunityToolkit.Diagnostics;
 
 using JetBrains.Annotations;
 
+using KC.Apps.SpyderLib.Interfaces;
 using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Modules;
 using KC.Apps.SpyderLib.Properties;
 
 using Microsoft.Extensions.Logging;
+
+using MySql.Data.MySqlClient;
 
 
 
@@ -41,6 +44,7 @@ public class DownloadController : IDownloadController
     private HashSet<string> _downloadedLinks;
     private TaskCompletionSource _longRunningTaskLifetime;
     private HashSet<string> _searchedPages;
+    private static string connectionString;
 
     #endregion
 
@@ -112,7 +116,7 @@ public class DownloadController : IDownloadController
 
     private void OnDownloadsComplete(object sender, EventArgs e)
     {
-        throw new NotImplementedException();
+        Console.WriteLine("***   Downloads Completed *****");
     }
 
 
@@ -124,6 +128,8 @@ public class DownloadController : IDownloadController
     {
         Log.Debug("Download Queue Load Complete Tasks Available == {0}",
             _downloadQue.Count.ToString(CultureInfo.InvariantCulture));
+
+
         _downloadQue.PostingComplete();
     }
 
@@ -175,10 +181,9 @@ public class DownloadController : IDownloadController
         var stopwatch = new Stopwatch();
         stopwatch.Start();
 
-        Guard.IsNotNull(_cache.CacheIndexItems);
+        var unsearchedCache = GetCacheItems();
 
-        // Gets the list of pages that have not already been searched from disk
-        var unsearchedCache = ExcludeDictionaryByValues(_cache.CacheIndexItems, _searchedPages);
+
 
         if (unsearchedCache.Count == 0)
         {
@@ -213,31 +218,64 @@ public class DownloadController : IDownloadController
 
 
 
-    private async Task<CachedPage> ProcessCachedPageAsync(CachedPage page)
+
+    private static List<string> GetCacheItems()
     {
-        // Add page to file so we skip nexttime
-        //  _searchedPages.Add(page.Value);
-        AppendLineToFile("SearchedPages.txt", page.CachedPageInfo.Value);
+        using var conn = new MySqlConnection(connectionString);
+        conn.Open();
 
-        //Get source
-        var pageSource = GetCachedPageSourceFromDiskAsync(page).ConfigureAwait(false);
-
-        //Checks source for HtmlTag and returns any found source links
-        var found = HtmlParser.TryExtractUserTagFromDocument(
-            HtmlParser.CreateHtmlDocument(await pageSource),
-            _options.HtmlTagToSearchFor,
-            out var foundLinks);
+        var sql = "SELECT siteurl FROM CacheIndex where searched = 0";
+        using var cmd = new MySqlCommand(sql, conn);
+        var reader = cmd.ExecuteReader();
+        List<string> urls = [];
 
 
-        //  If there are any links found they are checked against the completed list
-        // and added to the download Que if they are new.
-        if (found)
+        while (reader.Read())
         {
-            await FilterAndAddToQueueAsync(foundLinks, page).ConfigureAwait(false);
+            urls.Add(reader["siteurl"].ToString());
         }
-
-        return await Task.FromResult(page).ConfigureAwait(false);
+        return urls;
     }
+
+
+    private static void SetItemSearched(string address)
+    {
+        using var conn = new MySqlConnection(connectionString);
+        conn.Open();
+        var sql = "UPDATE CacheIndex SET searched = 1 WHERE siteurl = @address";
+        var cmd = new MySqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@address", address);
+        cmd.ExecuteNonQuery();
+    }
+
+
+
+
+
+    private static string GetCacheFileNameFromDb(string address)
+    {
+        try
+        {
+            using var conn = new MySqlConnection(connectionString);
+
+            conn.Open();
+
+            var sql = "SELECT filename FROM CacheIndex WHERE siteurl = @address";
+            var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@address", address);
+            var filename = (string)cmd.ExecuteScalar();
+            return filename;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            throw;
+        }
+    }
+
+
+
+
 
 
 
@@ -245,22 +283,40 @@ public class DownloadController : IDownloadController
 
 
     /// <summary>
-    ///     Excludes all entries from a ConcurrentDictionary where the value is contained in the valuesToExclude HashSet.
-    ///     This is done in a thread-safe manner.
+    ///     Processes a cached page from disk
     /// </summary>
-    /// <typeparam name="TKey">Type of the dictionary key</typeparam>
-    /// <typeparam name="TValue">Type of the dictionary value</typeparam>
-    /// <param name="dictionary">The dictionary to remove the entries from</param>
-    /// <param name="valuesToExclude">The values to exclude</param>
-    /// <returns>A new dictionary without the excluded entries</returns>
-    private static List<CachedPage> ExcludeDictionaryByValues<TKey, TValue>(
-        ConcurrentDictionary<TKey, TValue> dictionary,
-        HashSet<TValue> valuesToExclude)
+    /// <param name="pageurl">The url of the cached page to process.</param>
+    /// <returns>A <see cref="CachedPage"/> instance.</returns>
+    private async Task ProcessCachedPageAsync(string pageurl)
     {
-        return dictionary.Where(entry => !valuesToExclude.Contains(entry.Value))
-            .Select(entry => new CachedPage(entry.Key.ToString(), entry.Value.ToString()))
-            .ToList();
+        // Get source
+        var pageSource = await GetCachedPageSourceFromDiskAsync(pageurl).ConfigureAwait(false);
+        if (pageSource == null || pageSource.Length <= 1000) return;
+        try
+        {
+            // Checks source for HtmlTag and returns any found source links
+            var found = HtmlParser.TryExtractUserTagFromDocument(
+                HtmlParser.CreateHtmlDocument(pageSource),
+                _options.HtmlTagToSearchFor,
+                out var foundLinks);
+
+            // If there are any links found they are checked against the completed list
+            // and added to the download Que if they are new.
+            if (found)
+            {
+                await AddTagHitsToQueueAsync(foundLinks).ConfigureAwait(false);
+            }
+            SetItemSearched(pageurl);
+        }
+        catch (System.Exception)
+        {
+
+            throw;
+        }
+
     }
+
+
 
 
 
@@ -269,7 +325,7 @@ public class DownloadController : IDownloadController
 
     public void Start()
     {
-        Init();
+        LoadProducerQueueAsync().Wait();
     }
 
     #endregion
@@ -359,9 +415,9 @@ public class DownloadController : IDownloadController
     /// <param name="foundLinks">The collection of scraped URLs.</param>
     /// <param name="page">The cached page.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    private async Task FilterAndAddToQueueAsync(ConcurrentScrapedUrlCollection foundLinks, CachedPage page)
+    private async Task AddTagHitsToQueueAsync(ScrapedUrls foundLinks)
     {
-        foreach (var s in foundLinks.Select(k => k.Key).Except(_downloadedLinks))
+        foreach (var s in foundLinks.AllUrlsAsStrings.Select(k => k).Except(_downloadedLinks))
         {
             try
             {
@@ -370,8 +426,7 @@ public class DownloadController : IDownloadController
             catch (SpyderException ex)
             {
                 Log.AndContinue(ex);
-                //Remove the last entry that caused exception
-                _ = _cache.CacheIndexItems.Remove(page.Key, out _);
+
             }
         }
     }
@@ -398,10 +453,10 @@ public class DownloadController : IDownloadController
     ///     </list>
     /// </remarks>
     /// <returns>The cached page source.</returns>
-    private async Task<string> GetCachedPageSourceFromDiskAsync(CachedPage page)
+    private async Task<string> GetCachedPageSourceFromDiskAsync(string page)
     {
         // Combines the cache path and the page value to get the full path to the cached page.
-        var pagePath = Path.Combine(_options.CacheLocation, page.Value);
+        var pagePath = Path.Combine(_options.CacheLocation, page);
 
         // Reads the cached page source from disk.
         var source = await File.ReadAllTextAsync(pagePath).ConfigureAwait(false);

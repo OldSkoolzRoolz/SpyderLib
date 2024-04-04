@@ -203,11 +203,6 @@ internal static class HtmlParser
 
 
 
-
-
-
-
-
     private static (List<string> BaseUrls, List<string> OtherUrls) SeparateUrls(
         IEnumerable<string> sanitizedUrls,
         Uri baseUri)
@@ -338,8 +333,7 @@ internal static class HtmlParser
     /// </returns>
     public static ScrapedUrls GetHrefLinksFromDocumentSource(HtmlDocument doc)
     {
-
-        ScrapedUrls pageUrls = new(SpyderControlService.Options.StartingUrl);
+        ScrapedUrls pageUrls = new(ServiceBase.Options.StartingUrl);
 
         try
         {
@@ -374,11 +368,6 @@ internal static class HtmlParser
 
         return default;
     }
-
-
-
-
-
 
 
 
@@ -423,11 +412,11 @@ internal static class HtmlParser
     public static bool TryExtractUserTagFromDocument(
         HtmlDocument doc,
         string tagToSearchFor,
-        out ConcurrentScrapedUrlCollection links)
+        out ScrapedUrls links)
     {
         Guard.IsNotNull(doc);
         Guard.IsNotNull(tagToSearchFor);
-        links = new();
+        links = new(SpyderControlService.Options.StartingUrl);
 
 
 
@@ -440,7 +429,7 @@ internal static class HtmlParser
         var att = ParseNodeCollectionForSources(tagnodes);
         foreach (var link in att)
         {
-            links.Add(link);
+            links.AddUrl(link);
         }
 
         return links.Any();

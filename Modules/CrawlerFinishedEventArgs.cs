@@ -1,4 +1,4 @@
-namespace KC.Apps.SpyderLib.Control;
+namespace KC.Apps.SpyderLib.Modules;
 
 /// <summary>
 ///     CrawlerFinishedEventArgs

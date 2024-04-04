@@ -3,7 +3,14 @@
     "inlineChat.acceptedOrDiscardBeforeSave": false,
     "inlineChat.mode": "preview",
     "editor.guides.indentation": false,
-    "editor.formatOnPaste": true,
-    "editor.formatOnSave": true,
+    "minimap.renderSideBySide": false,
+
     "editor.formatOnType": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+    "workbench.colorTheme": "vscode-darcula",
+    "workbench.defaultFormatters": ["esbenp.prettier-vscode"],
+
+    "workbench.iconTheme": "vscode-darcula",
+   
 }]

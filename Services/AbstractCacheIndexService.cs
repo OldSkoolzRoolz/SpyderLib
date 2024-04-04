@@ -1,19 +1,23 @@
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+
+using JetBrains.Annotations;
 
 using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Modules;
 using KC.Apps.SpyderLib.Properties;
 
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
+using MySql.Data.MySqlClient;
 
 
 
 namespace KC.Apps.SpyderLib.Services;
 
-public abstract class AbstractCacheIndex
+public abstract class AbstractCacheIndex : BackgroundService
 {
     #region feeeldzzz
 
@@ -35,39 +39,16 @@ public abstract class AbstractCacheIndex
 
 
     private protected AbstractCacheIndex(
-        [JetBrains.Annotations.NotNull] IMyClient client,
-        [JetBrains.Annotations.NotNull] ILogger logger,
-        [JetBrains.Annotations.NotNull] SpyderMetrics metrics)
+        [NotNull] IMyClient client,
+        [NotNull] ILogger logger,
+        [NotNull] SpyderMetrics metrics)
     {
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
 
         _options = AppContext.GetData("options") as SpyderOptions;
-
-
-        SpyderControlService.LibraryHostShuttingDown += OnStopping;
-        IndexCache = LoadCacheIndex();
     }
-
-
-
-
-
-
-    #region Public Methods
-
-    /// <summary>
-    ///     Save Index to disk
-    /// </summary>
-    [SuppressMessage("Performance", "CA1822:Mark members as static")]
-    public void SaveCacheIndex()
-    {
-        using var fileOperations = new FileOperations();
-        fileOperations.SaveCacheIndex(IndexCache);
-    }
-
-    #endregion
 
 
 
@@ -76,7 +57,7 @@ public abstract class AbstractCacheIndex
 
     #region Properteez
 
-    public static ConcurrentDictionary<string, string> IndexCache { get; private set; }
+    public static ConcurrentDictionary<string, string> IndexCache { get; set; }
     public static TaskCompletionSource<bool> StartupComplete { get; } = new();
 
     #endregion
@@ -88,10 +69,10 @@ public abstract class AbstractCacheIndex
 
     #region Private Methods
 
-    private static string GenerateUniqueCacheFilename(
-        string cacheLocale)
+    private static string GenerateUniqueCacheFilename(string cacheLocale, Uri uri)
     {
         var filename = Guid.NewGuid().ToString();
+
         _ = s_mutex.WaitOne();
         try
         {
@@ -116,9 +97,78 @@ public abstract class AbstractCacheIndex
 
 
 
-    protected async Task<string> GetAndSetContentFromCacheCoreAsync([JetBrains.Annotations.NotNull] string address)
+    private static MySqlConnection GetMySqlConnection(string connectionString)
+    {
+        return new(connectionString);
+    }
+
+
+
+
+
+
+    // Example connection string format:
+    private static readonly string connectionString = "server=localhost;user=sa;password=password;database=spyderlib;";
+
+
+
+
+
+
+    protected async Task<string> GetAndSetContentFromCacheCoreAsync([NotNull] string address)
     {
         return await TryGetCacheValue(address).ConfigureAwait(false);
+    }
+
+
+
+
+
+
+    private static void InsertNewCacheItem(string address, string filename)
+    {
+        try
+        {
+            using var conn = GetMySqlConnection(connectionString);
+            conn.Open();
+
+            var sql = "INSERT INTO CacheIndex (siteurl, filename) VALUES (@address, @filename)";
+            var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@address", address);
+            cmd.Parameters.AddWithValue("@filename", filename);
+            cmd.ExecuteNonQuery();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            throw;
+        }
+    }
+
+
+
+
+
+
+    private static string GetCacheFileNameFromDb(string address)
+    {
+        try
+        {
+            using var conn = new MySqlConnection(connectionString);
+
+            conn.Open();
+
+            var sql = "SELECT filename FROM CacheIndex WHERE siteurl = @address";
+            var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@address", address);
+            var filename = (string)cmd.ExecuteScalar();
+            return filename;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            throw;
+        }
     }
 
 
@@ -157,7 +207,7 @@ public abstract class AbstractCacheIndex
         {
             _logger.InternalSpyderError(
                 "A Cache entry was missing from disk. A cache index consistency check has been triggered. Checking cache consistency...");
-            VerifyCacheIndex();
+
         }
     }
 
@@ -191,42 +241,6 @@ public abstract class AbstractCacheIndex
 
 
 
-
-    protected ConcurrentDictionary<string, string> LoadCacheIndex()
-    {
-        try
-        {
-            using var fileOperations = new FileOperations();
-            // load the cache asynchronously to avoid blocking the constructor
-            return fileOperations.LoadCacheIndex();
-        }
-        catch (Exception)
-        {
-            _logger.InternalSpyderError("Failed to load cache index");
-
-
-            throw;
-        }
-    }
-
-
-
-
-
-
-    protected void OnStopping(object sender, EventArgs eventArgs)
-    {
-        try
-        {
-            SaveCacheIndex();
-            _logger.SpyderInfoMessage("Cache Index is saved");
-        }
-        catch (SpyderException)
-        {
-            _logger.SpyderError(
-                "Error saving Cache Index. Consider checking data against backup file.");
-        }
-    }
 
 
 
@@ -283,13 +297,13 @@ public abstract class AbstractCacheIndex
         try
         {
             //Generate a unique filename to save the entry to disk.
-            var filename = GenerateUniqueCacheFilename(_options.CacheLocation);
+            var filename = GenerateUniqueCacheFilename(_options.CacheLocation, new(address));
             resultObj.CacheFileName = filename;
             await FileOperations.SafeFileWriteAsync(
                     Path.Combine(_options.CacheLocation, filename), resultObj.Content)
                 .ConfigureAwait(false);
 
-            _ = IndexCache.TryAdd(address, filename);
+            InsertNewCacheItem(address, filename);
         }
         catch (Exception e)
         {
@@ -305,65 +319,25 @@ public abstract class AbstractCacheIndex
 
 
 
-    private Task<string> TryGetCacheValue(string key)
+    private async Task<string> TryGetCacheValue(string address)
     {
-        // Atttempt to get value from cache if it exists or gets value from the web if it doesn't
-        return IndexCache.TryGetValue(key, out var keyVal)
-            ? Task.FromResult(ReadCacheItemFromDisk(keyVal))
-            : GetValueAsyncInternal(key);
-    }
+        // Atttempt to get value from cache DB if it exists or gets value from the web if it doesn't
+        var filename = GetCacheFileNameFromDb(address);
 
-
-
-
-
-
-    /// <summary>
-    ///     Verifies the cache index by performing cleaning of non-existing files and entries.
-    /// </summary>
-    private void VerifyCacheIndex()
-    {
-        // Create copies so we don't iterate live data.
-        var cacheEntriesSnapshot = new Dictionary<string, string>(IndexCache);
-        var directoryFilesSnapshot = Directory.GetFiles(_options.CacheLocation);
-
-        var deletedFilesCount = 0;
-        var deletedEntriesCount =
-            (from item in cacheEntriesSnapshot
-             let entryFilePath = Path.Combine(_options.CacheLocation, item.Value)
-             where !File.Exists(entryFilePath)
-             select item).Count(item => IndexCache.Remove(item.Key, out _));
-
-
-        SaveCacheIndex();
-        // Iterate through a copy of the cache index and deletes entries if files don't exist.
-
-        // Compare existing files in directory with cache entries.
-        var currentCacheFileNames =
-            new HashSet<string>(IndexCache.Values.Select(filename =>
-                Path.Combine(_options.CacheLocation,
-                    filename)));
-        var redundantFiles = directoryFilesSnapshot.Except(currentCacheFileNames);
-
-        // Delete files that are missing in the cache.
-        foreach (var file in redundantFiles)
+        if (!string.IsNullOrEmpty(filename))
         {
-            try
-            {
-                File.Delete(file);
-                deletedFilesCount++;
-            }
-            catch (SpyderException)
-            {
-                _logger.InternalSpyderError(
-                    $"Failed to delete file: {file}. It can be either used by another process or doesn't exist anymore.");
-            }
+            return await Task.FromResult(ReadCacheItemFromDisk(filename));
         }
 
-        SaveCacheIndex();
-        _logger.SpyderInfoMessage(
-            $"Cache verification complete. {deletedFilesCount} files and {deletedEntriesCount} entries deleted.");
+        return await Task.FromResult(await GetValueAsyncInternal(address));
+
+
     }
+
+
+
+
+
 
     #endregion
 }

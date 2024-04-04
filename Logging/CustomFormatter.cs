@@ -28,11 +28,11 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
 
         // Case insensitive
         : base("customName")
-    {
-        Guard.IsNotNull(options);
-        (_optionsReloadToken, _formatterOptions) =
-            (options.OnChange(ReloadLoggerOptions), options.CurrentValue);
-    }
+        {
+            Guard.IsNotNull(options);
+            (_optionsReloadToken, _formatterOptions) =
+                (options.OnChange(ReloadLoggerOptions), options.CurrentValue);
+        }
 
 
 
@@ -42,9 +42,9 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
     #region Public Methods
 
     public void Dispose()
-    {
-        _optionsReloadToken?.Dispose();
-    }
+        {
+            _optionsReloadToken?.Dispose();
+        }
 
 
 
@@ -55,15 +55,15 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
         in LogEntry<TState> logEntry,
         IExternalScopeProvider scopeProvider,
         TextWriter textWriter)
-    {
-        ArgumentNullException.ThrowIfNull(textWriter);
-        var message =
-            logEntry.Formatter.Invoke(
-                logEntry.State, logEntry.Exception);
+        {
+            ArgumentNullException.ThrowIfNull(textWriter);
+            var message =
+                logEntry.Formatter.Invoke(
+                    logEntry.State, logEntry.Exception);
 
-        CustomLogicGoesHere(textWriter);
-        textWriter.WriteLine(message);
-    }
+            CustomLogicGoesHere(textWriter);
+            textWriter.WriteLine(message);
+        }
 
     #endregion
 
@@ -76,9 +76,9 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
 
     private void CustomLogicGoesHere(
         TextWriter textWriter)
-    {
-        textWriter.Write(_formatterOptions.CustomPrefix);
-    }
+        {
+            textWriter.Write(_formatterOptions.CustomPrefix);
+        }
 
 
 
@@ -87,9 +87,9 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
 
     private void ReloadLoggerOptions(
         CustomOptions options)
-    {
-        _formatterOptions = options;
-    }
+        {
+            _formatterOptions = options;
+        }
 
     #endregion
 }

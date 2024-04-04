@@ -4,19 +4,11 @@ using KC.Apps.SpyderLib.Models;
 
 
 
-namespace KC.Apps.SpyderLib.Services;
+namespace KC.Apps.SpyderLib.Interfaces;
 
 public interface ICacheIndexService
 {
-    #region Properteez
-
-    ConcurrentDictionary<string, string> CacheIndexItems { get; }
-
-    #endregion
-
-
-
-
+ 
 
 
     int CacheHits { get; }
@@ -37,8 +29,6 @@ public interface ICacheIndexService
 
 
 
-
-    void SaveCacheIndex();
 
 
 

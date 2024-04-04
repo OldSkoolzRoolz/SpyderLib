@@ -20,16 +20,16 @@ public static class SpyderHelpers
     private static bool IsExternalDomainLinkCore(
         string link,
         Uri baseUri)
-    {
-        _ = Uri.TryCreate(link, UriKind.Absolute, out var uri);
-        if (uri == null)
         {
-            throw new ArgumentException("Invalid Uri");
+            _ = Uri.TryCreate(link, UriKind.Absolute, out var uri);
+            if (uri == null)
+                {
+                    throw new ArgumentException("Invalid Uri");
+                }
+
+
+            return !string.Equals(uri.Host, baseUri.Host, StringComparison.Ordinal);
         }
-
-
-        return !string.Equals(uri.Host, baseUri.Host, StringComparison.Ordinal);
-    }
 
 
 
@@ -44,28 +44,28 @@ public static class SpyderHelpers
     /// <returns></returns>
     internal static ConcurrentScrapedUrlCollection LoadLinksFromFile(
         string filename)
-    {
-        string path = "";
-        ConcurrentScrapedUrlCollection temp = new();
-        try
         {
-            if (!File.Exists(path))
-            {
-                return temp;
-            }
+            string path = "";
+            ConcurrentScrapedUrlCollection temp = new();
+            try
+                {
+                    if (!File.Exists(path))
+                        {
+                            return temp;
+                        }
 
-            var file = File.ReadAllLines(path);
-            temp.AddArray(file);
+                    var file = File.ReadAllLines(path);
+                    temp.AddArray(file);
+                }
+            catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+
+
+            return temp;
         }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
-
-
-        return temp;
-    }
 
 
 
@@ -82,37 +82,37 @@ public static class SpyderHelpers
         HtmlDocument doc,
         string url,
         IBackgroundDownloadQue que)
-    {
-        ArgumentNullException.ThrowIfNull(doc);
-
-        if (string.IsNullOrEmpty(url))
         {
-            throw new ArgumentException($"'{nameof(url)}' cannot be null or empty.", nameof(url));
-        }
+            ArgumentNullException.ThrowIfNull(doc);
 
-        ArgumentNullException.ThrowIfNull(que);
-
-        try
-        {
-            if (HtmlParser.TryExtractUserTagFromDocument(doc, "video",
-                    out var extractedLinks))
-            {
-                foreach (var link in extractedLinks)
+            if (string.IsNullOrEmpty(url))
                 {
-                    var dl = new DownloadItem(link.Key, "/Data/Spyder/Files");
-
-
-                    await que.QueueBackgroundWorkItemAsync(dl).ConfigureAwait(false);
+                    throw new ArgumentException($"'{nameof(url)}' cannot be null or empty.", nameof(url));
                 }
-            }
-        }
-        catch (SpyderException)
-        {
-            Console.WriteLine($"Error parsing page document {url}");
 
-            // Log and continue Failed tasks won't hang up the flow. Possible retry?            
+            ArgumentNullException.ThrowIfNull(que);
+
+            try
+                {
+                    if (HtmlParser.TryExtractUserTagFromDocument(doc, "video",
+                            out var extractedLinks))
+                        {
+                            foreach (var link in extractedLinks)
+                                {
+                                    var dl = new DownloadItem(link.Key, "/Data/Spyder/Files");
+
+
+                                    await que.QueueBackgroundWorkItemAsync(dl).ConfigureAwait(false);
+                                }
+                        }
+                }
+            catch (SpyderException)
+                {
+                    Console.WriteLine($"Error parsing page document {url}");
+
+                    // Log and continue Failed tasks won't hang up the flow. Possible retry?            
+                }
         }
-    }
 
 
 
@@ -120,9 +120,9 @@ public static class SpyderHelpers
 
 
     internal static Task SearchDocForHtmlTagAsync(HtmlDocument doc, Uri url, IBackgroundDownloadQue que)
-    {
-        throw new NotImplementedException();
-    }
+        {
+            throw new NotImplementedException();
+        }
 
 
 
@@ -142,18 +142,18 @@ public static class SpyderHelpers
     /// </remarks>
     internal static string StripQueryFragment(
         string url)
-    {
-        if (string.IsNullOrEmpty(url))
         {
-            return url;
+            if (string.IsNullOrEmpty(url))
+                {
+                    return url;
+                }
+
+            var uri = new Uri(url);
+            var x = uri.GetLeftPart(UriPartial.Path);
+
+
+            return x;
         }
-
-        var uri = new Uri(url);
-        var x = uri.GetLeftPart(UriPartial.Path);
-
-
-        return x;
-    }
 
     #endregion
 }

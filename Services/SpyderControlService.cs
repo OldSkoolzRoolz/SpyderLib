@@ -45,6 +45,7 @@ public class SpyderControlService : ServiceBase, IHostedService
         IDownloadController downloadController) : base(lifetime)
     {
         _ = lifetime.ApplicationStarted.Register(OnStarted);
+
         _ = lifetime.ApplicationStopping.Register(OnStopping);
         _downControl = downloadController;
         _webCrawlerController = webCrawlerController;
@@ -279,6 +280,10 @@ public class SpyderControlService : ServiceBase, IHostedService
             switch (userInput)
             {
                 case "1":
+                    CrawlerOptions.StartingUrl = "https://www.pornmd.com/search/a/diaper";
+                    CrawlerOptions.LinkDepthLimit = 5;
+                    CrawlerOptions.FollowExternalLinks = false;
+                    AppContext.SetData("options", CrawlerOptions);
                     await StartCrawlingAsync(_cancellationTokenSource!.Token).ConfigureAwait(false);
 
 
@@ -354,19 +359,14 @@ public class SpyderControlService : ServiceBase, IHostedService
     {
         if (options.UseLocalCache &&
             !CreateIfNotExists(options.CacheLocation,
-                "Configuration Error, cache location is not valid aborting."))
-        {
-            return false;
-        }
-
-        if (!CreateIfNotExists(options.LogPath,
+                "Configuration Error, cache location is not valid aborting.") || !CreateIfNotExists(options.LogPath,
                 "Configuration Error, log path is not valid aborting."))
         {
             return false;
         }
 
         if (!CreateIfNotExists(options.OutputFilePath,
-                "Configuration Error, output path is not valid aborting."))
+                    "Configuration Error, output path is not valid aborting."))
         {
             return false;
         }

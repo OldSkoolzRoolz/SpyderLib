@@ -64,27 +64,27 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
     /// </param>
     public BackgroundDownloadQue(
         ILogger<BackgroundDownloadQue> logger)
-    {
-        // Setup the Options for the Queue
-        var options = new BoundedChannelOptions(500)
         {
-            // Set the FullMode to Wait so that when the Queue is full
-            // the code will wait until there is space in the queue.
-            FullMode = BoundedChannelFullMode.Wait
-        };
+            // Setup the Options for the Queue
+            var options = new BoundedChannelOptions(500)
+                {
+                    // Set the FullMode to Wait so that when the Queue is full
+                    // the code will wait until there is space in the queue.
+                    FullMode = BoundedChannelFullMode.Wait
+                };
 
-        // Create the Channel with the options
-        _queue = Channel.CreateBounded<DownloadItem>(options);
+            // Create the Channel with the options
+            _queue = Channel.CreateBounded<DownloadItem>(options);
 
-        // Create the BufferBlock for the Queue
-        this.Block = new();
+            // Create the BufferBlock for the Queue
+            this.Block = new();
 
-        // Log that the Queue has loaded
-        logger.SpyderInfoMessage("Background download Que is loaded");
+            // Log that the Queue has loaded
+            logger.SpyderInfoMessage("Background download Que is loaded");
 
-        // Set the Download Queue Load Complete Task to be Complete
-        _ = DownloadQueLoadComplete.TrySetResult(true);
-    }
+            // Set the Download Queue Load Complete Task to be Complete
+            _ = DownloadQueLoadComplete.TrySetResult(true);
+        }
 
 
 
@@ -108,10 +108,10 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
     #region Public Methods
 
     public Task Complete()
-    {
-        this.Block.Complete();
-        return Task.CompletedTask;
-    }
+        {
+            this.Block.Complete();
+            return Task.CompletedTask;
+        }
 
 
 
@@ -119,16 +119,16 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
 
 
     public async ValueTask<DownloadItem> DequeueAsync(CancellationToken cancellationToken)
-    {
-        try
         {
-            return await _queue.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+            try
+                {
+                    return await _queue.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                }
+            catch (OperationCanceledException)
+                {
+                    return default;
+                }
         }
-        catch (OperationCanceledException)
-        {
-            return default;
-        }
-    }
 
 
 
@@ -136,9 +136,9 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
 
 
     public Task<bool> OutputAvailableAsync()
-    {
-        return this.Block.OutputAvailableAsync();
-    }
+        {
+            return this.Block.OutputAvailableAsync();
+        }
 
 
 
@@ -146,9 +146,9 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
 
 
     public void PostingComplete()
-    {
-        this.Block.Complete();
-    }
+        {
+            this.Block.Complete();
+        }
 
 
 
@@ -156,17 +156,17 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
 
 
     public async Task QueueBackgroundWorkItemAsync(DownloadItem workItem)
-    {
-        Guard.IsNotNull(workItem);
-        try
         {
-            _ = await this.Block.SendAsync(workItem).ConfigureAwait(false);
+            Guard.IsNotNull(workItem);
+            try
+                {
+                    _ = await this.Block.SendAsync(workItem).ConfigureAwait(false);
+                }
+            catch (Exception e)
+                {
+                    Console.WriteLine(Resources1.Buffer_Block_Data_Error);
+                }
         }
-        catch (Exception e)
-        {
-            Console.WriteLine(Resources1.Buffer_Block_Data_Error);
-        }
-    }
 
 
 
@@ -174,9 +174,9 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
 
 
     public Task<DownloadItem> ReceiveAsync()
-    {
-        return this.Block.ReceiveAsync(TimeSpan.FromSeconds(30));
-    }
+        {
+            return this.Block.ReceiveAsync(TimeSpan.FromSeconds(30));
+        }
 
     #endregion
 }

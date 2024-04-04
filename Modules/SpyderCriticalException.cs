@@ -10,8 +10,7 @@ public class SpyderCriticalException : Exception
 
 
     public SpyderCriticalException(string message, Exception innerException) : base(message,
-        innerException)
-    { }
+        innerException) { }
 
 
 

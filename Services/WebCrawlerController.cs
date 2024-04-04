@@ -1,8 +1,3 @@
-
-
-
-
-
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -12,22 +7,19 @@ using System.Windows.Input;
 using HtmlAgilityPack;
 
 using KC.Apps.SpyderLib.Control;
+using KC.Apps.SpyderLib.Interfaces;
 using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Modules;
 
 using Microsoft.Extensions.Logging;
 
+
+
 namespace KC.Apps.SpyderLib.Services;
-
-
 
 public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 {
-
-
-
-
     #region feeeldzzz
 
     private readonly ICacheIndexService _cache;
@@ -38,16 +30,16 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         SpyderControlService.CrawlerOptions.ConcurrentCrawlingTasks);
 
     private readonly ILogger<WebCrawlerController> _logger;
+    private readonly List<string> _urlsToCrawl = new();
     private readonly ConcurrentDictionary<string, byte> _visitedUrls = new();
     private ICommand _crawlCommand;
     private int _crawlMethod;
     private Stopwatch _crawlTimer;
+    private HtmlWeb _hapWeb;
     private bool _isCrawling;
     private ICommand _pauseCommand;
     private string _startingHost;
     private ICommand _stopCommand;
-    private List<string> _urlsToCrawl = new();
-    private HtmlWeb _hapWeb;
 
     #endregion
 
@@ -192,8 +184,6 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 
             // Wait for all the crawlers to finish
             await Task.WhenAll(_crawlerTasks.ToArray()).ConfigureAwait(false);
-
-
         }
         catch (SpyderException e)
         {
@@ -211,7 +201,6 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
             // Fire off the completion event for anyone who is listening
             this.CrawlerTasksFinished?.Invoke(this, new());
         }
-
     }
 
 
@@ -285,8 +274,6 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 
         // Add both otherUrls and baseUrls arrays to the UrlsScrapedThisSession in the output object.
         OutputControl.Instance.UrlsScrapedThisSession.AddRange(scrapeUrls.AllUrls);
-
-
     }
 
 
@@ -316,16 +303,15 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
     private async Task CrawlAsync(string cleanUrl, int currentDepth)
     {
         _crawlMethod++;
-        Console.WriteLine($"method count: {_crawlMethod}");
+
 
         _logger.SpyderTrace($"Crawling URL: {cleanUrl}");
 
-        //Throttling semaphores
-        await _crawlTasksGate.WaitAsync().ConfigureAwait(false);
+
 
         try
         {
-            await HandleCrawlUrlAsync(cleanUrl, currentDepth).ConfigureAwait(false);
+            await HandleCrawlUrlAsync(cleanUrl, currentDepth + 1).ConfigureAwait(false);
         }
         catch (OperationCanceledException oce)
         {
@@ -335,21 +321,13 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         catch (Exception ex)
         {
             //_logger.SpyderInfoMessage($"An unhandled error occurred when crawling URL: {cleanUrl}. Spyder will now exit.");
-            Console.WriteLine("Unhandled crawler error occurred.. <WebCrawlerController-340>");
+            Console.WriteLine("Unhandled crawler error occurred.. <WebCrawlerController-325>");
         }
         finally
         {
             _ = _crawlTasksGate.Release();
         }
-
-
     }
-
-
-
-
-
-
 
 
 
@@ -371,7 +349,6 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
     /// <returns>A `Task` that represents the asynchronous operation.</returns>
     private async Task HandleCrawlUrlAsync([NotNull] string url, int currentDepth)
     {
-
         ScrapedUrls scrapedUrls = new(Options.StartingUrl);
 
         // Check if the URL has already been visited and that the depth limit has not been reached
@@ -383,35 +360,40 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         // Add the URL to the list of visited URLs
         _ = _visitedUrls.TryAdd(url, 0);
 
+        try
+        {
+            //Using HAP attempt to get the source html on the url given
+            //  var document = await hapWeb.LoadFromWebAsync(url).ConfigureAwait(false);
+            var documentsrc = await _cache.GetAndSetContentFromCacheAsync(url).ConfigureAwait(false);
 
 
-        //Using HAP attempt to get the source html on the url given
-        //  var document = await hapWeb.LoadFromWebAsync(url).ConfigureAwait(false);
-        var documentsrc = await _cache.GetAndSetContentFromCacheAsync(url).ConfigureAwait(false);
+            // Parse the html and extract all hyperlink
+            var newPageLinks = HtmlParser.GetHrefLinksFromDocumentSourceProposed(documentsrc, url);
 
-
-        // Parse the html and extract all hyperlink
-        var newPageLinks = HtmlParser.GetHrefLinksFromDocumentSourceProposed(documentsrc, url);
-
-        scrapedUrls.AddRange(newPageLinks);
+            scrapedUrls.AddRange(newPageLinks);
 
 
 
 
-        var tasks = scrapedUrls.AllUrls.Select(async url =>
-            {
-                try
+            var tasks = scrapedUrls.AllUrls.Select(async url =>
                 {
-                    await CrawlAsync(url.OriginalString, currentDepth + 1).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    Log.AndContinue(ex);
-                }
-            });
+                    try
+                    {
+                        await CrawlAsync(url.OriginalString, currentDepth + 1).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.AndContinue(ex);
+                    }
+                });
 
 
-        _crawlerTasks.AddRange(tasks);
+            _crawlerTasks.AddRange(tasks);
+        }
+        catch (Exception e)
+        {
+            Log.AndContinue(e);
+        }
     }
 
 
@@ -456,6 +438,7 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 
     private void OnStopping(object sender, EventArgs e)
     {
+        PrintStats();
         // Log a message notifying that the application domain is being unloaded
         _logger.SpyderInfoMessage(
             "Application domain is being unloaded, stopping all web crawling tasks...");
@@ -563,57 +546,6 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         var newurls = HtmlParser.GetHrefLinksFromDocumentSource(doc);
 
         _urlsToCrawl.AddRange(from uri in newurls.AllUrls select url);
-
-
-    }
-
-
-
-
-
-
-    /// <summary>
-    ///     Separates a list of sanitized URLs into two lists: base URLs and other URLs.
-    /// </summary>
-    /// <param name="sanitizedUrls">An <see cref="IEnumerable{T}" /> of sanitized URL strings to be separated.</param>
-    /// <param name="baseUri">
-    ///     The base URI against which the URLs in 'sanitizedUrls' are compared. URLs that fit this base are
-    ///     classified as base URLs.
-    /// </param>
-    /// <returns>
-    ///     A tuple containing two lists of strings. The first list contains the base URLs and the second list contains
-    ///     the other URLs.
-    /// </returns>
-    /// <remarks>
-    ///     If the provided URL string cannot be converted into an <see cref="Uri" />, it is logged as an invalid URL and
-    ///     skipped.
-    /// </remarks>
-    private (List<string> BaseUrls, List<string> OtherUrls) SeparateUrls(IEnumerable<string> sanitizedUrls, Uri baseUri)
-    {
-        var baseUrls = new List<string>();
-        var otherUrls = new List<string>();
-        foreach (var url in sanitizedUrls)
-        {
-            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
-            {
-                var strippedUrl = uri.GetLeftPart(UriPartial.Path);
-                if (baseUri.IsBaseOf(new(strippedUrl)))
-                {
-                    baseUrls.Add(strippedUrl);
-                }
-                else
-                {
-                    otherUrls.Add(strippedUrl);
-                }
-            }
-            else
-            {
-                _logger.SpyderInfoMessage($"Skipping Invalid URL: {url}");
-            }
-        }
-
-
-        return (baseUrls, otherUrls);
     }
 
 
@@ -632,7 +564,6 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
 
         while (_urlsToCrawl.Count > 0 && !token.IsCancellationRequested)
         {
-
             var url = _urlsToCrawl.First();
 
             var depth = 0;
@@ -662,8 +593,5 @@ public sealed class WebCrawlerController : ServiceBase, IWebCrawlerController
         return Task.CompletedTask;
     }
 
-
     #endregion
-
-
 }

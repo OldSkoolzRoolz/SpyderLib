@@ -22,10 +22,10 @@ internal sealed class QueItem(Uri url) : Model
     #region Properteez
 
     public string Progress
-    {
-        get => _progress;
-        set => SetProperty(ref _progress, value);
-    }
+        {
+            get => _progress;
+            set => SetProperty(ref _progress, value);
+        }
 
 
 

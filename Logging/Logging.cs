@@ -22,16 +22,16 @@ public static class Log
         [CallerMemberName] string memberName = "",
         [CallerLineNumber] int line = 0,
         [CallerFilePath] string path = "")
-    {
-        var back = Console.BackgroundColor;
-        var front = Console.ForegroundColor;
-        Console.BackgroundColor = ConsoleColor.Green;
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine($"<INFO> {exception.Message}::{memberName} : {path}. Line #{line}");
-        Debugger.Log(99, "Error", exception.Message);
-        Console.ForegroundColor = front;
-        Console.BackgroundColor = back;
-    }
+        {
+            var back = Console.BackgroundColor;
+            var front = Console.ForegroundColor;
+            Console.BackgroundColor = ConsoleColor.Green;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"<INFO> {exception.Message}::{memberName} : {path}. Line #{line}");
+            Debugger.Log(99, "Error", exception.Message);
+            Console.ForegroundColor = front;
+            Console.BackgroundColor = back;
+        }
 
 
 
@@ -43,12 +43,12 @@ public static class Log
         [CallerMemberName] string memberName = "",
         [CallerLineNumber] int line = 0,
         [CallerFilePath] string path = "")
-    {
-        var b42 = Console.ForegroundColor;
-        Console.ForegroundColor = ConsoleColor.DarkCyan;
-        Console.WriteLine($"<DEBUG> {message}::{memberName} : {path}. Line #{line}");
-        Console.ForegroundColor = b42;
-    }
+        {
+            var b42 = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.WriteLine($"<DEBUG> {message}::{memberName} : {path}. Line #{line}");
+            Console.ForegroundColor = b42;
+        }
 
 
 
@@ -60,12 +60,12 @@ public static class Log
         [CallerMemberName] string memberName = "",
         [CallerLineNumber] int lineNumber = 0,
         [CallerFilePath] string filePath = "")
-    {
-        var previousColor = Console.ForegroundColor;
-        Console.ForegroundColor = ConsoleColor.DarkRed;
-        Console.WriteLine($"<CRITICAL> {message}::{memberName} : {filePath}. Line #{lineNumber}");
-        Console.ForegroundColor = previousColor;
-    }
+        {
+            var previousColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.WriteLine($"<CRITICAL> {message}::{memberName} : {filePath}. Line #{lineNumber}");
+            Console.ForegroundColor = previousColor;
+        }
 
     #endregion
 }

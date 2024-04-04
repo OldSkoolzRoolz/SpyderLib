@@ -11,10 +11,10 @@ public static class DebugLoggerExtensions
     public static ILoggingBuilder AddCustomFormatter(
         this ILoggingBuilder builder,
         Action<CustomOptions> configure)
-    {
-        return builder.AddConsole(options => options.FormatterName = "customName")
-            .AddConsoleFormatter<CustomFormatter, CustomOptions>(configure);
-    }
+        {
+            return builder.AddConsole(options => options.FormatterName = "customName")
+                .AddConsoleFormatter<CustomFormatter, CustomOptions>(configure);
+        }
 
     #endregion
 }

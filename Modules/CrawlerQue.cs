@@ -47,9 +47,9 @@ internal sealed class CrawlerQue : ICrawlerQue
 
     public void AddItemToQueue(
         QueItem item)
-    {
-        _ = _queue.Post(item);
-    }
+        {
+            _ = _queue.Post(item);
+        }
 
 
 
@@ -57,9 +57,9 @@ internal sealed class CrawlerQue : ICrawlerQue
 
 
     public Task<QueItem> GetItemFromQueueAsync()
-    {
-        return _queue.ReceiveAsync();
-    }
+        {
+            return _queue.ReceiveAsync();
+        }
 
     #endregion
 }

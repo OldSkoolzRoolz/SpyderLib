@@ -30,13 +30,13 @@ public abstract class ServiceBase : INotifyPropertyChanged
     /// </summary>
     /// <param name="lifetime"></param>
     protected ServiceBase(IHostApplicationLifetime lifetime)
-    {
-        Guard.IsNotNull(lifetime);
+        {
+            Guard.IsNotNull(lifetime);
 
 
 
-        this.AppLifetime = lifetime;
-    }
+            this.AppLifetime = lifetime;
+        }
 
 
 
@@ -74,13 +74,13 @@ public abstract class ServiceBase : INotifyPropertyChanged
     /// </summary>
     /// <param name="e">The <see cref="System.ComponentModel.PropertyChangedEventArgs" /> instance containing the event data.</param>
     private void OnPropertyChanged(PropertyChangedEventArgs e)
-    {
-        var handler = this.PropertyChanged;
-        if (handler != null)
         {
-            handler(this, e);
+            var handler = this.PropertyChanged;
+            if (handler != null)
+                {
+                    handler(this, e);
+                }
         }
-    }
 
 
 
@@ -96,9 +96,9 @@ public abstract class ServiceBase : INotifyPropertyChanged
     /// </param>
     [SuppressMessage("Design", "CA1030:Use events where appropriate")]
     protected void RaisePropertyChanged([CallerMemberName] string propertyName = null)
-    {
-        OnPropertyChanged(new(propertyName));
-    }
+        {
+            OnPropertyChanged(new(propertyName));
+        }
 
 
 
@@ -118,16 +118,16 @@ public abstract class ServiceBase : INotifyPropertyChanged
     /// </param>
     /// <returns>True if the value has changed, false if the old and new value were equal.</returns>
     protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
-    {
-        if (Equals(field, value))
         {
-            return false;
-        }
+            if (Equals(field, value))
+                {
+                    return false;
+                }
 
-        field = value;
-        RaisePropertyChanged(propertyName);
-        return true;
-    }
+            field = value;
+            RaisePropertyChanged(propertyName);
+            return true;
+        }
 
     #endregion
 }
