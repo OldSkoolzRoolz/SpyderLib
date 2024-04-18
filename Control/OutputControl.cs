@@ -9,7 +9,7 @@ public class OutputControl : IOutputControl
 {
     #region feeeldzzz
 
-    private static readonly SpyderOptions _options = AppContext.GetData("options") as SpyderOptions;
+    private static readonly SpyderOptions s_options = AppContext.GetData("options") as SpyderOptions;
 
     #endregion
 
@@ -100,29 +100,29 @@ public class OutputControl : IOutputControl
     /// <summary>
     ///     The urls collected that are NOT on the same host as the <see cref="SpyderOptions.StartingUrl" />
     /// </summary>
-    public ScrapedUrls CapturedExternalLinks { get; } = new(_options.StartingUrl);
+    public ScrapedUrls CapturedExternalLinks { get; } = new(s_options.StartingUrl);
 
     /// <summary>
     ///     The urls collected that are on the same host as the <see cref="SpyderOptions.StartingUrl" />
     /// </summary>
-    public ScrapedUrls CapturedSeedLinks { get; } = new(_options.StartingUrl);
+    public ScrapedUrls CapturedSeedLinks { get; } = new(s_options.StartingUrl);
 
     /// <summary>
     ///     The urls collected that were found to contain  the html tag searched for
     /// </summary>
-    public ScrapedUrls CapturedUrlWithSearchResults { get; } = new(_options.StartingUrl);
+    public ScrapedUrls CapturedUrlWithSearchResults { get; } = new(s_options.StartingUrl);
 
-    public ScrapedUrls CapturedVideoLinks { get; } = new(_options.StartingUrl);
+    public ScrapedUrls CapturedVideoLinks { get; } = new(s_options.StartingUrl);
 
     /// <summary>
     ///     Represents the urls of the pages that were scraped for content
     /// </summary>
-    public ScrapedUrls CrawledUrls { get; } = new(_options.StartingUrl);
+    public ScrapedUrls CrawledUrls { get; } = new(s_options.StartingUrl);
 
     /// <summary>
     ///     The collection of urls that failed during the attempt to scrape.
     /// </summary>
-    public ScrapedUrls FailedCrawlerUrls { get; } = new(_options.StartingUrl);
+    public ScrapedUrls FailedCrawlerUrls { get; } = new(s_options.StartingUrl);
 
     /// <summary>
     ///     Represents a singleton instance of an OutputControl object.
@@ -132,7 +132,7 @@ public class OutputControl : IOutputControl
     /// <summary>
     ///     Represents the urls that have been scraped from the pages that were crawled
     /// </summary>
-    public ScrapedUrls UrlsScrapedThisSession { get; } = new(_options.StartingUrl);
+    public ScrapedUrls UrlsScrapedThisSession { get; } = new(s_options.StartingUrl);
 
     #endregion
 }

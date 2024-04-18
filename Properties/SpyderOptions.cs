@@ -86,7 +86,9 @@ public class SpyderOptions
     /// </summary>
     [Url]
     [Required]
+#pragma warning disable CA1056 // URI-like properties should not be strings
     public string StartingUrl { get; set; }
+#pragma warning restore CA1056 // URI-like properties should not be strings
 
     /// <summary>
     ///     Should we save a copy of the page returned local
@@ -98,7 +100,7 @@ public class SpyderOptions
     public bool UseLocalCache { get; init; }
 
     public bool UseMetrics { get; init; }
-    public int ConcurrentCrawlingTasksLimit { get; init; } = 10; // default is 10 set; }
+    public int ConcurrentCrawlingTasksLimit { get; init; } = 10; 
 
     #endregion
 }

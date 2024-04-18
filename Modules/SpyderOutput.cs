@@ -15,14 +15,12 @@ public class SpyderOutput //: ISpyderOutput
 {
     #region Properteez
 
-    //public int CacheHits => CacheIndexService.CacheHits;
-    //public int CacheMisses => CacheIndexService.CacheMisses;
     public int CapturedExt => OutputControl.Instance.CapturedExternalLinks.Count;
     public int CapturedSeeds => OutputControl.Instance.CapturedSeedLinks.Count;
     public int CrawledUrls => WebCrawlerController.CrawledUrlCount;
     public int FailedUrls => OutputControl.Instance.FailedCrawlerUrls.Count;
 
-    //public int TotalCacheItems => CacheIndexService.CacheItemCount;
+    public int TotalCacheItems => (int)CacheIndexService.CacheItemCount;
     public int TotalCapturedUrls => OutputControl.Instance.UrlsScrapedThisSession.Count;
     public int TotalFilesDownloaded => QueueProcessingService.DownloadAttempts;
     public TimeSpan TotalSessionTime { get; set; }

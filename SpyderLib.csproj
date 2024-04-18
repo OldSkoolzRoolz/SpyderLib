@@ -1,18 +1,21 @@
-<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="17.7">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup Label="ProjDeets">
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>disable</Nullable>
         <RootNamespace>KC.Apps.SpyderLib</RootNamespace>
-        <AnalysisLevel>preview</AnalysisLevel>
+
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <AnalysisLevel>latest</AnalysisLevel>
         <AnalysisMode>All</AnalysisMode>
-        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
         <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
         <ServerGarbageCollection>true</ServerGarbageCollection>
+
         <NeutralResourcesLanguage>en</NeutralResourcesLanguage>
         <NeutralLanguage>en</NeutralLanguage>
         <FileVersion>1.0</FileVersion>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
     </PropertyGroup>
 
 
@@ -50,61 +53,54 @@
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' " Label="ReleaseProps">
-        <DefineConstants/>
+        <DefineConstants />
         <Optimize>true</Optimize>
         <DebugType>none</DebugType>
 
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <DocumentationFile>bin\Release\net8.0\SpyderLib.xml</DocumentationFile>
+        <DocumentationFile>bin\Release\net9.0\SpyderLib.xml</DocumentationFile>
         <WarningLevel>4</WarningLevel>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
-
     <ItemGroup>
-        <PackageReference Include="CommunityToolkit.Diagnostics" Version="*"/>
-        <PackageReference Include="HtmlAgilityPack" Version="*"/>
-        <PackageReference Include="Jetbrains.Annotations" Version="*" PrivateAssets="All"/>
-        <PackageReference Include="Microsoft.CodeAnalysis" Version="4.9.2"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0-preview.2.24128.5"/>
-        <PackageReference Include="Microsoft.Extensions.Diagnostics" Version="9.0.0-preview.2.24128.5"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0-preview.2.24128.5"/>
+        <PackageReference Include="CommunityToolkit.Diagnostics" Version="*" />
+        <PackageReference Include="HtmlAgilityPack" Version="*" />
+        <PackageReference Include="Jetbrains.Annotations" Version="*" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.CodeAnalysis" Version="*" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0-preview.2.24128.5" />
+        <PackageReference Include="Microsoft.Extensions.Diagnostics" Version="9.0.0-preview.2.24128.5" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0-preview.2.24128.5" />
 
-        <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0-preview.2.24128.5"/>
-        <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="9.0.0-preview.2.24128.4"/>
-        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.0.0-preview.2.24157.4"/>
+        <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0-preview.2.24128.5" />
+        <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="9.0.0-preview.2.24128.4" />
+        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.0.0-preview.2.24157.4" />
 
-        <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.0-preview.2.24128.5"/>
+        <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.0-preview.2.24128.5" />
 
-        <PackageReference Include="Microsoft.Extensions.Resilience" Version="9.0.0-preview.2.24157.4"/>
+        <PackageReference Include="Microsoft.Extensions.Resilience" Version="9.0.0-preview.2.24157.4" />
 
-        <PackageReference Include="MySql.Data" Version="8.3.0"/>
-        <PackageReference Include="Newtonsoft.Json" Version="*"/>
-        <PackageReference Include="System.Threading.Tasks.Dataflow" Version="9.0.0-preview.2.24128.5"/>
+        <PackageReference Include="MySql.Data" Version="8.3.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="*" />
+        <PackageReference Include="System.Threading.Tasks.Dataflow" Version="9.0.0-preview.2.24128.5" />
 
 
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include=".exclude\CrawlerFinishedEventArgs.cs"/>
-        <Compile Include=".exclude\CustomColorOptions.cs"/>
-        <Compile Include=".exclude\CustomOptions.cs"/>
-        <Compile Include=".exclude\IWebCrawlerController.cs"/>
-        <Compile Include=".exclude\LogFormatterOptions.cs"/>
-        <Compile Include=".exclude\ModFactory.cs"/>
-        <Compile Include=".exclude\PageCrawler.cs"/>
-        <Compile Remove=".exclude\**"/>
+    
+        <Compile Remove=".exclude\**" />
         <Compile Update="Properties\Resources1.Designer.cs">
             <DesignTime>True</DesignTime>
             <AutoGen>True</AutoGen>
             <DependentUpon>Resources1.resx</DependentUpon>
         </Compile>
-        <Compile Remove="Modules\SpyderClient.cs"/>
-        <Compile Remove="Modules\SpyderWeb.cs"/>
-        <Compile Remove="Services\WebCrawlerAI.cs"/>
+        <Compile Remove="Modules\SpyderClient.cs" />
+        <Compile Remove="Modules\SpyderWeb.cs" />
+        <Compile Remove="Services\WebCrawlerAI.cs" />
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Remove=".exclude\**"/>
+        <EmbeddedResource Remove=".exclude\**" />
         <EmbeddedResource Update="Properties\Resources1.resx">
             <Generator>ResXFileCodeGenerator</Generator>
             <LastGenOutput>Resources1.Designer.cs</LastGenOutput>
@@ -112,8 +108,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove=".exclude\**"/>
+        <None Remove=".exclude\**" />
     </ItemGroup>
+
+  
 
 
 </Project>

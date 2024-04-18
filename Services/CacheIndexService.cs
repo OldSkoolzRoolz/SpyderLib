@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using System.Collections.Concurrent;
 
 using KC.Apps.SpyderLib.Control;
 using KC.Apps.SpyderLib.Interfaces;
@@ -20,7 +20,7 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService
         IMyClient client) : base(client, logger, metrics)
     {
         SpyderControlService.LibraryHostShuttingDown += OnStopping;
-
+        LoadCachedIndexAsync().Wait();
         PrintStats();
         _logger.SpyderInfoMessage("Cache Index Service Loaded...");
     }
@@ -37,7 +37,7 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService
         Console.WriteLine("******************************************************");
         Console.WriteLine("**             Spyder Cache Operations              **");
         Console.WriteLine("******************************************************");
-        Console.WriteLine("**  {0,15}:   {1,28} {2,10}", "Cache Entries", this.CacheItemCount, "**");
+        Console.WriteLine("**  {0,15}:   {1,28} {2,10}", "Cache Entries", GetCacheItemCount(), "**");
 
 
         Console.WriteLine("**  {0,15}:   {1,28} {2,8}", "Session Captured",
@@ -71,27 +71,38 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService
 
 
 
-
-
-
-
-
     #region Properteez
 
-    public int CacheHits => s_cacheHits;
+    public int CacheHits => _cacheHits;
 
-    /// <summary>
-    ///     Cache Items currently in index
-    /// </summary>
-    public int CacheItemCount => IndexCache.Count;
+    public static long CacheItemCount => GetCacheItemCount();
 
-    public int CacheMisses => s_cacheMisses;
+
+
+
+
+
+    private static int GetCacheItemCount()
+    {
+        return s_CachedUrls.Count;
+    }
+
+
+
+
+
+
+    public int CacheMisses => _cacheMisses;
+    public ConcurrentBag<string> CachedUrls => s_CachedUrls;
 
     #endregion
 
 
 
-
+    protected void OnStartup(object sender, EventArgs eventArgs)
+    {
+        LoadCachedIndexAsync().Wait();
+    }
 
 
     #region Public Methods
@@ -100,13 +111,11 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService
     {
         try
         {
-            _logger.SpyderInfoMessage("Cache Index is saved");
             PrintStats();
         }
-        catch (SpyderException)
+        catch (Exception e)
         {
-            _logger.SpyderError(
-                "Error saving Cache Index. Consider checking data against backup file.");
+            Log.AndContinue(e);
         }
     }
 
@@ -115,35 +124,38 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService
 
 
 
-    public async Task<string> GetAndSetContentFromCacheAsync(string address)
+
+
+
+
+    private static async Task LoadCachedIndexAsync()
     {
-        try
+
+
+        var tmp = await GetCachedItemsAsync().ConfigureAwait(false);
+        foreach (var item in tmp)
         {
-            Stopwatch timer = new();
-            timer.Start();
-
-            var content = await GetAndSetContentFromCacheCoreAsync(address)
-                .ConfigureAwait(false);
-
-            timer.Stop();
-
-            Console.WriteLine("Cache time {0}ms", timer.ElapsedMilliseconds);
-
-
-
-            if (_options.UseMetrics)
-            {
-                _metrics.CrawlElapsedTime(timer.ElapsedMilliseconds);
-            }
-
-            return content;
+            s_CachedUrls.Add(item);
         }
-        catch (SpyderException)
-        {
-            _logger.SpyderWebException("An error occured during a url retrieval.");
 
-            return "error";
-        }
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+    public async Task<PageContent> GetAndSetContentFromCacheAsync(string address)
+    {
+        return await GetAndSetContentFromCacheCoreAsync(address).ConfigureAwait(false);
+
     }
 
 
@@ -167,25 +179,6 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService
 
     #region Private Methods
 
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!_disposed)
-        {
-            if (disposing)
-            {
-                // unsubscribe from static event
-                SpyderControlService.LibraryHostShuttingDown -= OnStopping;
-            }
-
-            // Here you can release unmanaged resources if any
-
-            _disposed = true;
-        }
-    }
-
-
-
-
 
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -198,11 +191,10 @@ public class CacheIndexService : AbstractCacheIndex, ICacheIndexService
 
 
 
-    // Destructor
-    ~CacheIndexService()
-    {
-        Dispose(false);
-    }
+
+
+
+
 
     #endregion
 } //namespace

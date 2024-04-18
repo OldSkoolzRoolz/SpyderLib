@@ -3,7 +3,6 @@ using System.Threading.Tasks.Dataflow;
 
 using CommunityToolkit.Diagnostics;
 
-using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Models;
 using KC.Apps.SpyderLib.Properties;
 
@@ -79,8 +78,7 @@ public class BackgroundDownloadQue : IBackgroundDownloadQue
             // Create the BufferBlock for the Queue
             this.Block = new();
 
-            // Log that the Queue has loaded
-            logger.SpyderInfoMessage("Background download Que is loaded");
+        
 
             // Set the Download Queue Load Complete Task to be Complete
             _ = DownloadQueLoadComplete.TrySetResult(true);

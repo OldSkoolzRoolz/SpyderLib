@@ -1,8 +1,3 @@
-// ReSharper disable All
-
-
-
-
 using HtmlAgilityPack;
 
 using KC.Apps.SpyderLib.Models;
@@ -17,25 +12,6 @@ public static class SpyderHelpers
 {
     #region Private Methods
 
-    private static bool IsExternalDomainLinkCore(
-        string link,
-        Uri baseUri)
-        {
-            _ = Uri.TryCreate(link, UriKind.Absolute, out var uri);
-            if (uri == null)
-                {
-                    throw new ArgumentException("Invalid Uri");
-                }
-
-
-            return !string.Equals(uri.Host, baseUri.Host, StringComparison.Ordinal);
-        }
-
-
-
-
-
-
     /// <summary>
     ///     Load links from given filename previously saved to disk
     ///     <remarks>Will look for file in the OutputFilePath option set in options</remarks>
@@ -45,7 +21,7 @@ public static class SpyderHelpers
     internal static ConcurrentScrapedUrlCollection LoadLinksFromFile(
         string filename)
         {
-            string path = "";
+            var path = "";
             ConcurrentScrapedUrlCollection temp = new();
             try
                 {
@@ -94,17 +70,13 @@ public static class SpyderHelpers
 
             try
                 {
-                    if (HtmlParser.TryExtractUserTagFromDocument(doc, "video",
-                            out var extractedLinks))
-                        {
-                            foreach (var link in extractedLinks)
+            var extractedLinks =  HtmlParser.TryExtractUserTagFromDocument(doc, "video");
+
+                            foreach (var link in extractedLinks.AllUrlz)
                                 {
-                                    var dl = new DownloadItem(link.Key, "/Data/Spyder/Files");
-
-
+                                    var dl = new DownloadItem(link, "/Data/Spyder/Files");
                                     await que.QueueBackgroundWorkItemAsync(dl).ConfigureAwait(false);
                                 }
-                        }
                 }
             catch (SpyderException)
                 {
@@ -116,13 +88,6 @@ public static class SpyderHelpers
 
 
 
-
-
-
-    internal static Task SearchDocForHtmlTagAsync(HtmlDocument doc, Uri url, IBackgroundDownloadQue que)
-        {
-            throw new NotImplementedException();
-        }
 
 
 

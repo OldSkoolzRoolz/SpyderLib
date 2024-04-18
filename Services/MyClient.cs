@@ -86,19 +86,7 @@ public sealed class MyClient : IMyClient
 
     private async Task<string> GetPageContentFromWebAsync(Uri address)
         {
-            try
-                {
-                    var results = await _client.GetStringAsync(address).ConfigureAwait(false);
-                    return results;
-                }
-            catch (HttpRequestException) { }
-            catch (TaskCanceledException) { }
-            catch (SpyderException e)
-                {
-                    Console.WriteLine(e);
-                }
-
-            return string.Empty;
+           return await _client.GetStringAsync(address).ConfigureAwait(false);
         }
 
     #endregion

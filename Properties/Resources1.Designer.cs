@@ -80,5 +80,11 @@ namespace KC.Apps.SpyderLib.Properties {
                 return ResourceManager.GetString("DownloadController_DownloadController_Download_Controller_Initialized_", resourceCulture);
             }
         }
+        
+        internal static string AbstractCacheIndex_GetValueFromWebAsync_Cache_miss__Loading_page_from_web__0_ {
+            get {
+                return ResourceManager.GetString("AbstractCacheIndex_GetValueFromWebAsync_Cache_miss__Loading_page_from_web__0_", resourceCulture);
+            }
+        }
     }
 }

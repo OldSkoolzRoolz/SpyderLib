@@ -42,4 +42,7 @@
     <data name="DownloadController_DownloadController_Download_Controller_Initialized_" xml:space="preserve">
         <value>Download Controller Initialized!</value>
     </data>
+    <data name="AbstractCacheIndex_GetValueFromWebAsync_Cache_miss__Loading_page_from_web__0_" xml:space="preserve">
+        <value>Cache miss: Loading page from web {0}</value>
+    </data>
 </root>

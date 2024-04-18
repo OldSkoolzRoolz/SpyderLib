@@ -43,9 +43,6 @@ public class FileOperations : IDisposable
 
 
 
-    private void PrintStats() { }
-
-
 
 
 

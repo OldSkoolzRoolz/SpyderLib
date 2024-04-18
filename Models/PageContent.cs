@@ -1,10 +1,16 @@
+using System.Security.Policy;
+
+using JetBrains.Annotations;
+
+
+
 namespace KC.Apps.SpyderLib.Models;
 
 public record struct PageContent
 {
     public PageContent(Uri url) : this()
         {
-            this.Url = url;
+            this.Address = url;
             this.CacheFileName = string.Empty;
             this.Content = string.Empty;
             this.FromCache = false;
@@ -30,6 +36,7 @@ public record struct PageContent
     /// <summary>
     ///     If an error occurred during the scraping of this url it will be populated here.
     /// </summary>
+    [CanBeNull]
     public Exception Exception { get; set; }
 
     public bool FromCache { get; set; }
@@ -40,7 +47,7 @@ public record struct PageContent
     /// <value>
     ///     The URL.
     /// </value>
-    public Uri Url { get; init; }
+    public Uri Address { get; init; }
 
     #endregion
 }

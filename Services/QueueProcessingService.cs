@@ -5,9 +5,12 @@ using CommunityToolkit.Diagnostics;
 
 using KC.Apps.SpyderLib.Logging;
 using KC.Apps.SpyderLib.Models;
+using KC.Apps.SpyderLib.Modules;
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
+using MySql.Data.MySqlClient;
 
 
 
@@ -23,7 +26,8 @@ public sealed class QueueProcessingService : BackgroundService
     private readonly ILogger<QueueProcessingService> _logger;
     private readonly IBackgroundDownloadQue _taskQueue;
     private CancellationToken _stoppingToken;
-
+ private  const string CONNECTION_STRING =
+        "server=localhost;user=plato;password=password;database=spyderlib;";
     #endregion
 
 
@@ -175,12 +179,30 @@ public sealed class QueueProcessingService : BackgroundService
                                 .ConfigureAwait(false);
                         }
                 }
+            await UpdateDownloadedUrlAsync(workItem.Link).ConfigureAwait(false);
 
             _logger.SpyderDebug($"Downloaded {workItem.Link} to {savePath}");
             _logger.SpyderDebug($"Tasks remaining::  {_taskQueue.Count}");
         }
 
 
+
+
+private static async Task UpdateDownloadedUrlAsync(string address)
+        {
+            var sql = "update downloadedurls set downloaded = 1 where siteurl = @address";
+           await MySqlHelper.ExecuteNonQueryAsync(CONNECTION_STRING, sql, new MySqlParameter("@address", address)).ConfigureAwait(false);
+        }
+
+
+
+
+ private static void InsertDownloadedUrl(string address)
+        {
+           
+            var sql = "insert into downloadedurls (siteurl) values (@address)";
+        MySqlHelper.ExecuteNonQuery(CONNECTION_STRING, sql,new MySqlParameter("@address",address));
+        }
 
 
 
@@ -195,6 +217,11 @@ public sealed class QueueProcessingService : BackgroundService
             while (!stoppingToken.IsCancellationRequested)
                 {
                     await Task.Delay(1000, stoppingToken).ConfigureAwait(false);
+
+                    if (_taskQueue.Count > 0)
+                        {
+                             await DoQueProcessingAsync().ConfigureAwait(false);
+                        }
                 }
         }
 

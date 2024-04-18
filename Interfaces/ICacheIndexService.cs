@@ -8,13 +8,9 @@ namespace KC.Apps.SpyderLib.Interfaces;
 
 public interface ICacheIndexService
 {
- 
-
-
     int CacheHits { get; }
     int CacheMisses { get; }
-    int CacheItemCount { get; }
-
+ConcurrentBag<string> CachedUrls { get; }
 
 
 
@@ -22,8 +18,9 @@ public interface ICacheIndexService
 
     #region Public Methods
 
-    Task<string> GetAndSetContentFromCacheAsync(
+    Task<PageContent> GetAndSetContentFromCacheAsync(
         string address);
+
 
 
 

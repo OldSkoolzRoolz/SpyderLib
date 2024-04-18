@@ -25,16 +25,23 @@ public class ScrapedUrls(string startingHost)
     public IEnumerable<Uri> BaseUrls => _internalUrls;
     public IEnumerable<Uri> OtherUrls => _externalUrls;
     public IEnumerable<Uri> AllUrls => _internalUrls.Union(_externalUrls);
-    public IEnumerable<string> AllUrlsAsStrings => AllUrls.Select(x => x.AbsoluteUri);
+    public IEnumerable<string> AllUrlz => this.AllUrls.Select(x => x.OriginalString);
     public int Count => _internalUrls.Count + _externalUrls.Count;
 
 
 
 
+
+
     public bool Any()
-    {
-        return AllUrls.Any();
-    }
+        {
+            return this.AllUrls.Any();
+        }
+
+
+
+
+
 
     /// <summary>
     ///     Adds a collection of URLs to the ScrapedUrlCollection
@@ -45,14 +52,14 @@ public class ScrapedUrls(string startingHost)
     ///     Thrown if the input collection contains at least one null URL or an invalid URL
     /// </exception>
     public void AddRange([NotNull] IEnumerable<string> urls)
-    {
-        ArgumentNullException.ThrowIfNull(urls);
-
-        foreach (var uri in urls)
         {
-            AddUrl(uri);
+            ArgumentNullException.ThrowIfNull(urls);
+
+            foreach (var uri in urls)
+                {
+                    AddUrl(new Uri(uri));
+                }
         }
-    }
 
 
 
@@ -65,14 +72,14 @@ public class ScrapedUrls(string startingHost)
     /// <param name="urls">A collection of URLs</param>
     /// <exception cref="ArgumentNullException">Thrown if the input collection is null</exception>
     public void AddRange([NotNull] IEnumerable<Uri> urls)
-    {
-        ArgumentNullException.ThrowIfNull(urls, nameof(urls));
-
-        foreach (var uri in urls)
         {
-            AddUrl(uri);
+            ArgumentNullException.ThrowIfNull(urls, nameof(urls));
+
+            foreach (var uri in urls)
+                {
+                    AddUrl(uri);
+                }
         }
-    }
 
 
 
@@ -91,26 +98,26 @@ public class ScrapedUrls(string startingHost)
     /// <exception cref="ArgumentException">
     ///     Thrown if the input parameter is not a valid absolute URI.
     /// </exception>
-    private void AddUrl([NotNull] Uri newUrl)
-    {
-        // Throw an exception if the URL is null
-        ArgumentNullException.ThrowIfNull(newUrl);
-        // Validate the input URL
-        if (!IsValidUrl(newUrl.OriginalString))
+    public void AddUrl([NotNull] Uri newUrl)
         {
-            return;
-        }
+            // Throw an exception if the URL is null
+            ArgumentNullException.ThrowIfNull(newUrl);
+            // Validate the input URL
+            if (!IsValidUrl(newUrl.OriginalString))
+                {
+                    return;
+                }
 
-        // Add the Uri object to the appropriate collection based on its kind
-        if (IsExternalUrl(newUrl))
-        {
-            _ = _externalUrls.Add(newUrl);
+            // Add the Uri object to the appropriate collection based on its kind
+            if (IsExternalUrl(newUrl))
+                {
+                    _ = _externalUrls.Add(newUrl);
+                }
+            else
+                {
+                    _ = _internalUrls.Add(newUrl);
+                }
         }
-        else
-        {
-            _ = _internalUrls.Add(newUrl);
-        }
-    }
 
 
 
@@ -121,22 +128,36 @@ public class ScrapedUrls(string startingHost)
     ///     Adds a URL to the internal or external URL collections based on its kind.
     /// </summary>
     /// <param name="url">The URL to be added. Must not be null.</param>
-    public void AddUrl([NotNull] string url)
-    {
-        // Throw an exception if the URL is null
-        ArgumentNullException.ThrowIfNull(url);
-
-
-
-
-        if (IsValidUrl(url) && !CheckStringForSubstring(url, _options.LinkPatternExclusions))
+    public void AddUrl([NotNull] string address)
         {
-            // Try to create a Uri object from the URL
-            _ = Uri.TryCreate(url, UriKind.Absolute, out var uriResult);
+            // Throw an exception if the URL is null
+            ArgumentNullException.ThrowIfNull(address);
 
-            // Add the Uri object to the appropriate collection based on its kind
-            AddUrl(uriResult);
+
+
+
+            if (IsValidUrl(address) && !CheckStringForSubstring(address, _options.LinkPatternExclusions))
+                {
+                    // Try to create a Uri object from the address
+                    _ = Uri.TryCreate(address, UriKind.Absolute, out var uriResult);
+
+                    // Add the Uri object to the appropriate collection based on its kind
+                    AddUrl(uriResult);
+                }
         }
+
+
+
+private bool CheckStringForSubstring(string url, string[] substring)
+    {
+        foreach (var s in substring)
+            {
+                if (url.Contains(s))
+                    {
+                        return true;
+                    }
+            }
+        return false;
     }
 
 
@@ -150,10 +171,10 @@ public class ScrapedUrls(string startingHost)
     /// <param name="url">The URL to check.</param>
     /// <returns>True if the URL is external, false otherwise.</returns>
     private bool IsExternalUrl(Uri url)
-    {
-        ArgumentNullException.ThrowIfNull(url);
-        return this.BaseUrl.IsBaseOf(url);
-    }
+        {
+            ArgumentNullException.ThrowIfNull(url);
+            return !this.BaseUrl.IsBaseOf(url);
+        }
 
 
 
@@ -166,58 +187,15 @@ public class ScrapedUrls(string startingHost)
     /// <param name="newUrl">The URL to be validated.</param>
     /// <returns>True if the URL is valid, false otherwise.</returns>
     private static bool IsValidUrl(string newUrl)
-    {
-        return Uri.IsWellFormedUriString(newUrl, UriKind.Absolute) &&
-               Uri.TryCreate(newUrl, UriKind.Absolute, out var uriResult) &&
-               (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
-    }
-
-
-
-
-
-
-    /// <summary>
-    ///     Replaces any patterns in the given URL with an empty string.
-    /// </summary>
-    /// <param name="url">The URL to check for patterns.</param>
-    /// <returns>The URL with any patterns removed.</returns>
-    /// <remarks>
-    ///     This method checks the options to see if there are any link pattern exclusions,
-    ///     and if there are, it uses the Aggregate method of IEnumerable to apply a series
-    ///     of string replacements to the URL.
-    /// </remarks>
-    private string CheckUrlForPatterns(string url)
-    {
-        // Get the link pattern exclusions from the options.
-        var patterns = _options.LinkPatternExclusions;
-
-        // If there are no link pattern exclusions, return the URL as is.
-        if (!CheckStringForSubstring(url, patterns))
         {
-            return url;
+            return Uri.IsWellFormedUriString(newUrl, UriKind.Absolute) &&
+                   Uri.TryCreate(newUrl, UriKind.Absolute, out var uriResult) &&
+                   (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
         }
 
-        return string.Empty;
-    }
 
 
 
-
-
-
-    private bool CheckStringForSubstring(string inputString, string[] substrings)
-    {
-        foreach (var substring in substrings)
-        {
-            if (inputString.Contains(substring))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
 
 
@@ -225,15 +203,39 @@ public class ScrapedUrls(string startingHost)
 
 
     private IEnumerable<string> FilterPatternsFromUrls(IEnumerable<string> urls)
-    {
-        var patterns = _options.LinkPatternExclusions;
+        {
+            var patterns = _options.LinkPatternExclusions;
 
-        return patterns is null
-            ? urls
-            :
-            // Returns the urls that do not contain any of the patterns.
-            urls.Where(url =>
-                !patterns.Any(pattern =>
-                    url.Contains(pattern, StringComparison.CurrentCultureIgnoreCase)));
+            return patterns is null
+                ? urls
+                :
+                // Returns the urls that do not contain any of the patterns.
+                urls.Where(url =>
+                    !patterns.Any(pattern =>
+                        url.Contains(pattern, StringComparison.CurrentCultureIgnoreCase)));
+        }
+
+    internal ScrapedUrls RemoveVisitedUrls(ScrapedUrls visitedUrls)
+    {
+        _internalUrls.ExceptWith(visitedUrls._internalUrls);
+        _externalUrls.ExceptWith(visitedUrls._externalUrls);
+        return this;
+
     }
+
+
+
+
+internal void Remove(Uri address)
+{
+  
+        _internalUrls.Remove(address);
+
+        _externalUrls.Remove(address);
+    
+}
+
+
+
+
 }

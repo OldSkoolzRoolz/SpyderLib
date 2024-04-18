@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Windows.Input;
 
 
 
@@ -7,21 +6,11 @@ namespace KC.Apps.SpyderLib.Services;
 
 public interface IWebCrawlerController : INotifyPropertyChanged
 {
-    Task StartTagSearch(CancellationToken token);
-
-
-
-
-
-
     #region Properteez
 
     // Members for use in UI
-    ICommand CrawlCommand { get; set; }
     bool IsCrawling { get; set; }
     bool IsPaused { get; set; }
-    ICommand PauseCommand { get; set; }
-    ICommand StopCommand { get; set; }
 
     #endregion
 
